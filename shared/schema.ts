@@ -8,7 +8,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
-  role: text("role").notNull().default("editor"), // admin, editor, translator, viewer
+  role: text("role").notNull().default("editor"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -23,7 +23,6 @@ export const inquiries = pgTable("inquiries", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// CMS Tables
 export const pages = pgTable("pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   slug: text("slug").notNull().unique(),
@@ -33,7 +32,7 @@ export const pages = pgTable("pages", {
   titleJp: text("title_jp"),
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
-  status: text("status").notNull().default("draft"), // draft, published
+  status: text("status").notNull().default("draft"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -42,7 +41,7 @@ export const pages = pgTable("pages", {
 export const sections = pgTable("sections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   pageId: varchar("page_id").references(() => pages.id).notNull(),
-  type: text("type").notNull(), // hero, text, gallery, carousel, pricing, etc
+  type: text("type").notNull(),
   orderIndex: integer("order_index").notNull().default(0),
   contentJson: jsonb("content_json").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -101,10 +100,10 @@ export const hotels = pgTable("hotels", {
   amenities: text("amenities").array().notNull(),
   image: text("image").notNull(),
   description: text("description").notNull(),
-  fullDescription: text("full_description"), // Extended description for about section
-  highlights: text("highlights").array().notNull().default([]), // Hotel highlights
-  gallery: text("gallery").array().notNull().default([]), // Gallery images
-  rooms: jsonb("rooms").notNull().default([]), // Array of room objects
+  fullDescription: text("full_description"),
+  highlights: text("highlights").array().notNull().default([]),
+  gallery: text("gallery").array().notNull().default([]),
+  rooms: jsonb("rooms").notNull().default([]),
   featured: boolean("featured").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -127,6 +126,10 @@ export const destinations = pgTable("destinations", {
   region: text("region").notNull(),
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
+  seoTitle: text("seo_title"),
+  metaDescription: text("meta_description"),
+  schemaMarkup: text("schema_markup"),
+  faqs: jsonb("faqs").default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -172,9 +175,9 @@ export const packages = pgTable("packages", {
   currency: text("currency").notNull().default("USD"),
   includes: text("includes").array().notNull().default([]),
   excludes: text("excludes").array().notNull().default([]),
-  tours: text("tours").array().notNull().default([]), // Array of tour IDs
-  hotels: text("hotels").array().notNull().default([]), // Array of hotel IDs
-  destinations: text("destinations").array().notNull().default([]), // Array of destination IDs
+  tours: text("tours").array().notNull().default([]),
+  hotels: text("hotels").array().notNull().default([]),
+  destinations: text("destinations").array().notNull().default([]),
   category: text("category").notNull(),
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
@@ -206,12 +209,11 @@ export const settings = pgTable("settings", {
   updatedBy: varchar("updated_by").references(() => users.id),
 });
 
-// Navigation Items for Header
 export const navItems = pgTable("nav_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   label: text("label").notNull(),
   href: text("href").notNull(),
-  parentId: varchar("parent_id"), // For dropdown items, references parent nav item
+  parentId: varchar("parent_id"),
   sortOrder: integer("sort_order").notNull().default(0),
   isVisible: boolean("is_visible").notNull().default(true),
   openInNewTab: boolean("open_in_new_tab").notNull().default(false),
@@ -219,20 +221,18 @@ export const navItems = pgTable("nav_items", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Site Configuration (Header & Footer)
 export const siteConfig = pgTable("site_config", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  key: text("key").notNull().unique(), // e.g., 'header_logo', 'footer_logo', 'footer_description', etc.
+  key: text("key").notNull().unique(),
   value: text("value").notNull(),
-  type: text("type").notNull().default("text"), // text, image, json
+  type: text("type").notNull().default("text"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: varchar("updated_by").references(() => users.id),
 });
 
-// Footer Links (organized by sections)
 export const footerLinks = pgTable("footer_links", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  section: text("section").notNull(), // e.g., 'quick_links', 'experiences', 'support'
+  section: text("section").notNull(),
   label: text("label").notNull(),
   href: text("href").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -242,10 +242,9 @@ export const footerLinks = pgTable("footer_links", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Social Media Links
 export const socialLinks = pgTable("social_links", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  platform: text("platform").notNull(), // facebook, instagram, twitter, etc.
+  platform: text("platform").notNull(),
   url: text("url").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   isVisible: boolean("is_visible").notNull().default(true),
@@ -255,23 +254,22 @@ export const socialLinks = pgTable("social_links", {
 
 export const aboutPageContent = pgTable("about_page_content", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  slug: text("slug").notNull().unique(), // who-we-are, iluxury-difference, your-experience, trusted-worldwide
+  slug: text("slug").notNull().unique(),
   heroImage: text("hero_image"),
   heroTitle: text("hero_title"),
   heroSubtitle: text("hero_subtitle"),
   heroDescription: text("hero_description"),
-  sectionImages: jsonb("section_images").notNull().default({}), // Object with section image URLs
-  sections: jsonb("sections").notNull().default([]), // Array of section content
+  sectionImages: jsonb("section_images").notNull().default({}),
+  sections: jsonb("sections").notNull().default([]),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   updatedBy: varchar("updated_by").references(() => users.id),
 });
 
-// FAQ Items
 export const faqs = pgTable("faqs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
-  category: text("category"), // Optional category for grouping FAQs
+  category: text("category"),
   sortOrder: integer("sort_order").notNull().default(0),
   isVisible: boolean("is_visible").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -279,7 +277,6 @@ export const faqs = pgTable("faqs", {
   createdBy: varchar("created_by").references(() => users.id),
 });
 
-// Newsletter Subscribers
 export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
@@ -288,13 +285,12 @@ export const newsletterSubscribers = pgTable("newsletter_subscribers", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Hero Slides for Home Page
 export const heroSlides = pgTable("hero_slides", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sortOrder: integer("sort_order").notNull().default(0),
-  mediaType: text("media_type").notNull().default("video"), // "video" or "image"
+  mediaType: text("media_type").notNull().default("video"),
   mediaUrl: text("media_url").notNull(),
-  posterUrl: text("poster_url"), // poster image for videos
+  posterUrl: text("poster_url"),
   subtitle: text("subtitle"),
   title: text("title").notNull(),
   description: text("description"),
@@ -305,10 +301,9 @@ export const heroSlides = pgTable("hero_slides", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Siwa Section Content
 export const siwaSection = pgTable("siwa_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  mediaType: text("media_type").notNull().default("video"), // "video" or "image"
+  mediaType: text("media_type").notNull().default("video"),
   mediaUrl: text("media_url").notNull(),
   title: text("title").notNull(),
   description: text("description"),
@@ -318,17 +313,15 @@ export const siwaSection = pgTable("siwa_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Guest Experience Section Content
 export const guestExperienceSection = pgTable("guest_experience_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
   description: text("description"),
-  tagline: text("tagline"), // "Your journey, our promise."
+  tagline: text("tagline"),
   isActive: boolean("is_active").notNull().default(true),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Why Choose Section Content
 export const whyChooseSection = pgTable("why_choose_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -337,7 +330,6 @@ export const whyChooseSection = pgTable("why_choose_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Why Choose Cards (4 cards)
 export const whyChooseCards = pgTable("why_choose_cards", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -348,7 +340,6 @@ export const whyChooseCards = pgTable("why_choose_cards", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Guest Testimonials/Reviews
 export const testimonials = pgTable("testimonials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -361,7 +352,6 @@ export const testimonials = pgTable("testimonials", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Contact CTA Section (phone and email)
 export const contactCtaSection = pgTable("contact_cta_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   phone: text("phone").notNull(),
@@ -369,7 +359,6 @@ export const contactCtaSection = pgTable("contact_cta_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Stay Page Content Tables
 export const stayPageHero = pgTable("stay_page_hero", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   title: text("title").notNull(),
@@ -385,10 +374,10 @@ export const stayPageHero = pgTable("stay_page_hero", {
 export const stayAccommodationTypes = pgTable("stay_accommodation_types", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sortOrder: integer("sort_order").notNull().default(0),
-  icon: text("icon").notNull(), // star, waves, sparkles, shield
+  icon: text("icon").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  count: text("count").notNull(), // e.g., "15+ Partners"
+  count: text("count").notNull(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -397,7 +386,7 @@ export const stayAccommodationTypes = pgTable("stay_accommodation_types", {
 export const stayLuxuryFeatures = pgTable("stay_luxury_features", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sortOrder: integer("sort_order").notNull().default(0),
-  icon: text("icon").notNull(), // utensils, sparkles, car, shield, wifi, star
+  icon: text("icon").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   isActive: boolean("is_active").notNull().default(true),
@@ -411,7 +400,7 @@ export const stayNileSection = pgTable("stay_nile_section", {
   paragraphs: text("paragraphs").array().notNull().default([]),
   buttonText: text("button_text"),
   buttonLink: text("button_link"),
-  images: text("images").array().notNull().default([]), // 4 images
+  images: text("images").array().notNull().default([]),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -426,30 +415,25 @@ export const stayCta = pgTable("stay_cta", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Tour Bookings/Submissions
 export const tourBookings = pgTable("tour_bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  // Tour Information
   tourId: varchar("tour_id").references(() => tours.id),
   tourTitle: text("tour_title").notNull(),
   tourSlug: text("tour_slug"),
   tourPrice: integer("tour_price"),
   tourDuration: text("tour_duration"),
-  // Customer Information
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
   preferredDates: text("preferred_dates"),
   numberOfGuests: integer("number_of_guests"),
   specialRequests: text("special_requests"),
-  // Status
-  status: text("status").notNull().default("pending"), // pending, confirmed, cancelled, completed
-  notes: text("notes"), // Admin notes
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Brochure Downloads - Email capture for brochure downloads
 export const brochureDownloads = pgTable("brochure_downloads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull(),
@@ -478,7 +462,6 @@ export const insertInquirySchema = createInsertSchema(inquiries).omit({
   specialRequests: z.string().optional(),
 });
 
-// CMS Schemas
 export const insertPageSchema = createInsertSchema(pages).omit({
   id: true,
   createdAt: true,
@@ -501,7 +484,6 @@ export const insertMediaSchema = createInsertSchema(media).omit({
   createdAt: true,
 });
 
-// Room schema for hotels
 export const roomSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Room name is required"),
@@ -519,6 +501,12 @@ export const attractionSchema = z.object({
   image: z.string().min(1, "Attraction image is required"),
 });
 
+export const faqSchema = z.object({
+  id: z.string(),
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
+});
+
 export const insertHotelSchema = createInsertSchema(hotels).omit({
   id: true,
   createdAt: true,
@@ -528,7 +516,7 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   location: z.string().min(1, "Location is required"),
   region: z.string().min(1, "Region is required"),
   type: z.string().min(1, "Hotel type is required"),
-  rating: z.number().min(1).max(5, "Rating must be between 1 and 5"),
+  rating: z.number().min(1).max(5),
   priceTier: z.string().min(1, "Price tier is required"),
   amenities: z.array(z.string()).min(1, "At least one amenity is required"),
   image: z.string().min(1, "Hero image is required"),
@@ -555,6 +543,10 @@ export const insertDestinationSchema = createInsertSchema(destinations).omit({
   attractions: z.array(attractionSchema).default([]),
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
+  seoTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  schemaMarkup: z.string().optional(),
+  faqs: z.array(faqSchema).default([]),
 });
 
 export const insertTourSchema = createInsertSchema(tours).omit({
@@ -570,7 +562,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   duration: z.string().min(1, "Duration is required"),
   groupSize: z.string().optional(),
   difficulty: z.string().optional().default("Easy"),
-  price: z.number().min(0, "Price must be 0 or greater"),
+  price: z.number().min(0),
   currency: z.string().default("USD"),
   category: z.string().min(1, "Category is required"),
   includes: z.array(z.string()).default([]),
@@ -592,7 +584,7 @@ export const insertPackageSchema = createInsertSchema(packages).omit({
   description: z.string().min(1, "Description is required"),
   heroImage: z.string().url("Please provide a valid hero image URL"),
   duration: z.string().min(1, "Duration is required"),
-  price: z.number().min(0, "Price must be 0 or greater"),
+  price: z.number().min(0),
   currency: z.string().default("USD"),
   category: z.string().min(1, "Category is required"),
   includes: z.array(z.string()).default([]),
@@ -708,7 +700,7 @@ export const insertHeroSlideSchema = createInsertSchema(heroSlides).omit({
   subtitle: z.string().optional(),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  ctaText: z.string().max(150, "CTA text must be 150 characters or less").optional(),
+  ctaText: z.string().max(150).optional(),
   ctaLink: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -721,7 +713,7 @@ export const insertSiwaSectionSchema = createInsertSchema(siwaSection).omit({
   mediaUrl: z.string().min(1, "Media URL is required"),
   title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  ctaText: z.string().max(150, "CTA text must be 150 characters or less").optional(),
+  ctaText: z.string().max(150).optional(),
   ctaLink: z.string().optional(),
   isActive: z.boolean().default(true),
 });
@@ -797,7 +789,6 @@ export const insertTourBookingSchema = createInsertSchema(tourBookings).omit({
   notes: z.string().optional(),
 });
 
-// Stay Page Schemas
 export const insertStayPageHeroSchema = createInsertSchema(stayPageHero).omit({
   id: true,
   updatedAt: true,
@@ -859,13 +850,11 @@ export const insertStayCtaSchema = createInsertSchema(stayCta).omit({
   secondaryButtonLink: z.string().optional(),
 });
 
-// Login Schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
-// Settings Schemas
 export const changeUsernameSchema = z.object({
   newUsername: z.string().min(3, "Username must be at least 3 characters"),
   currentPassword: z.string().min(1, "Current password is required"),
@@ -891,7 +880,6 @@ export const emailSettingsSchema = z.object({
   inquiryNotificationEmail: z.string().email("Valid email required"),
 });
 
-// Type Exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertInquiry = z.infer<typeof insertInquirySchema>;
