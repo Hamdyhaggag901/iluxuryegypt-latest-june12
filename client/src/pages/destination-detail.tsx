@@ -8,12 +8,24 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'wouter';
 import { MapPin, Clock, Camera, Car, Star, Loader2 } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface Attraction {
   id: string;
   name: string;
   description: string;
   image: string;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
 }
 
 interface Destination {
@@ -32,6 +44,10 @@ interface Destination {
   region: string;
   featured: boolean;
   published: boolean;
+  seoTitle?: string | null;
+  metaDescription?: string | null;
+  schemaMarkup?: string | null;
+  faqs?: FAQ[];
 }
 
 export default function DestinationDetail() {
@@ -51,10 +67,40 @@ export default function DestinationDetail() {
     enabled: !!slug,
   });
 
+  const validFaqs = (destination?.faqs || []).filter(
+    (f) => f && f.question?.trim() && f.answer?.trim()
+  );
+
+  const faqJsonLd = validFaqs.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: validFaqs.map((f) => ({
+          "@type": "Question",
+          name: f.question,
+          acceptedAnswer: { "@type": "Answer", text: f.answer },
+        })),
+      }
+    : null;
+
+  const customSchema = destination?.schemaMarkup?.trim() || null;
+  const jsonLd: Array<string | object> = [];
+  if (customSchema) jsonLd.push(customSchema);
+  if (faqJsonLd) jsonLd.push(faqJsonLd);
+
   useSEO({
-    title: destination?.name ? `${destination.name} - Luxury Travel Guide` : undefined,
-    description: destination?.shortDescription || destination?.description?.slice(0, 160),
+    title: destination?.seoTitle?.trim()
+      ? destination.seoTitle.trim()
+      : destination?.name
+        ? `${destination.name} - Luxury Travel Guide`
+        : undefined,
+    titleOverride: !!destination?.seoTitle?.trim(),
+    description:
+      destination?.metaDescription?.trim() ||
+      destination?.shortDescription ||
+      destination?.description?.slice(0, 160),
     image: destination?.heroImage,
+    jsonLd: jsonLd.length > 0 ? jsonLd : undefined,
   });
 
   if (isLoading) {
@@ -262,6 +308,41 @@ export default function DestinationDetail() {
           </div>
         </div>
       </section>
+
+      {validFaqs.length > 0 && (
+        <section className="py-12 md:py-20 bg-background" data-testid="destination-faq-section">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8 md:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mb-4 md:mb-6">
+                Frequently Asked Questions
+              </h2>
+              <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
+              <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
+                Everything you need to know about visiting {destination.name}.
+              </p>
+            </div>
+
+            <Accordion type="single" collapsible className="w-full">
+              {validFaqs.map((faq, index) => (
+                <AccordionItem key={faq.id} value={faq.id} data-testid={`faq-item-${index}`}>
+                  <AccordionTrigger
+                    className="text-left text-base md:text-lg font-medium"
+                    data-testid={`faq-question-${index}`}
+                  >
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent
+                    className="text-sm md:text-base text-muted-foreground leading-relaxed whitespace-pre-line"
+                    data-testid={`faq-answer-${index}`}
+                  >
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
+        </section>
+      )}
 
       <Footer />
       <ScrollToTopButton />
