@@ -27,6 +27,12 @@ interface Attraction {
   image: string;
 }
 
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+}
+
 interface DestinationFormProps {
   initialData?: Partial<any>;
   onSubmit: (data: any) => void;
@@ -35,6 +41,7 @@ interface DestinationFormProps {
 
 export function DestinationForm({ initialData, onSubmit, isLoading }: DestinationFormProps) {
   const [attractions, setAttractions] = useState<Attraction[]>(initialData?.attractions || []);
+  const [faqs, setFaqs] = useState<FAQ[]>(initialData?.faqs || []);
 
   const form = useForm<DestinationFormData>({
     resolver: zodResolver(destinationFormSchema),
@@ -53,6 +60,10 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       region: "",
       featured: false,
       published: true,
+      seoTitle: "",
+      metaDescription: "",
+      schemaMarkup: "",
+      faqs: [],
       ...initialData,
     },
   });
@@ -64,6 +75,9 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       });
       if (initialData.attractions) {
         setAttractions(initialData.attractions);
+      }
+      if (initialData.faqs) {
+        setFaqs(initialData.faqs);
       }
     }
   }, [initialData, form]);
@@ -104,12 +118,26 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
     setAttractions(attractions.filter(attr => attr.id !== id));
   };
 
+  // FAQ management
+  const addFaq = () => {
+    setFaqs([...faqs, { id: uuidv4(), question: "", answer: "" }]);
+  };
+
+  const updateFaq = (id: string, field: keyof Omit<FAQ, "id">, value: string) => {
+    setFaqs(faqs.map(faq => (faq.id === id ? { ...faq, [field]: value } : faq)));
+  };
+
+  const removeFaq = (id: string) => {
+    setFaqs(faqs.filter(faq => faq.id !== id));
+  };
+
   const handleSubmit = (data: DestinationFormData) => {
     const transformedData = {
       ...data,
       attractions: attractions.filter(attr => attr.name.trim().length > 0),
       highlights: attractions.filter(attr => attr.name.trim().length > 0).map(attr => attr.name),
       gallery: attractions.filter(attr => attr.image.trim().length > 0).map(attr => attr.image),
+      faqs: faqs.filter(f => f.question.trim().length > 0 && f.answer.trim().length > 0),
     };
     onSubmit(transformedData);
   };
@@ -117,9 +145,10 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3" data-testid="tabs-destination-form">
+        <TabsList className="grid w-full grid-cols-4" data-testid="tabs-destination-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="attractions" data-testid="tab-attractions">Attractions</TabsTrigger>
+          <TabsTrigger value="faqs" data-testid="tab-faqs">FAQs</TabsTrigger>
           <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -372,8 +401,142 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
           </Card>
         </TabsContent>
 
+        {/* FAQs Tab */}
+        <TabsContent value="faqs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Frequently Asked Questions</CardTitle>
+              <CardDescription>Add common questions and answers about this destination. They will appear at the bottom of the destination page.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {faqs.map((faq, index) => (
+                <Card key={faq.id} className="border-2">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Question {index + 1}</CardTitle>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFaq(faq.id)}
+                        className="text-destructive hover:text-destructive"
+                        data-testid={`button-remove-faq-${index}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Question *</Label>
+                      <Input
+                        value={faq.question}
+                        onChange={(e) => updateFaq(faq.id, "question", e.target.value)}
+                        placeholder="e.g., What is the best time to visit?"
+                        data-testid={`input-faq-question-${index}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Answer *</Label>
+                      <Textarea
+                        value={faq.answer}
+                        onChange={(e) => updateFaq(faq.id, "answer", e.target.value)}
+                        placeholder="Provide a detailed answer..."
+                        rows={4}
+                        data-testid={`input-faq-answer-${index}`}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addFaq}
+                className="w-full"
+                data-testid="button-add-faq"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add FAQ
+              </Button>
+
+              {faqs.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No FAQs added yet.</p>
+                  <p className="text-sm">Click the button above to add a question and answer for this destination.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Settings</CardTitle>
+              <CardDescription>Optimize how this destination appears in search engines and social shares.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="seoTitle">SEO Title</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {(form.watch("seoTitle") || "").length}/60
+                  </span>
+                </div>
+                <Input
+                  id="seoTitle"
+                  maxLength={60}
+                  {...form.register("seoTitle")}
+                  placeholder="e.g., Luxury Cairo Travel Guide | I.LuxuryEgypt"
+                  data-testid="input-destination-seo-title"
+                />
+                <p className="text-xs text-muted-foreground">Used for the &lt;title&gt; tag (max 60 characters).</p>
+                {form.formState.errors.seoTitle && (
+                  <p className="text-sm text-destructive">{String(form.formState.errors.seoTitle.message)}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="metaDescription">Meta Description</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {(form.watch("metaDescription") || "").length}/160
+                  </span>
+                </div>
+                <Textarea
+                  id="metaDescription"
+                  maxLength={160}
+                  rows={3}
+                  {...form.register("metaDescription")}
+                  placeholder="A short summary shown in search results and social shares (max 160 characters)."
+                  data-testid="input-destination-meta-description"
+                />
+                {form.formState.errors.metaDescription && (
+                  <p className="text-sm text-destructive">{String(form.formState.errors.metaDescription.message)}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="schemaMarkup">Schema Markup (JSON-LD)</Label>
+                <Textarea
+                  id="schemaMarkup"
+                  rows={8}
+                  className="font-mono text-xs"
+                  {...form.register("schemaMarkup")}
+                  placeholder='{"@context":"https://schema.org","@type":"TouristDestination","name":"Cairo"}'
+                  data-testid="input-destination-schema-markup"
+                />
+                <p className="text-xs text-muted-foreground">Paste valid JSON-LD. It will be embedded in a &lt;script type="application/ld+json"&gt; tag in the page &lt;head&gt;.</p>
+                {form.formState.errors.schemaMarkup && (
+                  <p className="text-sm text-destructive">{String(form.formState.errors.schemaMarkup.message)}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Destination Settings</CardTitle>
