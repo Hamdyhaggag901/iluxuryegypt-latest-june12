@@ -52,11 +52,11 @@ export default function Alexandria() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src={alexandriaMainImage}
           alt="Alexandria Mediterranean coastline"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
           loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -157,11 +157,11 @@ export default function Alexandria() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {highlights.map((highlight, index) => (
               <Card key={index} className="overflow-hidden group hover:shadow-xl transition-all duration-500">
-                <div className="relative">
+                <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={highlight.image}
                     alt={highlight.title}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-3 rounded-full">

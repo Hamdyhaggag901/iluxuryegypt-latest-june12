@@ -224,12 +224,12 @@ export default function TourDetail() {
       <Navigation />
 
       {/* Hero Section - Full Screen */}
-      <section className="relative h-[70vh] md:h-screen w-full">
+      <section className="relative h-[70vh] md:h-screen w-full bg-black">
         <div className="absolute inset-0">
           <img
             src={tour.heroImage}
             alt={tour.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain md:object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
         </div>

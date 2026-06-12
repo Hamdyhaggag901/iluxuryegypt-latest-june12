@@ -10,11 +10,11 @@ export default function Aswan() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src="https://images.unsplash.com/photo-1578662996442-48f60103fc96?q=80&w=2070&auto=format&fit=crop"
           alt="Aswan - Gateway to Nubian Heritage"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         
@@ -92,11 +92,11 @@ export default function Aswan() {
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Philae Temple */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1594735797063-9d0c7e54f6c8?q=80&w=2070&auto=format&fit=crop"
                   alt="Philae Temple"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -112,11 +112,11 @@ export default function Aswan() {
 
             {/* High Dam */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578917319415-01c0e82e31b7?q=80&w=2070&auto=format&fit=crop"
                   alt="Aswan High Dam"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -131,11 +131,11 @@ export default function Aswan() {
 
             {/* Nubian Villages */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578917319419-d47b0ba7ea8b?q=80&w=2070&auto=format&fit=crop"
                   alt="Nubian Villages"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -150,11 +150,11 @@ export default function Aswan() {
 
             {/* Felucca Sailing */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578925441513-b3c1bd1bb0e8?q=80&w=2070&auto=format&fit=crop"
                   alt="Felucca Sailing on the Nile"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

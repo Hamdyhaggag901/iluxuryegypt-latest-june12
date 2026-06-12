@@ -10,11 +10,11 @@ export default function SharmElSheikh() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop"
           alt="Sharm El-Sheikh - Sinai's Resort Paradise"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         
@@ -92,11 +92,11 @@ export default function SharmElSheikh() {
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Ras Mohammed Park */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1582967788606-a171c1080cb0?q=80&w=2070&auto=format&fit=crop"
                   alt="Ras Mohammed National Park"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -111,11 +111,11 @@ export default function SharmElSheikh() {
 
             {/* Naama Bay */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578073075043-3e5d87b9a6b3?q=80&w=2070&auto=format&fit=crop"
                   alt="Naama Bay"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -130,11 +130,11 @@ export default function SharmElSheikh() {
 
             {/* Blue Hole Diving */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=2070&auto=format&fit=crop"
                   alt="Blue Hole Diving Site"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -149,11 +149,11 @@ export default function SharmElSheikh() {
 
             {/* St. Catherine Monastery */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578073884727-9ba8b1f7a9c5?q=80&w=2070&auto=format&fit=crop"
                   alt="St. Catherine Monastery"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

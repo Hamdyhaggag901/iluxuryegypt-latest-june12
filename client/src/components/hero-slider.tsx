@@ -143,7 +143,7 @@ export default function HeroSlider() {
             <img
               src={slide.src}
               alt={slide.alt || slide.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain md:object-cover"
               loading={index === 0 ? "eager" : "lazy"}
               // @ts-ignore - fetchpriority is a valid HTML attribute for LCP optimization
               fetchpriority={index === 0 ? "high" : "low"}

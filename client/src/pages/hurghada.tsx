@@ -10,11 +10,11 @@ export default function Hurghada() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop"
           alt="Hurghada - Red Sea Diving Paradise"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         
@@ -92,11 +92,11 @@ export default function Hurghada() {
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Coral Reefs */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?q=80&w=2070&auto=format&fit=crop"
                   alt="Coral Reefs in Hurghada"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -111,11 +111,11 @@ export default function Hurghada() {
 
             {/* World-class Diving */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1582967788606-a171c1080cb0?q=80&w=2070&auto=format&fit=crop"
                   alt="Diving in Hurghada"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -130,11 +130,11 @@ export default function Hurghada() {
 
             {/* Marina Boulevard */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578073075043-3e5d87b9a6b3?q=80&w=2070&auto=format&fit=crop"
                   alt="Marina Boulevard Hurghada"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -149,11 +149,11 @@ export default function Hurghada() {
 
             {/* Desert Safari */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1569849653922-e3adcbcc6b9d?q=80&w=2070&auto=format&fit=crop"
                   alt="Desert Safari from Hurghada"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

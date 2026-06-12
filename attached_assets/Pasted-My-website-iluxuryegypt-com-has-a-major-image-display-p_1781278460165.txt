@@ -1,0 +1,26 @@
+My website iluxuryegypt.com has a major image display problem on mobile devices.
+
+THE PROBLEM:
+Background/hero images and section images are being cropped randomly and show only a small portion of the image instead of the full image scaled to fit the screen. On mobile, users see a zoomed-in, partial view of images instead of the complete image like they would see on a desktop/laptop screen.
+
+WHAT I WANT:
+Every image and background image on the site should display its FULL content, scaled and centered to fit the container, similar to how a desktop browser shows it — just smaller. The user should see the complete image (not a cropped fragment), regardless of screen size.
+
+REQUIRED FIXES:
+1. Go through every hero section, background image, and <img> tag on the site (homepage and all pages).
+
+2. For background images (CSS background-image), make sure they use:
+   background-size: contain or background-size: cover combined with background-position: center center, and test both to choose whichever shows the full meaningful content of the image without cropping out important parts (like the boat, the pyramid, the text overlay area).
+
+3. For <img> tags, use:
+   width: 100%;
+   height: auto;
+   object-fit: contain; (or "cover" only if the image still shows its full subject after cropping)
+
+4. Make sure hero sections have a min-height that adapts to mobile screens (use vh units or aspect-ratio) so images aren't forced into oddly cropped fixed-height containers on small screens.
+
+5. Check the slider/carousel components specifically (the hero image sliders on the homepage) — these are showing cropped, off-center images on mobile. Fix their container sizing and image positioning so the full image is visible and centered.
+
+6. Test on a mobile viewport (375px width) and confirm: every image shows its complete content (not cut off at edges), exactly like it would appear on a desktop browser, just resized proportionally.
+
+Go through each page (Home, About, Stay, Testimonials, Travel Guide, FAQs, etc.) and fix this systematically — don't just fix the homepage.

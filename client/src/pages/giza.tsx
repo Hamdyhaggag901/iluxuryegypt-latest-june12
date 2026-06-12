@@ -10,11 +10,11 @@ export default function Giza() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src="https://images.unsplash.com/photo-1553913861-c0fddf2619ee?q=80&w=2070&auto=format&fit=crop"
           alt="Giza - Home of the Great Pyramids"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         
@@ -92,11 +92,11 @@ export default function Giza() {
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Great Pyramids */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1586779942416-90a5f8fc82d6?q=80&w=2070&auto=format&fit=crop"
                   alt="Great Pyramids of Giza"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -111,11 +111,11 @@ export default function Giza() {
 
             {/* Great Sphinx */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1587138854008-9b3ed33b10b1?q=80&w=2069&auto=format&fit=crop"
                   alt="Great Sphinx of Giza"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -130,11 +130,11 @@ export default function Giza() {
 
             {/* Solar Boat Museum */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578398999190-e6bcccd94db0?q=80&w=2070&auto=format&fit=crop"
                   alt="Solar Boat Museum"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -149,11 +149,11 @@ export default function Giza() {
 
             {/* Sound & Light Show */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578399027467-c7ad6b2ba11b?q=80&w=2070&auto=format&fit=crop"
                   alt="Sound and Light Show at Giza"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

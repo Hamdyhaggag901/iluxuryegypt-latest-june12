@@ -10,11 +10,11 @@ export default function Dahab() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
         <img
           src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop"
           alt="Dahab - Bohemian Red Sea Gem"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         
@@ -92,11 +92,11 @@ export default function Dahab() {
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             {/* Blue Hole */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1583212292454-1fe6229603b7?q=80&w=2070&auto=format&fit=crop"
                   alt="Blue Hole Diving Site"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -112,11 +112,11 @@ export default function Dahab() {
 
             {/* Lighthouse Reef */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?q=80&w=2070&auto=format&fit=crop"
                   alt="Lighthouse Reef"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -132,11 +132,11 @@ export default function Dahab() {
 
             {/* Bedouin Culture */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1578917319419-d47b0ba7ea8b?q=80&w=2070&auto=format&fit=crop"
                   alt="Bedouin Culture in Dahab"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -152,11 +152,11 @@ export default function Dahab() {
 
             {/* Windsurfing */}
             <div className="group">
-              <div className="relative overflow-hidden rounded-xl mb-6">
+              <div className="relative overflow-hidden rounded-xl mb-6 aspect-[4/3]">
                 <img
                   src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=2070&auto=format&fit=crop"
                   alt="Windsurfing in Dahab"
-                  className="w-full h-80 object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

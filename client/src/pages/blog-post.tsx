@@ -506,11 +506,11 @@ export default function BlogPost() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative h-[600px] overflow-hidden">
+      <section className="relative bg-black overflow-hidden h-[56vw] min-h-[280px] md:h-[500px]">
         <img
           src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
           alt={post.titleEn}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain md:object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         

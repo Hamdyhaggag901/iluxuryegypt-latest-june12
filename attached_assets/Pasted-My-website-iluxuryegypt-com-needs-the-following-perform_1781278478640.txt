@@ -1,0 +1,20 @@
+My website iluxuryegypt.com needs the following performance and accessibility fixes based on a PageSpeed Insights audit:
+
+1. VIEWPORT FIX: Remove `user-scalable=no` and any `maximum-scale` restriction from the viewport meta tag. Change it to:
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+2. MOBILE LCP/TBT ERROR: On mobile, Largest Contentful Paint and Total Blocking Time return "Error / NO_LCP" meaning the page fails to fully render on mobile. Investigate what's blocking rendering — likely a large hero image, a heavy script, or a layout issue specific to mobile viewports. Fix whatever is causing this hang.
+
+3. IMAGE OPTIMIZATION: Convert all images (especially hero/banner images) to WebP format with proper compression. Add responsive images using srcset and sizes attributes so mobile devices load smaller image files instead of the full desktop-size images. Target: reduce image payload by at least 300-600 KiB.
+
+4. RENDER-BLOCKING RESOURCES: Identify CSS and JS files that block initial rendering. Add `defer` or `async` to non-critical JavaScript, and inline critical CSS while loading the rest asynchronously.
+
+5. MINIFY CSS AND JS: Minify all CSS and JavaScript files for production (this should be part of the build process — check the build config, e.g. Vite/Webpack minification settings).
+
+6. REMOVE UNUSED CSS/JS: Audit and remove unused CSS rules and JavaScript code/imports that are bundled but not used, to reduce bundle size.
+
+7. ACCESSIBILITY - BUTTON NAMES: Find all icon-only buttons (menu toggle, search, social media icons, carousel arrows, etc.) that lack visible text, and add aria-label attributes describing their function (e.g. aria-label="Open menu", aria-label="Next slide").
+
+8. ACCESSIBILITY - COLOR CONTRAST: Find text/background color combinations flagged for low contrast and adjust colors to meet WCAG AA contrast ratio (4.5:1 for normal text, 3:1 for large text), while keeping the brand's navy/gold theme.
+
+After making these changes, run a production build and verify no errors are introduced. Apply these fixes across all pages, not just the homepage.
