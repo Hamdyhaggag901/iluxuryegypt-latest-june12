@@ -1,0 +1,121 @@
+Redesign the complete "Stays" section of iLUXURY EGYPT with this exact structure:
+
+════════════════════════════
+PAGE 1: /stays (Index Page)
+════════════════════════════
+
+SECTION 1 — Hero
+- Full-width hero image with dark overlay
+- H1: "Where You Rest Matters"
+- Subtitle: "Curated luxury properties across Egypt"
+- Hero image editable from admin dashboard
+
+SECTION 2 — Editorial Article Block
+- Title + full rich text article (300-400 words) about luxury hotels in Egypt
+- 100% editable from admin dashboard (add field: stays_page_article_title + stays_page_article_body)
+- Beautiful editorial typography, no images in this section
+
+SECTION 3 — Hotels Grid (with scroll animations)
+- All hotels from DB as animated cards (fade-in + slide-up on scroll using Intersection Observer)
+- Each card: cover image, hotel name, location, short tagline
+- Clicking → /stays/[slug]
+- NO filters, NO search, NO prices
+
+SECTION 4 — "Journey Further" Tours Section
+- Pull 3 featured tours/experiences from the database
+- Title: "Journey Further — Our Curated Tours"
+- Horizontal scroll cards: image, tour name, duration, short description
+- "View All Tours" button → /experiences
+- Same dark navy + gold design
+
+SECTION 5 — General FAQ Accordion
+- Title: "Frequently Asked Questions"
+- 100% editable from admin: add/edit/delete Q&A pairs (field: stays_page_faqs as JSON array)
+- Accordion style: click to expand/collapse
+- Default questions about luxury hotels in Egypt
+
+════════════════════════════════════════
+PAGE 2: /stays/[slug] (Hotel Article Page)
+════════════════════════════════════════
+
+SECTION 1 — Full-Width Hero
+- Large hero_image with overlay
+- Hotel name (large Cormorant Garamond)
+- Location below name
+- "← Back to Stays" top-left link
+- Breadcrumb: Home > Stays > [Hotel Name]
+
+SECTION 2 — Long-Form Article
+- Full rich text article (1500-2000 words target)
+- Supports: paragraphs, H2 headings, H3 subheadings, bold, blockquotes (pull quotes)
+- Editorial two-column-feel layout
+- "Book This Stay" CTA button at end
+- 100% editable from admin with a proper rich text editor (TipTap or Quill)
+
+SECTION 3 — Amenities Tags
+- Styled gold badge tags (from highlights/amenities field)
+- Example: "Nile Views", "Spa", "Historic Palace", "Pool"
+
+SECTION 4 — Photo Gallery ("Sites Gallery")
+- Full-width grid: first image large, rest in 2-3 column grid
+- Lightbox on click (fullscreen view)
+- Images from gallery_images array in DB
+- Alt text auto-generated: "[Hotel Name] – [Location] luxury hotel"
+
+SECTION 5 — Related Tours
+- 2-3 tours related to same city/region
+- Same card design as main stays page tours section
+
+SECTION 6 — Hotel-Specific FAQs
+- Title: "[Hotel Name] – Frequently Asked Questions"
+- Editable per hotel from admin (field: faqs as JSON array of {question, answer})
+- Accordion style
+
+════════════════════════════
+ADMIN DASHBOARD ADDITIONS
+════════════════════════════
+
+For /stays page settings (new admin section "Stays Page Settings"):
+- Hero image upload
+- Article title (text input)
+- Article body (rich text editor)
+- FAQs manager (add/edit/delete rows of question + answer)
+
+For each hotel editor, add these fields:
+- Long-form article body (TipTap rich text editor — supports H2, H3, bold, blockquote)
+- Hotel FAQs (add/edit/delete: question + answer per hotel)
+- Meta title (for SEO)
+- Meta description (for SEO)
+
+Keep all existing fields: name, slug, location, hero_image, gallery_images, highlights, amenities
+
+════════════════════════════
+SEO (Critical)
+════════════════════════════
+- <title>: "[Hotel Name] | Luxury Hotel in [Location] | iLUXURY EGYPT"
+- <meta description>: from meta_description field
+- JSON-LD Schema (LodgingBusiness) on every hotel page: name, address, image, description
+- Clean slugs: /stays/four-seasons-nile-plaza
+- Image alt text: auto-generated from name + location
+- Internal links between hotel pages
+
+════════════════════════════
+DESIGN
+════════════════════════════
+- Colors: dark navy #1a2332, gold #c9a96e, cream white backgrounds
+- Headings: Cormorant Garamond
+- Body: clean sans-serif
+- Scroll animations: Intersection Observer (fade-in + translateY)
+- Fully mobile responsive
+- Luxury editorial feel — Condé Nast Traveler style
+
+════════════════════════════
+REMOVE
+════════════════════════════
+- All filter/search UI
+- Price display
+- Room booking complexity
+- Hardcoded text (everything from DB or admin)
+
+Tech stack: React/Next.js + PostgreSQL (Neon)
+Show all files to create/modify with complete code.

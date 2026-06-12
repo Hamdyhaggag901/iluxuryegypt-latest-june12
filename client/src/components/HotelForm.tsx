@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, X, Loader2, Trash2, ImagePlus } from "lucide-react";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 const hotelFormSchema = insertHotelSchema.extend({
   rating: z.union([z.number(), z.string().min(1)]).transform((val) =>
@@ -35,6 +36,10 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
   const [galleryInput, setGalleryInput] = useState("");
   const [roomAmenitiesInput, setRoomAmenitiesInput] = useState<Record<number, string>>({});
 
+  const [hotelFaqsLocal, setHotelFaqsLocal] = useState<{ question: string; answer: string }[]>(
+    (initialData?.hotelFaqs as any[] | undefined) || []
+  );
+
   const form = useForm<HotelFormData>({
     resolver: zodResolver(hotelFormSchema),
     defaultValues: {
@@ -49,9 +54,13 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       image: "",
       description: "",
       fullDescription: "",
+      articleBody: "",
       highlights: [],
       gallery: [],
       rooms: [],
+      hotelFaqs: [],
+      metaTitle: "",
+      metaDescription: "",
       featured: false,
       ...initialData,
     },
@@ -62,6 +71,9 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       Object.keys(initialData).forEach((key) => {
         form.setValue(key as any, initialData[key]);
       });
+      if (initialData.hotelFaqs) {
+        setHotelFaqsLocal(initialData.hotelFaqs as any[]);
+      }
     }
   }, [initialData, form]);
 
@@ -169,6 +181,7 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
         amenities: (room.amenities || []).filter((a: string) => a.trim().length > 0),
         images: (room.images || []).filter((i: string) => i.trim().length > 0),
       })),
+      hotelFaqs: hotelFaqsLocal.filter(f => f.question.trim() && f.answer.trim()),
     };
     onSubmit(transformedData);
   };
@@ -178,11 +191,12 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5" data-testid="tabs-hotel-form">
+        <TabsList className="grid w-full grid-cols-6" data-testid="tabs-hotel-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
           <TabsTrigger value="media" data-testid="tab-media">Media</TabsTrigger>
           <TabsTrigger value="rooms" data-testid="tab-rooms">Rooms & Suites</TabsTrigger>
+          <TabsTrigger value="article" data-testid="tab-article">Article & SEO</TabsTrigger>
           <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -748,6 +762,119 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                 <Plus className="h-4 w-4 mr-2" />
                 Add Room Type
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Article & SEO Tab */}
+        <TabsContent value="article" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hotel Article Body</CardTitle>
+              <CardDescription>
+                Long-form editorial content shown on the /stays/:slug page. Supports rich formatting.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RichTextEditor
+                value={form.watch("articleBody") || ""}
+                onChange={(html) => form.setValue("articleBody", html)}
+                placeholder="Write a detailed, editorial-quality description of this hotel..."
+                minHeight="400px"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Hotel FAQs</CardTitle>
+              <CardDescription>
+                Frequently asked questions specific to this hotel. Displayed in an accordion on the hotel detail page.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {hotelFaqsLocal.map((faq, index) => (
+                <Card key={index} className="border border-accent/10">
+                  <CardContent className="pt-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Question {index + 1}</Label>
+                          <Input
+                            value={faq.question}
+                            onChange={(e) =>
+                              setHotelFaqsLocal((prev) =>
+                                prev.map((f, i) => (i === index ? { ...f, question: e.target.value } : f))
+                              )
+                            }
+                            placeholder="e.g. Is breakfast included?"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">Answer</Label>
+                          <Textarea
+                            value={faq.answer}
+                            onChange={(e) =>
+                              setHotelFaqsLocal((prev) =>
+                                prev.map((f, i) => (i === index ? { ...f, answer: e.target.value } : f))
+                              )
+                            }
+                            placeholder="Write a clear answer..."
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:bg-destructive/10 flex-shrink-0 mt-5"
+                        onClick={() => setHotelFaqsLocal((prev) => prev.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setHotelFaqsLocal((prev) => [...prev, { question: "", answer: "" }])}
+              >
+                <Plus className="h-4 w-4 mr-2" /> Add FAQ
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Metadata</CardTitle>
+              <CardDescription>
+                Override the auto-generated title and description for search engines.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="metaTitle">Meta Title</Label>
+                <Input
+                  id="metaTitle"
+                  {...form.register("metaTitle")}
+                  placeholder={`${form.watch("name") || "Hotel Name"} | Luxury Hotel in Egypt | iLUXURY EGYPT`}
+                />
+                <p className="text-xs text-muted-foreground">Recommended: 50–60 characters</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea
+                  id="metaDescription"
+                  {...form.register("metaDescription")}
+                  placeholder="A compelling 1–2 sentence summary for search engine results..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">Recommended: 150–160 characters</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

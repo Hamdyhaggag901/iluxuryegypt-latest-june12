@@ -101,10 +101,14 @@ export const hotels = pgTable("hotels", {
   amenities: text("amenities").array().notNull(),
   image: text("image").notNull(),
   description: text("description").notNull(),
-  fullDescription: text("full_description"), // Extended description for about section
-  highlights: text("highlights").array().notNull().default([]), // Hotel highlights
-  gallery: text("gallery").array().notNull().default([]), // Gallery images
-  rooms: jsonb("rooms").notNull().default([]), // Array of room objects
+  fullDescription: text("full_description"),
+  articleBody: text("article_body"),
+  highlights: text("highlights").array().notNull().default([]),
+  gallery: text("gallery").array().notNull().default([]),
+  rooms: jsonb("rooms").notNull().default([]),
+  hotelFaqs: jsonb("hotel_faqs").notNull().default([]),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
   featured: boolean("featured").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -519,6 +523,11 @@ export const attractionSchema = z.object({
   image: z.string().min(1, "Attraction image is required"),
 });
 
+export const faqItemSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string().min(1),
+});
+
 export const insertHotelSchema = createInsertSchema(hotels).omit({
   id: true,
   createdAt: true,
@@ -534,9 +543,13 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   image: z.string().min(1, "Hero image is required"),
   description: z.string().min(1, "Description is required"),
   fullDescription: z.string().optional(),
+  articleBody: z.string().optional(),
   highlights: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
   rooms: z.array(roomSchema).default([]),
+  hotelFaqs: z.array(faqItemSchema).default([]),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
   featured: z.boolean().default(false),
 });
 

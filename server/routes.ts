@@ -3201,6 +3201,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ── Stays Page Settings ────────────────────────────────────────────────────
+
+  // Public: get stays page settings
+  app.get("/api/public/stays-settings", async (req, res) => {
+    try {
+      const [heroImage, articleTitle, articleBody, faqsRaw] = await Promise.all([
+        storage.getSetting("stays_hero_image"),
+        storage.getSetting("stays_article_title"),
+        storage.getSetting("stays_article_body"),
+        storage.getSetting("stays_faqs"),
+      ]);
+      let faqs: any[] = [];
+      if (faqsRaw?.value) {
+        try { faqs = JSON.parse(faqsRaw.value); } catch {}
+      }
+      res.json({
+        heroImage: heroImage?.value || "",
+        articleTitle: articleTitle?.value || "",
+        articleBody: articleBody?.value || "",
+        faqs,
+      });
+    } catch (error) {
+      console.error("Error fetching stays settings:", error);
+      res.status(500).json({ message: "Error fetching stays settings" });
+    }
+  });
+
+  // CMS: update stays page settings
+  app.put("/api/cms/stays-settings", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const { heroImage, articleTitle, articleBody, faqs } = req.body;
+      await Promise.all([
+        storage.upsertSetting("stays_hero_image", heroImage || "", authReq.user.id),
+        storage.upsertSetting("stays_article_title", articleTitle || "", authReq.user.id),
+        storage.upsertSetting("stays_article_body", articleBody || "", authReq.user.id),
+        storage.upsertSetting("stays_faqs", JSON.stringify(faqs || []), authReq.user.id),
+      ]);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating stays settings:", error);
+      res.status(500).json({ message: "Error updating stays settings" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

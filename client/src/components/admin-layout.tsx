@@ -160,9 +160,15 @@ export default function AdminLayout({ children, title, description }: AdminLayou
     },
     {
       id: "stay-page",
-      label: "Stay Page",
+      label: "Stay Page (Legacy)",
       icon: Bed,
       href: "/admin/stay-page",
+    },
+    {
+      id: "stays-settings",
+      label: "Stays Page Settings",
+      icon: Bed,
+      href: "/admin/stays-settings",
     },
     {
       id: "header",

@@ -34,7 +34,7 @@ const defaultNavItems = [
     { label: "Day Tours", href: "/egypt-day-tours" },
     { label: "Nile Cruises", href: "/egypt-nile-cruise-tours" },
   ]},
-  { label: "Stays", id: "stays", type: "page" as const, href: "/stay" },
+  { label: "Stays", id: "stays", type: "page" as const, href: "/stays" },
   { label: "Blog", id: "blog", type: "page" as const, href: "/blog" },
   { label: "Contact", id: "contact", type: "page" as const, href: "/contact" },
 ];

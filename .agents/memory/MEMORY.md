@@ -1,0 +1,1 @@
+- [Stays redesign patterns](stays-redesign.md) — /stays and /stays/:slug use editorial design; hotel detail fallbacks to generated article if articleBody is empty
