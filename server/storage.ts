@@ -1775,6 +1775,7 @@ export async function seedDatabase() {
       const sampleHotels = [
         {
           name: "Mena House Hotel",
+          slug: "mena-house-hotel",
           location: "Giza",
           region: "Cairo & Giza",
           type: "Palace" as const,
@@ -1787,6 +1788,7 @@ export async function seedDatabase() {
         },
         {
           name: "Sofitel Winter Palace",
+          slug: "sofitel-winter-palace",
           location: "Luxor",
           region: "Luxor",
           type: "Palace" as const,
@@ -1799,6 +1801,7 @@ export async function seedDatabase() {
         },
         {
           name: "Four Seasons Hotel Cairo at Nile Plaza",
+          slug: "four-seasons-cairo-nile-plaza",
           location: "Cairo",
           region: "Cairo & Giza",
           type: "Resort" as const,
