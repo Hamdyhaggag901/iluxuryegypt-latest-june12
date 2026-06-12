@@ -1,0 +1,161 @@
+Got it ✅
+Here’s the *technical specification rewritten* with *LuxorTravel* as the brand and no mention of Travel2Egypt:
+
+---
+
+# Technical Specification: Custom CMS for LuxorTravel
+
+## 1. Core Requirements
+
+* *Admin Backend* with authentication and role-based access.
+* *CRUD Management* for:
+
+  * Pages (e.g., Homepage, Destinations, Blog, About Us)
+  * Sections (e.g., Hero banners, “Why LuxorTravel,” CTA blocks)
+  * Components (e.g., carousels, galleries, testimonials, pricing tables)
+  * Blog/Articles with categories and tags
+  * Media Library (images, videos, docs)
+* *Versioning/History*: Option to rollback or restore previous edits.
+* *SEO Controls*: Title, meta description, alt text, schema fields for each page.
+* *Multilingual Support*: Fields for EN, ES, JP, FR (expandable).
+* *Preview Mode*: Admin can see unpublished changes before going live.
+* *Deployment-ready API*: All frontend pages fetch content dynamically.
+
+---
+
+## 2. Tech Stack
+
+* *Frontend*: Next.js (React-based, static generation + SSR for SEO)
+* *Backend*: Node.js with Express (REST or GraphQL API)
+* *Database*: PostgreSQL (relational, structured data for multilingual fields)
+* *ORM*: Prisma (schema management + migrations)
+* *Authentication*: JWT-based, with refresh tokens and secure password hashing (bcrypt)
+* *Image/Asset Handling*: Cloudinary or Supabase Storage (with CDN delivery)
+* *Admin Dashboard*: React + Tailwind, protected routes, modular CRUD interfaces
+
+---
+
+## 3. System Architecture
+
+### 3.1 Content Model
+
+* *Page*:
+
+  * id, slug, title, SEO fields
+  * relationships → sections
+* *Section*:
+
+  * id, type (hero, text, gallery, carousel, pricing table, etc.)
+  * JSON field for flexible content (key-value pairs)
+* *Component*:
+
+  * Reusable UI blocks (testimonials, CTAs, FAQs)
+  * Editable via CMS, stored as JSON schema
+* *Media*:
+
+  * id, URL, alt text, caption, tags
+* *Blog Post*:
+
+  * id, title, slug, body, featured\_image, categories, tags, publish\_status
+* *Users*:
+
+  * id, name, email, role (Admin, Editor, Translator)
+
+---
+
+## 4. Features
+
+### 4.1 User & Role Management
+
+* Admin: Full access
+* Editor: Content CRUD, no system settings
+* Translator: Language-specific CRUD
+* Viewer: Read-only dashboard access
+
+### 4.2 Content Editing
+
+* WYSIWYG Editor (rich text, embedded media, inline links)
+* Drag-and-drop ordering of sections
+* Image uploader with cropping
+* Inline JSON editor for advanced sections (pricing, itineraries)
+
+### 4.3 API Layer
+
+* *GraphQL API* or REST endpoints for frontend consumption:
+
+  * /api/pages/:slug
+  * /api/posts/:slug
+  * /api/media/:id
+* Secured admin endpoints for CRUD
+
+### 4.4 SEO & Marketing Tools
+
+* Per-page meta title & description
+* OpenGraph & Twitter card fields
+* Schema markup JSON editor
+* URL redirection manager
+
+### 4.5 Multilingual Support
+
+* Each content field has language variants
+* Fallback to English if translation missing
+* Language switcher in frontend
+
+---
+
+## 5. Database Schema (Simplified)
+
+sql
+Pages(id, slug, title_en, title_es, title_fr, title_jp, meta_title, meta_description)
+Sections(id, page_id, type, order, content_json)
+Posts(id, slug, title_en, body_en, title_es, body_es, featured_image, status, published_at)
+Media(id, url, alt_en, alt_es, alt_fr, alt_jp, caption)
+Users(id, name, email, password_hash, role)
+
+
+---
+
+## 6. Admin Dashboard Modules
+
+* *Dashboard Overview*: Recent edits, pending translations
+* *Pages Manager*: CRUD pages & sections
+* *Blog Manager*: CRUD blog posts, categories, tags
+* *Media Library*: Upload/search/filter media
+* *SEO Manager*: Global settings + per-page controls
+* *User Manager*: CRUD users & roles
+* *Settings*: Languages, branding, API keys
+
+---
+
+## 7. Security
+
+* HTTPS enforced
+* JWT-based authentication
+* Rate limiting on API
+* Role-based permissions
+* Encrypted passwords (bcrypt)
+* CSRF protection in dashboard
+
+---
+
+## 8. Deployment & Hosting
+
+* *Frontend*: Vercel or Netlify (for Next.js)
+* *Backend*: Render, Railway, or VPS (Node.js + Postgres)
+* *Database*: Supabase/Postgres
+* *CI/CD*: GitHub Actions with auto-deploy to staging/production
+
+---
+
+## 9. Future Extensions
+
+* Workflow (Draft → Review → Publish)
+* Scheduled publishing
+* Analytics dashboard (Google Analytics / Plausible integration)
+* Plugin system for custom modules (e.g., booking widgets)
+
+---
+
+👉 This version is *brand-agnostic* and tied to *LuxorTravel*, with all Travel2Egypt references removed.
+
+Do you want me to now *expand this into developer-ready tasks* (like a breakdown of endpoints, tables, and dashboard views) so you can hand it directly to a dev team?

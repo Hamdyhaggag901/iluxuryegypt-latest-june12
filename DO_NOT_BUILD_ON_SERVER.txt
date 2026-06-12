@@ -1,0 +1,11 @@
+WARNING: DO NOT run 'npm run build' on this server!
+
+The source code on this server is outdated.
+Always build locally on the dev machine and deploy using deploy_fast.py
+
+If you need to update the site:
+1. Make changes locally in D:/Elkostart/iluxury/
+2. Run: npm run build
+3. Run: python deploy_fast.py
+
+Last updated: 2026-02-15

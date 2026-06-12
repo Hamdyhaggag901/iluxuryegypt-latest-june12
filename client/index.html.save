@@ -1,0 +1,18 @@
+cp /var/www/iluxuryegypt/client/index.html.txt /var/www/iluxuryegypt/client/index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>Egypt's Most Exclusive Travel Agency | Luxury Tours & Nile Cruises for Discerning Americans</title>
+    <meta name="description" content="America's gateway to ultra-luxury Egypt. Private pyramid access, exclusive Nile cruises & 5-star Cairo suites. Crafted for discerning US travelers who accept nothing less than extraordinary." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <h1 style="position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden;">Luxury Egypt Tours for American Travelers | Private Nile Cruises & Pyramid Access</h1>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

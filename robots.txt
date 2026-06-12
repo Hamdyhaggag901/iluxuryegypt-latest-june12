@@ -1,0 +1,5 @@
+# Robots.txt for iluxuryegypt.com
+User-agent: *
+Allow: /
+Disallow: /admin/
+Sitemap: https://iluxuryegypt.com/sitemap.xml

@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(set NODE_ENV=development)",
+      "Bash(npx tsx:*)",
+      "Bash(where:*)",
+      "Bash(net start:*)",
+      "Bash(sc query:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 3760 /F\")",
+      "Bash(cmd //c \"taskkill /PID 5140 /F\")",
+      "Bash(ls -la \"D:\\\\Elkostart\\\\iluxury\\\\client\\\\src\\\\pages\"\" | grep -E \"package)",
+      "Bash(tour)",
+      "Bash(cruise \")",
+      "Bash(ls:*)",
+      "Bash(npm run db:push:*)",
+      "Bash(timeout /t:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "Bash(cmd /c \"netstat -ano | findstr :5000\")",
+      "Bash(npx drizzle-kit:*)",
+      "Bash(npx kill-port 5000)",
+      "Bash(sshpass -p 'Egyptluxury2026' ssh -o StrictHostKeyChecking=no root@212.90.120.64 \"uname -a && node -v 2>/dev/null || echo ''Node not installed'' && nginx -v 2>&1 || echo ''Nginx not installed''\")",
+      "Bash(plink -ssh root@212.90.120.64 -pw Egyptluxury2026 \"uname -a && node -v 2>/dev/null || echo ''Node not installed''\")",
+      "Bash(ssh:*)",
+      "Bash(apt-get install:*)",
+      "Bash(pacman -S:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"\nimport paramiko\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''uname -a && cat /etc/os-release | head -5 && node -v 2>/dev/null || echo Node_not_installed && nginx -v 2>&1 || echo Nginx_not_installed''\\)\nprint\\(stdout.read\\(\\).decode\\(\\)\\)\nprint\\(stderr.read\\(\\).decode\\(\\)\\)\nssh.close\\(\\)\n\")",
+      "Bash(python -c \"\nimport paramiko\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''pm2 -v 2>/dev/null || echo PM2_not_installed && ls -la /var/www/ 2>/dev/null || echo No_www_dir && certbot --version 2>/dev/null || echo Certbot_not_installed''\\)\nprint\\(stdout.read\\(\\).decode\\(\\)\\)\nprint\\(stderr.read\\(\\).decode\\(\\)\\)\nssh.close\\(\\)\n\")",
+      "Bash(python -c \"\nimport paramiko\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''ls -la /var/www/iluxuryegypt/ && cat /var/www/iluxuryegypt/.env 2>/dev/null || echo No_env_file''\\)\nprint\\(stdout.read\\(\\).decode\\(\\)\\)\nprint\\(stderr.read\\(\\).decode\\(\\)\\)\nssh.close\\(\\)\n\")",
+      "Bash(python -c \"\nimport paramiko\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''systemctl status postgresql 2>/dev/null | head -5 || echo PostgreSQL_not_running && psql --version 2>/dev/null || echo psql_not_installed''\\)\nprint\\(stdout.read\\(\\).decode\\(\\)\\)\nprint\\(stderr.read\\(\\).decode\\(\\)\\)\nssh.close\\(\\)\n\")",
+      "Bash(python -c \"\nimport paramiko\nimport sys\nsys.stdout.reconfigure\\(encoding=''utf-8''\\)\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''systemctl is-active postgresql && psql --version''\\)\nout = stdout.read\\(\\).decode\\(''utf-8'', errors=''replace''\\)\nerr = stderr.read\\(\\).decode\\(''utf-8'', errors=''replace''\\)\nprint\\(out\\)\nprint\\(err\\)\nssh.close\\(\\)\n\")",
+      "Bash(python -c \"\nimport paramiko\nimport sys\nsys.stdout.reconfigure\\(encoding=''utf-8''\\)\nssh = paramiko.SSHClient\\(\\)\nssh.set_missing_host_key_policy\\(paramiko.AutoAddPolicy\\(\\)\\)\nssh.connect\\(''212.90.120.64'', port=22, username=''root'', password=''Egyptluxury2026''\\)\nstdin, stdout, stderr = ssh.exec_command\\(''sudo -u postgres psql -c \"\"SELECT datname FROM pg_database WHERE datname = \\\\''iluxuryegypt\\\\'';\"\"''\\)\nout = stdout.read\\(\\).decode\\(''utf-8'', errors=''replace''\\)\nerr = stderr.read\\(\\).decode\\(''utf-8'', errors=''replace''\\)\nprint\\(''OUT:'', out\\)\nprint\\(''ERR:'', err\\)\nssh.close\\(\\)\n\")",
+      "Bash(tar:*)"
+    ]
+  }
+}
