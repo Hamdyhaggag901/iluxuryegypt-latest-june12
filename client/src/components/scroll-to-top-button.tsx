@@ -41,6 +41,7 @@ export default function ScrollToTopButton() {
       className={`fixed bottom-8 right-8 z-[9999] rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary text-primary-foreground hover:bg-primary/90 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
+      aria-label="Scroll to top of page"
       data-testid="button-scroll-to-top"
       style={{ 
         position: 'fixed',

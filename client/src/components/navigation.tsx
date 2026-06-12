@@ -167,14 +167,14 @@ export default function Navigation() {
           </div>
 
           <div className="lg:hidden">
-            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="h-12 w-12 text-primary hover:text-accent" data-testid="button-mobile-menu">
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="h-12 w-12 text-primary hover:text-accent" data-testid="button-mobile-menu" aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={isMobileMenuOpen} aria-controls="mobile-menu">
+              {isMobileMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
             </Button>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-primary/20 bg-white shadow-lg">
+          <div id="mobile-menu" className="lg:hidden border-t border-primary/20 bg-white shadow-lg" role="navigation" aria-label="Mobile navigation">
             <div className="px-4 py-6 space-y-2">
               {navItems.map((item) => (
                 item.type === "dropdown" ? (

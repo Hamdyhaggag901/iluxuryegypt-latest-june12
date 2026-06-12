@@ -119,7 +119,7 @@ export default function HeroSlider() {
   const goToPrevSlide = () => goToSlide((currentSlide - 1 + slides.length) % slides.length);
 
   return (
-    <section className="relative h-screen overflow-hidden bg-black" data-testid="hero-slider">
+    <section className="relative h-[100svh] min-h-[500px] overflow-hidden bg-black" data-testid="hero-slider">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -136,7 +136,7 @@ export default function HeroSlider() {
               muted
               loop
               playsInline
-              preload="auto"
+              preload={index === 0 ? "auto" : "none"}
               aria-label={slide.alt || slide.title}
             />
           ) : (
@@ -144,6 +144,11 @@ export default function HeroSlider() {
               src={slide.src}
               alt={slide.alt || slide.title}
               className="absolute inset-0 w-full h-full object-cover"
+              loading={index === 0 ? "eager" : "lazy"}
+              // @ts-ignore - fetchpriority is a valid HTML attribute for LCP optimization
+              fetchpriority={index === 0 ? "high" : "low"}
+              decoding={index === 0 ? "sync" : "async"}
+              sizes="100vw"
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/20" />
@@ -151,7 +156,7 @@ export default function HeroSlider() {
         </div>
       ))}
 
-      <div className="relative z-20 h-full flex flex-col justify-end pb-32 md:pb-40">
+      <div className="relative z-20 h-full flex flex-col justify-end pb-20 sm:pb-28 md:pb-36">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 w-full">
           {slides.map((slide, index) => (
             <div

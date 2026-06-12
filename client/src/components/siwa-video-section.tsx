@@ -50,7 +50,7 @@ export default function SiwaVideoSection() {
   }
 
   return (
-    <section className="relative w-full h-[500px] overflow-hidden" data-testid="siwa-video-section">
+    <section className="relative w-full h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden" data-testid="siwa-video-section">
       {content.mediaType === "video" ? (
         <video
           ref={videoRef}
@@ -58,7 +58,7 @@ export default function SiwaVideoSection() {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           className="absolute inset-0 w-full h-full object-cover"
           onLoadedData={() => setVideoLoaded(true)}
           onError={(e) => {

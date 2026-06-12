@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -388,11 +387,22 @@
   }
 
   /* Custom utility for parallax effect */
+  /* Note: background-attachment:fixed is disabled on mobile — it causes blank/broken backgrounds on iOS Safari */
   .parallax {
-    background-attachment: fixed;
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+  }
+
+  @media (min-width: 1024px) {
+    .parallax {
+      background-attachment: fixed;
+    }
+  }
+
+  /* Prevent horizontal overflow on all containers */
+  img, video, iframe, embed, object {
+    max-width: 100%;
   }
 
   /* Smooth transitions for luxury feel */
