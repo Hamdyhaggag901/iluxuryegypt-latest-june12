@@ -1851,11 +1851,15 @@ export async function seedDatabase() {
     // Seed settings if not already present
     const existingSettings = await storage.getAllSettings();
     if (existingSettings.length === 0) {
-      await storage.upsertSetting("contact_email", "info@luxortravel.com", "admin");
-      await storage.upsertSetting("inquiry_notification_email", "support@luxortravel.com", "admin");
-      await storage.upsertSetting("site_name", "Luxury Egypt Tours", "admin");
-      await storage.upsertSetting("site_tagline", "Experience the magic of Egypt.", "admin");
-      console.log("✓ Sample settings seeded");
+      const adminUser = await storage.getUserByUsername("admin");
+      const adminId = adminUser?.id ?? null;
+      if (adminId) {
+        await storage.upsertSetting("contact_email", "info@luxortravel.com", adminId);
+        await storage.upsertSetting("inquiry_notification_email", "support@luxortravel.com", adminId);
+        await storage.upsertSetting("site_name", "Luxury Egypt Tours", adminId);
+        await storage.upsertSetting("site_tagline", "Experience the magic of Egypt.", adminId);
+        console.log("✓ Sample settings seeded");
+      }
     }
 
     console.log("✓ Database seeding completed");
