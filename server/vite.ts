@@ -103,7 +103,13 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // index: false — without this, express.static serves dist/public/index.html
+  // directly for "/" (and any other directory-style match) and ends the
+  // response there, before it ever reaches the catch-all below that injects
+  // per-page meta tags. Disabling it forces every HTML request through our
+  // middleware so the home page (and any future root-level match) gets the
+  // same meta injection as every other route.
+  app.use(express.static(distPath, { index: false }));
 
   // Add JSON 404 handler for API routes in production
   app.use("/api/*", (_req, res) => {
