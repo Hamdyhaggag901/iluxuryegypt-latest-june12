@@ -5,6 +5,7 @@ import { createServer as createViteServer, createLogger } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
+import { resolvePageMeta, injectMetaTags } from "./seo-meta";
 
 const viteLogger = createLogger();
 
@@ -73,7 +74,13 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await vite.transformIndexHtml(url, template);
+      let page = await vite.transformIndexHtml(url, template);
+
+      const meta = await resolvePageMeta(url.split("?")[0]);
+      if (meta) {
+        page = injectMetaTags(page, url, meta);
+      }
+
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
@@ -103,13 +110,20 @@ export function serveStatic(app: Express) {
     res.status(404).json({ message: "API endpoint not found" });
   });
 
+  // Read once at startup — the template is static, only the injected meta
+  // tags vary per request.
+  const indexTemplate = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
+
   // fall through to index.html only for SPA routes (no file extension)
-  app.use("*", (req, res) => {
+  app.use("*", async (req, res) => {
     const url = req.originalUrl.split("?")[0];
     // If the URL has a file extension, it's a missing static file — return 404
     if (url.match(/\.\w{2,5}$/)) {
       return res.status(404).send("Not found");
     }
-    res.sendFile(path.resolve(distPath, "index.html"));
+
+    const meta = await resolvePageMeta(url);
+    const page = meta ? injectMetaTags(indexTemplate, url, meta) : indexTemplate;
+    res.status(200).set({ "Content-Type": "text/html" }).send(page);
   });
 }
