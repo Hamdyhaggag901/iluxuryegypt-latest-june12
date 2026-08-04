@@ -1,9 +1,9 @@
 import { storage } from "./storage";
 
-const SITE_NAME = "I.LuxuryEgypt";
+const SITE_NAME = "iLuxury Egypt";
 const SITE_URL = "https://iluxuryegypt.com";
 const DEFAULT_DESCRIPTION =
-  "Experience Egypt in pure luxury with I.LuxuryEgypt. Curated bespoke stays across Egypt's most iconic destinations from Nile-side sanctuaries to Red Sea havens.";
+  "Experience Egypt in pure luxury with iLuxury Egypt. Curated bespoke stays across Egypt's most iconic destinations from Nile-side sanctuaries to Red Sea havens.";
 const DEFAULT_IMAGE = `${SITE_URL}/api/assets/uploads/e1643e72-36f2-409f-9d0a-c8e894a66d3d.png`;
 
 export interface PageMeta {
@@ -18,8 +18,17 @@ function truncate(text: string, max: number): string {
   return clean.length > max ? `${clean.slice(0, max - 1).trim()}…` : clean;
 }
 
+// Matches any casing/spacing/punctuation variant of the site name, optionally
+// preceded by a separator, anchored to the end of the string. Handles content
+// authored as "iLuxury Egypt", "I.LuxuryEgypt", "I LuxuryEgypt", etc. so it
+// can be stripped before re-appending the canonical suffix exactly once.
+const SITE_NAME_SUFFIX_RE = /[\s|\-–—:,]*i[.\s]?luxury\s?egypt\s*$/i;
+
 function withSiteName(title: string): string {
-  return title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+  const trimmed = title.trim();
+  const stripped = trimmed.replace(SITE_NAME_SUFFIX_RE, "").trim();
+  if (!stripped) return SITE_NAME;
+  return `${stripped} | ${SITE_NAME}`;
 }
 
 // Every static route registered in client/src/App.tsx (i.e. anything that is
