@@ -13,13 +13,11 @@ import CallToActionSection from "../components/call-to-action-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
 import NewsletterSection from "../components/newsletter-section";
-
 export default function Home() {
   useSEO({
-    title: "Luxury Egypt Tours & Vacation Packages | Bespoke Private Tours",
-    description: "Experience Egypt in pure luxury with I.LuxuryEgypt. Curated bespoke stays across Egypt's most iconic destinations from Nile-side sanctuaries to Red Sea havens.",
+    title: "Egypt Luxury Tours | iLuxury Egypt - Bespoke Private Travel",
+    description: "Private Egypt luxury tours crafted for discerning travelers. Exclusive Pyramid access, 5-star Nile cruises & Egyptologist guides. Start planning your bespoke journey today.",
   });
-
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
