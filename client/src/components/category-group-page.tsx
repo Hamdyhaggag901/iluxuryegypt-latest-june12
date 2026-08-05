@@ -15,6 +15,25 @@ interface CategoryGroupPageProps {
   basePath: string;
 }
 
+// On-page description overrides, keyed by category slug. Takes priority over
+// category.shortDescription/description from the DB and is shown in full
+// (not run through the 150-char truncation below) — these are curated copy,
+// not raw DB content that needs a safety clamp.
+const CATEGORY_DESCRIPTION_OVERRIDES: Record<string, string> = {
+  "small-group-tours-egypt":
+    "Travel in an intimate small group led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries — cultural depth without the crowds.",
+  "egypt-family-tours":
+    "Private Egyptologist guides, luxury hotels, and flexible itineraries designed for every generation. Explore the Pyramids, cruise the Nile, and discover Luxor and Aswan with VIP transportation and activities the whole family will remember.",
+  "egypt-solo-travel":
+    "Personalized private journeys for independent travelers who value flexibility and authentic experiences. Explore the Pyramids, the Nile, Luxor, and Aswan with expert Egyptologist guides, luxury hotels, and itineraries built around your own pace.",
+  "egypt-spiritual-tours":
+    "Visit the Great Pyramids, Abydos, Dendera, Luxor, Aswan, and the Nile with expert Egyptologist guides. Private meditation sessions, five-star stays, and personalized itineraries create peaceful moments of reflection and spiritual discovery.",
+  "luxury-honeymoon-egypt":
+    "Designed for couples seeking privacy and romance. Explore the Pyramids, cruise the Nile in luxury, and stay at iconic five-star hotels, with intimate candlelit dinners and Red Sea moments woven into a journey built entirely around you.",
+  "solar-eclipse-egypt":
+    "Witness the longest total solar eclipse on land until 2114 from a private site along Luxor's path of totality. This small-group journey pairs the August 2, 2027 spectacle with after-hours access to the Great Pyramid and Valley of the Kings.",
+};
+
 export default function CategoryGroupPage({
   group,
   title,
@@ -245,10 +264,12 @@ export default function CategoryGroupPage({
                         {group.replace("-", " ")}
                       </span>
 
-                      {/* Description - fixed 150 characters */}
+                      {/* Description - curated override shown in full; DB fallback still clamped to 150 chars */}
                       <div className="mt-4 flex-1">
                         <p className="text-muted-foreground text-sm leading-relaxed">
                           {(() => {
+                            const override = CATEGORY_DESCRIPTION_OVERRIDES[category.slug];
+                            if (override) return override;
                             const desc = category.shortDescription || category.description || "";
                             return desc.length > 150 ? desc.substring(0, 150) + "..." : desc;
                           })()}
