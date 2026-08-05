@@ -1,7 +1,16 @@
+import { Compass } from "lucide-react";
+
 export default function WhoIsILuxurySection() {
   return (
     <section className="py-20 bg-background" data-testid="who-is-iluxury-section">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="relative inline-block mb-8">
+          <div className="absolute -inset-4 bg-accent/10 rounded-full blur-xl"></div>
+          <div className="relative bg-background/80 backdrop-blur-sm rounded-full p-6 border border-accent/20">
+            <Compass className="h-8 w-8 text-accent" />
+          </div>
+        </div>
+
         <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-8 animate-fade-in">
           Who is iLuxury Egypt
         </h2>
@@ -10,12 +19,10 @@ export default function WhoIsILuxurySection() {
           <div className="w-2 h-2 bg-accent rotate-45"></div>
           <div className="w-16 h-px bg-accent"></div>
         </div>
-        <div className="space-y-6 max-w-4xl mx-auto">
+
+        <div className="bg-muted/30 rounded-2xl p-8 md:p-12 border border-accent/10">
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            iLuxury Egypt is a boutique private tour operator built for travelers who want more than a checklist of monuments — we design journeys around access, timing, and comfort most visitors never experience. Every itinerary is arranged personally, from the moment you land in Cairo to your final departure, with a single point of contact managing every detail along the way.
-          </p>
-          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Unlike mass-market operators running fixed group tours, we work exclusively in private and small-group formats — never more than a handful of travelers per journey — so you're never rushed or competing for your guide's attention. Our Egyptologists are chosen for depth of knowledge, and our hotel and cruise partners are selected personally, not booked through a standard allotment.
+            iLuxury Egypt is a boutique private tour operator designing journeys around access, timing, and comfort most visitors never experience every detail arranged personally, from arrival to departure.
           </p>
         </div>
       </div>
