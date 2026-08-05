@@ -14,23 +14,37 @@ interface TestimonialData {
 const fallbackTestimonials: TestimonialData[] = [
   {
     id: "1",
-    quote: "From the moment we arrived, every detail exceeded our expectations. I.LuxuryEgypt created not just a trip, but a lifetime memory filled with wonder.",
-    author: "Sarah & Michael",
-    location: "UK",
+    quote: "I'll be honest I almost canceled this trip after reading so many conflicting opinions online. From my very first email, Hamdy patiently answered every question without ever making me feel pressured to book. When we landed in Cairo, Magdy was already waiting outside arrivals, and within an hour I realized I'd spent weeks worrying for nothing. Looking back, what I'll remember most isn't just the pyramids, but how easy the entire journey felt.",
+    author: "Michael R.",
+    location: "California, USA",
     rating: 5
   },
   {
     id: "2",
-    quote: "The private Nile cruise was beyond imagination. Every moment was crafted to perfection, from the sunset views to the impeccable service aboard.",
-    author: "Luis & Marta",
-    location: "Spain",
+    quote: "As a solo traveler, safety was naturally my biggest concern before coming to Egypt. Ahmed Hosni stayed in touch before I arrived and made sure I always knew what to expect. During the trip, Christine checked in more than once just to make sure everything was going smoothly. That level of communication gave me far more confidence than I expected, and I never once felt alone.",
+    author: "Melissa Carter",
+    location: "Boston, USA",
     rating: 5
   },
   {
     id: "3",
-    quote: "A perfect mix of history and modern luxury. The way they seamlessly blended ancient wonders with contemporary comfort was simply extraordinary.",
-    author: "Akira & Yumi",
-    location: "Japan",
+    quote: "The Grand Egyptian Museum was one of the main reasons we came to Egypt, but spending the day with Amr Youssef made it even better. He somehow turned every gallery into a conversation instead of a lecture. We stayed longer than planned because I kept asking questions, and no one ever made us feel rushed.",
+    author: "Emily S.",
+    location: "New York, USA",
+    rating: 5
+  },
+  {
+    id: "4",
+    quote: "We booked this trip to celebrate our 20th wedding anniversary, and it turned out to be even better than we imagined. Our favorite day was sailing on the Nile at sunset. It never felt rushed, and we always had enough time to enjoy each place instead of simply checking attractions off a list.",
+    author: "Karen & David",
+    location: "Texas, USA",
+    rating: 5
+  },
+  {
+    id: "5",
+    quote: "Our teenage kids usually lose interest after the first museum, but our guide somehow managed to keep them engaged the whole time. Even now they're still talking about Karnak Temple and the Valley of the Kings. That's probably the best compliment I can give.",
+    author: "The Wilson Family",
+    location: "North Carolina, USA",
     rating: 5
   }
 ];
