@@ -55,7 +55,7 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
       "Get in touch with I.LuxuryEgypt. Plan your bespoke luxury Egypt vacation with our expert travel consultants.",
   },
   "/about/who-we-are": {
-    title: "Who We Are - About I.LuxuryEgypt",
+    title: "Who We Are - About iLuxury Egypt",
     description:
       "Meet the team behind I.LuxuryEgypt. Passionate travel experts dedicated to crafting bespoke luxury Egypt experiences.",
   },
