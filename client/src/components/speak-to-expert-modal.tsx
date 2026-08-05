@@ -5,15 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Star } from "lucide-react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 
 const BACKGROUND_IMAGE_URL = "https://iluxuryegypt.com/api/assets/uploads/ee366046-f7f3-4c54-a946-878414a60aa0.jpg";
 const WHATSAPP_NUMBER = "201121012676";
+
+const TRIP_TYPES = [
+  "Small Group Tours",
+  "Luxury Family",
+  "Luxury Solo",
+  "Spiritual Journeys",
+  "Luxury Honeymoon",
+  "Solar Eclipse",
+  "Tailor Made Tour",
+];
 
 interface SpeakToExpertModalProps {
   open: boolean;
@@ -26,7 +36,7 @@ const initialFormState = {
   lastName: "",
   phone: "",
   email: "",
-  isTravelAdvisor: "No",
+  tripType: "",
   message: "",
   acceptPrivacy: false,
   wantsUpdates: false,
@@ -64,13 +74,15 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
 
     setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/api/inquiries", {
+      await apiRequest("POST", "/api/tour-bookings", {
+        tourTitle: "General Inquiry - Speak to an Expert",
         fullName: `${form.title} ${form.firstName} ${form.lastName}`.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() ? `+20 ${form.phone.trim()}` : undefined,
         specialRequests: [
-          `Travel advisor: ${form.isTravelAdvisor}`,
+          form.tripType ? `Trip type: ${form.tripType}` : null,
           form.message.trim() ? `Message: ${form.message.trim()}` : null,
+          "Privacy Policy accepted: Yes",
           `Wants marketing updates: ${form.wantsUpdates ? "Yes" : "No"}`,
         ]
           .filter(Boolean)
@@ -98,19 +110,33 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="max-w-4xl w-[calc(100%-2rem)] p-0 overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[90vh]"
+        className="w-[95vw] sm:w-[90vw] max-w-[1400px] p-0 overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-0 max-h-[90vh]"
       >
         {/* Side image */}
-        <div
-          className="hidden md:block bg-cover bg-center"
-          style={{ backgroundImage: `url(${BACKGROUND_IMAGE_URL})` }}
-        />
+        <div className="hidden md:block relative h-full min-h-full">
+          <img
+            src={BACKGROUND_IMAGE_URL}
+            alt="Begin your bespoke Egypt journey"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        </div>
 
         {/* Form side */}
-        <div className="p-6 sm:p-8 overflow-y-auto max-h-[90vh]">
-          <DialogTitle className="text-2xl md:text-3xl font-serif font-bold text-primary mb-6">
-            Start Your Journey Today
+        <div className="p-8 lg:p-12 overflow-y-auto max-h-[90vh]">
+          <DialogTitle className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2">
+            Begin Your Bespoke Egypt
           </DialogTitle>
+
+          <p className="text-sm font-medium text-accent flex items-center gap-1.5 mb-4">
+            <Star className="h-3.5 w-3.5 fill-current" />
+            125+ Discerning Travelers · 4.9 Client Satisfaction
+          </p>
+
+          <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-6">
+            Tell us about your dream trip, and one of our Egypt specialists will reach out personally — no call centers, no bots.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-3 gap-3">
@@ -181,21 +207,28 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
             </div>
 
             <div className="space-y-2">
-              <Label>Are you a travel advisor?</Label>
-              <RadioGroup
-                value={form.isTravelAdvisor}
-                onValueChange={(v) => updateField("isTravelAdvisor", v)}
-                className="flex items-center gap-6"
-              >
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="Yes" id="ste-advisor-yes" data-testid="radio-advisor-yes" />
-                  <Label htmlFor="ste-advisor-yes" className="font-normal cursor-pointer">Yes</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="No" id="ste-advisor-no" data-testid="radio-advisor-no" />
-                  <Label htmlFor="ste-advisor-no" className="font-normal cursor-pointer">No</Label>
-                </div>
-              </RadioGroup>
+              <Label>What type of journey interests you?</Label>
+              <div className="flex flex-wrap gap-2">
+                {TRIP_TYPES.map((type) => {
+                  const isSelected = form.tripType === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => updateField("tripType", isSelected ? "" : type)}
+                      className={cn(
+                        "px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200",
+                        isSelected
+                          ? "bg-accent text-accent-foreground border-accent shadow-sm"
+                          : "border-input bg-background text-muted-foreground hover:border-accent hover:text-accent"
+                      )}
+                      data-testid={`chip-trip-type-${type.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -244,7 +277,7 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
               data-testid="button-submit-speak-expert"
             >
               {isSubmitting ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
-              Speak to an Expert
+              Talk to an Egypt Specialist
             </Button>
 
             <a
