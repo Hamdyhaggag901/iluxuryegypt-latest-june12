@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Check, Image as ImageIcon, CalendarIcon, Minus, Plus } from "lucide-react";
+import { Loader2, Check, CalendarIcon, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TripTypeChips from "@/components/trip-type-chips";
 
@@ -49,20 +49,6 @@ const initialFormState = {
 };
 
 type FormState = typeof initialFormState;
-
-function ImagePlaceholder({ className, caption }: { className?: string; caption: string }) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center gap-2 border-2 border-dashed border-accent/30 bg-muted/50 text-muted-foreground",
-        className
-      )}
-    >
-      <ImageIcon className="h-7 w-7 text-accent/50" />
-      <span className="text-xs text-center px-4 leading-snug">{caption}</span>
-    </div>
-  );
-}
 
 function ProgressBar({ currentStep }: { currentStep: number }) {
   return (
@@ -230,9 +216,10 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
         <div className="overflow-y-auto flex-1">
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr]">
-              <ImagePlaceholder
-                className="hidden md:flex h-full min-h-[420px]"
-                caption="Full-height destination photo (e.g. Pyramids at golden hour)"
+              <img
+                src="https://iluxuryegypt.com/api/assets/uploads/1079b196-39ee-4172-ba0b-847d1749503b.webp"
+                alt="Egypt luxury travel destination"
+                className="hidden md:block h-full min-h-[420px] w-full object-cover"
               />
               <div className="p-8 lg:p-12 space-y-6">
                 <div className="space-y-2">
@@ -345,9 +332,10 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
 
           {step === 2 && (
             <div className="p-8 lg:p-12 space-y-6">
-              <ImagePlaceholder
-                className="w-full h-40 md:h-56 rounded-xl"
-                caption="Wide banner — travel style mood shot (16:9 or wider)"
+              <img
+                src="https://iluxuryegypt.com/api/assets/uploads/7f6865c5-78d4-4a48-958b-f70c645fec09.webp"
+                alt="Egypt travel style"
+                className="w-full h-40 md:h-56 rounded-xl object-cover"
               />
               <div className="space-y-2">
                 <Label>What type of journey interests you?</Label>
@@ -409,9 +397,10 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
                   </div>
                 </div>
 
-                <ImagePlaceholder
-                  className="order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-56 rounded-xl"
-                  caption="Small accent visual — luxury detail (e.g. suite interior)"
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/1d4ffc47-d263-41ee-a7a4-f0be83ef9d53.webp"
+                  alt="Luxury travel detail"
+                  className="order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-56 rounded-xl object-cover"
                 />
               </div>
             </div>
@@ -420,9 +409,21 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
           {step === 4 && (
             <div className="p-8 lg:p-12 space-y-6">
               <div className="grid grid-cols-3 gap-3">
-                <ImagePlaceholder className="aspect-square rounded-lg" caption="Thumbnail 1" />
-                <ImagePlaceholder className="aspect-square rounded-lg" caption="Thumbnail 2" />
-                <ImagePlaceholder className="aspect-square rounded-lg" caption="Thumbnail 3" />
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp"
+                  alt="Egypt travel highlight 1"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/33cd81bc-f856-451d-90a0-d255fff524f5.webp"
+                  alt="Egypt travel highlight 2"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/2f79462e-6808-45c0-aa91-8b272386ec38.webp"
+                  alt="Egypt travel highlight 3"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
