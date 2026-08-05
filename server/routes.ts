@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import express from "express";
 import path from "path";
 import { storage } from "./storage";
+import { pool } from "./db";
+import { sendBookingConfirmation } from "./email";
 import {
   insertInquirySchema,
   insertUserSchema,
@@ -48,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertInquirySchema.parse(req.body);
       const inquiry = await storage.createInquiry(validatedData);
-      
+
       // Log the inquiry for demonstration purposes
       console.log("New luxury travel inquiry received:", {
         name: inquiry.fullName,
@@ -56,7 +58,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         destination: inquiry.destination,
         dates: inquiry.preferredDates,
       });
-      
+
+      // Fire-and-forget: email failures must never fail the inquiry submission.
+      sendBookingConfirmation({
+        fullName: inquiry.fullName,
+        email: inquiry.email,
+        tripSummary: inquiry.destination || "General Inquiry",
+        phone: inquiry.phone,
+        preferredDates: inquiry.preferredDates,
+        specialRequests: inquiry.specialRequests,
+      }).catch((err) => console.error("[email] sendBookingConfirmation failed for inquiry:", err));
+
       res.status(201).json({
         success: true,
         message: "Thank you for your inquiry! Our luxury travel specialists will contact you within 24 hours to craft your bespoke Egyptian journey.",
@@ -686,7 +698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching post:', error);
       res.status(500).json({ message: 'Error fetching post' });
-    }
+          }
   });
 
   // Update post
@@ -858,6 +870,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching hotels for CMS:', error);
       res.status(500).json({ message: 'Error fetching hotels' });
+    }
+  });
+
+  // Get single hotel for CMS editing (admin/editor access)
+  app.get("/api/cms/hotels/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const hotel = await storage.getHotel(req.params.id);
+      if (!hotel) {
+        return res.status(404).json({ message: 'Hotel not found' });
+      }
+      res.json({ success: true, hotel });
+    } catch (error) {
+      console.error('Error fetching hotel for CMS:', error);
+      res.status(500).json({ message: 'Error fetching hotel' });
     }
   });
 
@@ -1372,7 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error deleting destination' });
     }
   });
-
+  
   // Dashboard stats endpoint
   app.get("/api/cms/stats", requireAuth, requireEditor, async (req, res) => {
     try {
@@ -1585,6 +1611,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error fetching settings:', error);
       res.status(500).json({ message: 'Error fetching settings' });
     }
+  });
+
+  // Run schema migrations (admin-only). Idempotently adds columns introduced
+  // by the SEO + FAQ feature so the live database matches the current code
+  // without needing CLI access.
+  app.post("/api/cms/settings/run-migrations", requireAuth, requireAdmin, async (_req, res) => {
+    const migrations: Array<{ name: string; sql: string }> = [
+      {
+        name: "destinations.seo_title",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS seo_title text`,
+      },
+      {
+        name: "destinations.meta_description",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS meta_description text`,
+      },
+      {
+        name: "destinations.schema_markup",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS schema_markup text`,
+      },
+      {
+        name: "destinations.faqs",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS faqs jsonb NOT NULL DEFAULT '[]'::jsonb`,
+      },
+      {
+        name: "destinations.focus_keyword",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS focus_keyword text`,
+      },
+      {
+        name: "destinations.schema_type",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS schema_type text`,
+      },
+      {
+        name: "destinations.og_image",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS og_image text`,
+      },
+      {
+        name: "destinations.canonical_url",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS canonical_url text`,
+      },
+      {
+        name: "destinations.robots",
+        sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS robots text`,
+      },
+    ];
+
+    const applied: string[] = [];
+    const errors: Array<{ name: string; error: string }> = [];
+
+    for (const m of migrations) {
+      try {
+        await (pool as any).query(m.sql);
+        applied.push(m.name);
+      } catch (err: any) {
+        errors.push({ name: m.name, error: err?.message || String(err) });
+      }
+    }
+
+    if (errors.length > 0) {
+      return res.status(500).json({
+        success: false,
+        message: `Applied ${applied.length}/${migrations.length} migrations with errors`,
+        applied,
+        errors,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully applied ${applied.length} migration${applied.length === 1 ? "" : "s"}. Your database is up to date.`,
+      applied,
+    });
   });
 
   // Change username
@@ -2001,7 +2098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update navigation item
   app.put("/api/cms/nav-items/:id", requireAuth, requireEditor, async (req, res) => {
-    try {
+        try {
       const data = insertNavItemSchema.partial().parse(req.body);
       const item = await storage.updateNavItem(req.params.id, data);
       if (!item) {
@@ -2418,6 +2515,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertTourBookingSchema.parse(req.body);
       const booking = await storage.createTourBooking(data);
+
+      // Fire-and-forget: email failures must never fail the booking submission.
+      sendBookingConfirmation({
+        fullName: booking.fullName,
+        email: booking.email,
+        tripSummary: booking.tourTitle,
+        phone: booking.phone,
+        preferredDates: booking.preferredDates,
+        numberOfGuests: booking.numberOfGuests,
+        specialRequests: booking.specialRequests,
+      }).catch((err) => console.error("[email] sendBookingConfirmation failed for tour booking:", err));
+
       res.status(201).json({ success: true, message: 'Booking submitted successfully! We will contact you soon.', booking });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2689,7 +2798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error updating guest experience section' });
     }
   });
-
+  
   // ==================== WHY CHOOSE SECTION ROUTES ====================
 
   // Public: Get why choose section and cards
@@ -3198,51 +3307,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating sitemap:", error);
       res.status(500).send("Error generating sitemap");
-    }
-  });
-
-  // ── Stays Page Settings ────────────────────────────────────────────────────
-
-  // Public: get stays page settings
-  app.get("/api/public/stays-settings", async (req, res) => {
-    try {
-      const [heroImage, articleTitle, articleBody, faqsRaw] = await Promise.all([
-        storage.getSetting("stays_hero_image"),
-        storage.getSetting("stays_article_title"),
-        storage.getSetting("stays_article_body"),
-        storage.getSetting("stays_faqs"),
-      ]);
-      let faqs: any[] = [];
-      if (faqsRaw?.value) {
-        try { faqs = JSON.parse(faqsRaw.value); } catch {}
-      }
-      res.json({
-        heroImage: heroImage?.value || "",
-        articleTitle: articleTitle?.value || "",
-        articleBody: articleBody?.value || "",
-        faqs,
-      });
-    } catch (error) {
-      console.error("Error fetching stays settings:", error);
-      res.status(500).json({ message: "Error fetching stays settings" });
-    }
-  });
-
-  // CMS: update stays page settings
-  app.put("/api/cms/stays-settings", requireAuth, requireEditor, async (req, res) => {
-    try {
-      const authReq = req as AuthenticatedRequest;
-      const { heroImage, articleTitle, articleBody, faqs } = req.body;
-      await Promise.all([
-        storage.upsertSetting("stays_hero_image", heroImage || "", authReq.user.id),
-        storage.upsertSetting("stays_article_title", articleTitle || "", authReq.user.id),
-        storage.upsertSetting("stays_article_body", articleBody || "", authReq.user.id),
-        storage.upsertSetting("stays_faqs", JSON.stringify(faqs || []), authReq.user.id),
-      ]);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error updating stays settings:", error);
-      res.status(500).json({ message: "Error updating stays settings" });
     }
   });
 
