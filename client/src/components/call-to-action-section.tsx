@@ -64,7 +64,7 @@ export default function CallToActionSection() {
               onClick={() => setIsSpeakToExpertOpen(true)}
             >
               <Phone className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-              Speak to Expert
+              Speak to an Expert
             </Button>
           </div>
 
