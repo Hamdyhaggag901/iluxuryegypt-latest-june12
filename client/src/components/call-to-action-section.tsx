@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Phone, Mail, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import SpeakToExpertModal from "@/components/speak-to-expert-modal";
 
 // Fallback contact info
 const fallbackContact = {
@@ -9,6 +11,8 @@ const fallbackContact = {
 };
 
 export default function CallToActionSection() {
+  const [isSpeakToExpertOpen, setIsSpeakToExpertOpen] = useState(false);
+
   // Fetch from database
   const { data } = useQuery({
     queryKey: ["publicContactCtaSection"],
@@ -57,6 +61,7 @@ export default function CallToActionSection() {
               className="text-lg px-8 py-4 h-auto font-semibold min-w-[200px] transform transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in group"
               style={{ animationDelay: '0.7s' }}
               data-testid="button-speak-expert"
+              onClick={() => setIsSpeakToExpertOpen(true)}
             >
               <Phone className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
               Speak to Expert
@@ -120,6 +125,8 @@ export default function CallToActionSection() {
           </div>
         </div>
       </div>
+
+      <SpeakToExpertModal open={isSpeakToExpertOpen} onOpenChange={setIsSpeakToExpertOpen} />
     </section>
   );
 }
