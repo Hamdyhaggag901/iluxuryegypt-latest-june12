@@ -13,11 +13,14 @@ import CallToActionSection from "../components/call-to-action-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
 import NewsletterSection from "../components/newsletter-section";
+
 export default function Home() {
   useSEO({
     title: "Egypt Luxury Tours | iLuxury Egypt - Bespoke Private Travel",
     description: "Private Egypt luxury tours crafted for discerning travelers. Exclusive Pyramid access, 5-star Nile cruises & Egyptologist guides. Start planning your bespoke journey today.",
+    titleOverride: true,
   });
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
