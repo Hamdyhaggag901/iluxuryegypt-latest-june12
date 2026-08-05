@@ -1,6 +1,7 @@
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
+import WhoIsILuxurySection from "../components/who-is-iluxury-section";
 import SiwaVideoSection from "../components/siwa-video-section";
 import BrandBanner from "../components/brand-banner";
 import GuestExperienceIntro from "../components/guest-experience-intro";
@@ -10,6 +11,7 @@ import LuxuryPackagesSection from "../components/destination-blocks";
 import InteractiveMapSection from "../components/interactive-map-section";
 import TestimonialSection from "../components/testimonial-section";
 import CallToActionSection from "../components/call-to-action-section";
+import HomeFAQSection from "../components/home-faq-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
 import NewsletterSection from "../components/newsletter-section";
@@ -26,6 +28,7 @@ export default function Home() {
       <Navigation />
       <main>
         <HeroSlider />
+        <WhoIsILuxurySection />
         <BrandBanner />
         <SiwaVideoSection />
         <GuestExperienceIntro />
@@ -36,6 +39,7 @@ export default function Home() {
         <TestimonialSection />
         <CallToActionSection />
         <NewsletterSection />
+        <HomeFAQSection />
       </main>
       <Footer />
       <ScrollToTopButton />
