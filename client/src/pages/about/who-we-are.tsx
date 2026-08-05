@@ -115,8 +115,9 @@ const defaultStoryImages = [sunsetFeluccaImage, poolsideDrinkImage, khanKhaliliI
 
 export default function WhoWeAre() {
   useSEO({
-    title: "Who We Are - About I.LuxuryEgypt",
+    title: "Who We Are - About iLuxury Egypt",
     description: "Meet the team behind I.LuxuryEgypt. Passionate travel experts dedicated to crafting bespoke luxury Egypt experiences.",
+    titleOverride: true,
   });
 
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
