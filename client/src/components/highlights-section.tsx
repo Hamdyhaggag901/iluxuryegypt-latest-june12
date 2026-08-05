@@ -13,32 +13,32 @@ export default function HighlightsSection() {
     {
       icon: Plane,
       title: "Private Airport Transfers",
-      description: "Seamless luxury transportation from arrival to departure.",
+      description: "Your journey begins the moment you land. A private representative meets you at the gate, guides you through a dedicated fast-track lane, and takes you directly to your hotel — no shared shuttles, no waiting.",
     },
     {
       icon: Bell,
       title: "24/7 Concierge Service",
-      description: "Your personal assistant for every need and desire.",
+      description: "Every guest gets a personal concierge reachable around the clock — not just business hours. Whether it's a last-minute reservation or a question at midnight, you have a direct line to someone who knows your trip in detail.",
     },
     {
       icon: Landmark,
       title: "Curated Cultural Experiences",
-      description: "Exclusive access to Egypt's most treasured sites.",
+      description: "We arrange access most tour groups never get close to: private viewing hours at major sites before public opening, and time with resident Egyptologists. These aren't add-ons — they're built into how we plan every itinerary.",
     },
     {
       icon: Utensils,
       title: "Fine Dining & Culinary Journeys",
-      description: "Exquisite cuisine celebrating Egyptian heritage.",
+      description: "Beyond hotel breakfast buffets, we arrange private dining that showcases Egypt's real culinary heritage — from a chef-guided meal in a heritage Cairo house to a sunset dinner on your Nile vessel's deck.",
     },
     {
       icon: Ship,
       title: "Private Nile Cruises",
-      description: "Sail the legendary river in ultimate comfort.",
+      description: "Sail the Nile aboard boutique vessels limited to a small number of cabins, not 200-passenger ships. Expect private balconies, a crew that knows your name by day two, and shore excursions timed to avoid the crowds.",
     },
     {
       icon: Sparkles,
       title: "Spa & Wellness Retreats",
-      description: "Rejuvenating treatments inspired by ancient traditions.",
+      description: "After days of exploring ancient sites, we build in time for rest — treatments inspired by traditional Egyptian ingredients, arranged at properties chosen specifically for their spa facilities.",
     },
   ];
 
