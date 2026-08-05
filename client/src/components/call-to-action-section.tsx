@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Phone, Mail, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import SpeakToExpertModal from "@/components/speak-to-expert-modal";
+import TripBuilderModal from "@/components/trip-builder-modal";
 
 // Fallback contact info
 const fallbackContact = {
@@ -12,6 +13,7 @@ const fallbackContact = {
 
 export default function CallToActionSection() {
   const [isSpeakToExpertOpen, setIsSpeakToExpertOpen] = useState(false);
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
 
   // Fetch from database
   const { data } = useQuery({
@@ -49,6 +51,7 @@ export default function CallToActionSection() {
               className="text-lg px-8 py-4 h-auto font-semibold min-w-[200px] transform transition-all duration-300 hover:scale-105 hover:shadow-xl animate-fade-in group"
               style={{ animationDelay: '0.5s' }}
               data-testid="button-start-planning"
+              onClick={() => setIsTripBuilderOpen(true)}
             >
               <Calendar className="h-5 w-5 mr-2 transition-transform duration-300 group-hover:rotate-12" />
               Start Planning
@@ -127,6 +130,7 @@ export default function CallToActionSection() {
       </div>
 
       <SpeakToExpertModal open={isSpeakToExpertOpen} onOpenChange={setIsSpeakToExpertOpen} />
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
     </section>
   );
 }
