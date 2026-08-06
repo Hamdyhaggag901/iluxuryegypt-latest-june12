@@ -1,4 +1,3 @@
-// 3. client/src/components/phone-country-select.tsx
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export interface CountryCode {
@@ -217,7 +216,7 @@ export const COUNTRY_CODES: CountryCode[] = [
   { name: "Zimbabwe", iso: "ZW", dialCode: "+263" },
 ];
 
-export const DEFAULT_COUNTRY_ISO = "EG";
+export const DEFAULT_COUNTRY_ISO = "US";
 
 export function getDialCode(iso: string): string {
   return COUNTRY_CODES.find((c) => c.iso === iso)?.dialCode ?? COUNTRY_CODES[0].dialCode;
