@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MessageCircle, Loader2, Star } from "lucide-react";
-import { Link } from "wouter";
 import TripTypeChips from "@/components/trip-type-chips";
 import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
 
@@ -225,14 +224,14 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
                 />
                 <Label htmlFor="ste-privacy" className="font-normal cursor-pointer leading-snug">
                   I accept the{" "}
-                  <Link
+                  <a
                     href="/privacy-policy"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline hover:text-accent"
                   >
                     Privacy Policy
-                  </Link>
+                  </a>
                 </Label>
               </div>
               <div className="flex items-start gap-2">
