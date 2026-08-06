@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Link } from "wouter";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -537,14 +536,14 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
                 />
                 <Label htmlFor="tb-privacy" className="font-normal cursor-pointer leading-snug">
                   I accept the{" "}
-                  <Link
+                  <a
                     href="/privacy-policy"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline hover:text-accent"
                   >
                     Privacy Policy
-                  </Link>
+                  </a>
                 </Label>
               </div>
             </div>
