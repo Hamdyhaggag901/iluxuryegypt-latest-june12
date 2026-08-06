@@ -225,7 +225,12 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
                 />
                 <Label htmlFor="ste-privacy" className="font-normal cursor-pointer leading-snug">
                   I accept the{" "}
-                  <Link href="/privacy-policy" className="underline hover:text-accent">
+                  <Link
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-accent"
+                  >
                     Privacy Policy
                   </Link>
                 </Label>
