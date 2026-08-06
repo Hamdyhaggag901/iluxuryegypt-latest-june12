@@ -336,7 +336,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
           {step === 2 && (
             <div className="p-8 lg:p-12 space-y-6">
               <img
-                src="https://iluxuryegypt.com/api/assets/uploads/7f6865c5-78d4-4a48-958b-f70c645fec09.webp"
+                src="https://iluxuryegypt.com/api/assets/uploads/22804d05-02fc-4e28-ae32-25c5e07d64b7.avif"
                 alt="Egypt travel style"
                 className="w-full h-40 md:h-56 rounded-xl object-cover"
               />
@@ -418,7 +418,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
                   className="aspect-square rounded-lg object-cover w-full"
                 />
                 <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/33cd81bc-f856-451d-90a0-d255fff524f5.webp"
+                  src="https://iluxuryegypt.com/api/assets/uploads/501477cf-a214-47ff-8cbe-0e76bfea6a27.avif"
                   alt="Egypt travel highlight 2"
                   className="aspect-square rounded-lg object-cover w-full"
                 />
