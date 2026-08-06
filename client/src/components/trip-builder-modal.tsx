@@ -1,4 +1,3 @@
-// 4. client/src/components/trip-builder-modal.tsx
 import { useState } from "react";
 import { format } from "date-fns";
 import { Link } from "wouter";
@@ -411,4 +410,120 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
           )}
 
           {step === 4 && (
-            <div clas
+            <div className="p-8 lg:p-12 space-y-6">
+              <div className="grid grid-cols-3 gap-3">
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp"
+                  alt="Egypt travel highlight 1"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/33cd81bc-f856-451d-90a0-d255fff524f5.webp"
+                  alt="Egypt travel highlight 2"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
+                <img
+                  src="https://iluxuryegypt.com/api/assets/uploads/2f79462e-6808-45c0-aa91-8b272386ec38.webp"
+                  alt="Egypt travel highlight 3"
+                  className="aspect-square rounded-lg object-cover w-full"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="tb-first-name">First Name</Label>
+                  <Input
+                    id="tb-first-name"
+                    required
+                    value={form.firstName}
+                    onChange={(e) => updateField("firstName", e.target.value)}
+                    data-testid="input-tb-first-name"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="tb-last-name">Last Name</Label>
+                  <Input
+                    id="tb-last-name"
+                    required
+                    value={form.lastName}
+                    onChange={(e) => updateField("lastName", e.target.value)}
+                    data-testid="input-tb-last-name"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="tb-phone">Phone Number</Label>
+                <div className="flex items-center gap-2">
+                  <CountryCodeSelect
+                    value={form.countryIso}
+                    onChange={(iso) => updateField("countryIso", iso)}
+                    testId="select-tb-country-code"
+                  />
+                  <Input
+                    id="tb-phone"
+                    type="tel"
+                    placeholder="1XX XXX XXXX"
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    data-testid="input-tb-phone"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="tb-email">Email Address</Label>
+                <Input
+                  id="tb-email"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  data-testid="input-tb-email"
+                />
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="tb-privacy"
+                  checked={form.acceptPrivacy}
+                  onCheckedChange={(checked) => updateField("acceptPrivacy", checked === true)}
+                  data-testid="checkbox-tb-privacy"
+                />
+                <Label htmlFor="tb-privacy" className="font-normal cursor-pointer leading-snug">
+                  I accept the{" "}
+                  <Link href="/privacy-policy" className="underline hover:text-accent">
+                    Privacy Policy
+                  </Link>
+                </Label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer navigation */}
+        <div className="px-8 lg:px-12 py-6 border-t border-border shrink-0 flex items-center justify-between">
+          <Button type="button" variant="outline" onClick={handleBack} disabled={step === 1} data-testid="button-tb-back">
+            Back
+          </Button>
+          {step < 4 ? (
+            <Button type="button" onClick={handleNext} data-testid="button-tb-next">
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              onClick={handleFinish}
+              disabled={isSubmitting}
+              className="font-semibold tracking-wide uppercase bg-[#101010] hover:bg-[#101010]/90 text-white"
+              data-testid="button-tb-finish"
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Finish
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
