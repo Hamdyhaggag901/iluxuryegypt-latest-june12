@@ -262,9 +262,18 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     if ((match = pathname.match(/^\/hotel\/([^/]+)\/?$/))) {
       const hotel = await storage.getHotelBySlug(decodeURIComponent(match[1]));
       if (!hotel) return null;
+      const keyword = hotel.focusKeyword?.trim();
+      const baseTitle = `${hotel.name} - ${hotel.location}`;
+      const title = keyword && !baseTitle.toLowerCase().includes(keyword.toLowerCase())
+        ? `${hotel.name} - ${keyword}`
+        : baseTitle;
+      const baseDescription = hotel.description || DEFAULT_DESCRIPTION;
+      const description = keyword && !baseDescription.toLowerCase().includes(keyword.toLowerCase())
+        ? `${keyword} — ${baseDescription}`
+        : baseDescription;
       return {
-        title: withSiteName(`${hotel.name} - ${hotel.location}`),
-        description: truncate(hotel.description || DEFAULT_DESCRIPTION, 160),
+        title: withSiteName(title),
+        description: truncate(description, 160),
         image: hotel.image || DEFAULT_IMAGE,
         type: "website",
       };
