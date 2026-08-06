@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import TripBuilderModal from "@/components/trip-builder-modal";
 
 interface NavItem {
   id: string;
@@ -44,6 +45,7 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const [openMobileDropdowns, setOpenMobileDropdowns] = useState<Record<string, boolean>>({});
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
   const [location] = useLocation();
 
   const { data: navItemsResponse } = useQuery<{ success: boolean; navItems: NavItem[] }>({
@@ -258,16 +260,26 @@ export default function Navigation() {
             </div>
           </div>
 
-          <div className="lg:hidden">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="h-12 w-12 text-primary hover:text-accent"
-              data-testid="button-mobile-menu"
+              onClick={() => setIsTripBuilderOpen(true)}
+              className="bg-[#101010] hover:bg-[#101010]/90 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
+              data-testid="button-nav-start-planning"
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              Start Planning
             </Button>
+
+            <div className="lg:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="h-12 w-12 text-primary hover:text-accent"
+                data-testid="button-mobile-menu"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -362,6 +374,8 @@ export default function Navigation() {
           </div>
         )}
       </div>
+
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
     </nav>
   );
 }
