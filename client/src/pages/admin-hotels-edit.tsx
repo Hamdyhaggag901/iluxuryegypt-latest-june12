@@ -61,7 +61,13 @@ export default function AdminHotelsEdit() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        const fieldErrors = Array.isArray(errorData.errors)
+          ? errorData.errors
+              .map((e: any) => `${(e.path || []).join(".") || "field"}: ${e.message}`)
+              .join("; ")
+          : undefined;
+        throw new Error(fieldErrors || errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       return response.json();
