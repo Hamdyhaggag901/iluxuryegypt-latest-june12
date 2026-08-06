@@ -1,529 +1,381 @@
-import { useState } from "react";
-import { format } from "date-fns";
-import { Link } from "wouter";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Check, CalendarIcon, Minus, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
-import TripTypeChips from "@/components/trip-type-chips";
-import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
+import { Menu, X, ChevronDown } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import TripBuilderModal from "@/components/trip-builder-modal";
 
-const DESTINATIONS = ["Cairo", "Luxor", "Aswan", "Hurghada", "Sharm El Sheikh", "Alexandria", "Siwa"];
-const NIGHT_OPTIONS = ["1-3 nights", "4-6 nights", "7-9 nights", "10-13 nights", "14+ nights"];
-const BUDGET_OPTIONS = ["Under $3,000", "$3,000 - $6,000", "$6,000 - $10,000", "$10,000 - $20,000", "$20,000+"];
-const BUDGET_FLEXIBILITY_OPTIONS = [
-  "Keeping to my budget",
-  "For the right trip, I'll increase my budget",
-  "Taking the perfect trip",
+interface NavItem {
+  id: string;
+  label: string;
+  href: string;
+  parentId: string | null;
+  sortOrder: number;
+  isVisible: boolean;
+  openInNewTab: boolean;
+}
+
+interface SiteConfig {
+  id: string;
+  key: string;
+  value: string;
+  type: string;
+}
+
+const defaultNavItems = [
+  { label: "About", id: "about", type: "dropdown" as const, subItems: [
+    { label: "Who We Are", href: "/about/who-we-are" },
+    { label: "The iLuxury Difference", href: "/about/iluxury-difference" },
+    { label: "Your Experience Includes", href: "/about/your-experience" },
+    { label: "Trusted Worldwide", href: "/about/trusted-worldwide" },
+  ]},
+  { label: "Destinations", id: "destinations", type: "page" as const, href: "/destinations" },
+  { label: "Experiences", id: "experiences", type: "dropdown" as const, subItems: [
+    { label: "Packages", href: "/egypt-tour-packages" },
+    { label: "Day Tours", href: "/egypt-day-tours" },
+    { label: "Nile Cruises", href: "/egypt-nile-cruise-tours" },
+  ]},
+  { label: "Stays", id: "stays", type: "page" as const, href: "/stay" },
+  { label: "Blog", id: "blog", type: "page" as const, href: "/blog" },
+  { label: "Contact", id: "contact", type: "page" as const, href: "/contact" },
 ];
-const STEP_LABELS = ["Trip Details", "Travel Style", "Budget", "Contact Info"];
 
-interface TripBuilderModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+export default function Navigation() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+  const [openMobileDropdowns, setOpenMobileDropdowns] = useState<Record<string, boolean>>({});
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+  const [location] = useLocation();
 
-const initialFormState = {
-  destinations: [] as string[],
-  travelDate: undefined as Date | undefined,
-  isFlexibleDates: false,
-  nights: "",
-  travelers: 2,
-  tripType: "",
-  additionalDetails: "",
-  budget: "",
-  budgetFlexibility: "",
-  firstName: "",
-  lastName: "",
-  countryIso: DEFAULT_COUNTRY_ISO,
-  phone: "",
-  email: "",
-  acceptPrivacy: false,
-};
+  const { data: navItemsResponse } = useQuery<{ success: boolean; navItems: NavItem[] }>({
+    queryKey: ["/api/public/nav-items"],
+    staleTime: 5 * 60 * 1000,
+  });
 
-type FormState = typeof initialFormState;
+  const { data: siteConfigResponse } = useQuery<{ success: boolean; config: Record<string, string> }>({
+    queryKey: ["/api/public/site-config"],
+    staleTime: 5 * 60 * 1000,
+  });
 
-function ProgressBar({ currentStep }: { currentStep: number }) {
+  const dbNavItems = navItemsResponse?.navItems;
+  const siteConfig = siteConfigResponse?.config;
+
+  const navItems = useMemo(() => {
+    if (!dbNavItems || dbNavItems.length === 0) {
+      return defaultNavItems;
+    }
+
+    const topLevelItems = dbNavItems
+      .filter(item => !item.parentId && item.isVisible)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+
+    return topLevelItems.map(item => {
+      const children = dbNavItems
+        .filter(child => child.parentId === item.id && child.isVisible)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+
+      if (children.length > 0) {
+        return {
+          label: item.label,
+          id: item.id,
+          type: "dropdown" as const,
+          href: item.href,
+          openInNewTab: item.openInNewTab,
+          subItems: children.map(child => ({
+            label: child.label,
+            href: child.href,
+            openInNewTab: child.openInNewTab,
+          })),
+        };
+      }
+
+      return {
+        label: item.label,
+        id: item.id,
+        type: "page" as const,
+        href: item.href,
+        openInNewTab: item.openInNewTab,
+      };
+    });
+  }, [dbNavItems]);
+
+  const logoUrl = useMemo(() => {
+    if (!siteConfig) return null;
+    return siteConfig.header_logo || null;
+  }, [siteConfig]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    if (location === "/contact" && sectionId === "contact") {
+      setIsMobileMenuOpen(false);
+      return;
+    }
+    if (location !== "/") {
+      window.location.href = `/#${sectionId}`;
+      setIsMobileMenuOpen(false);
+      return;
+    }
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const getDropdownState = (id: string) => openDropdowns[id] || false;
+  const setDropdownState = (id: string, state: boolean) => {
+    setOpenDropdowns(prev => ({ ...prev, [id]: state }));
+  };
+  const getMobileDropdownState = (id: string) => openMobileDropdowns[id] || false;
+  const toggleMobileDropdown = (id: string) => {
+    setOpenMobileDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
-    <div className="flex items-center" data-testid="trip-builder-progress">
-      {STEP_LABELS.map((label, index) => {
-        const stepNum = index + 1;
-        const isCompleted = stepNum < currentStep;
-        const isCurrent = stepNum === currentStep;
-        return (
-          <div key={label} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold border-2 transition-colors shrink-0",
-                  isCompleted || isCurrent
-                    ? "bg-[#101010] border-[#101010] text-white"
-                    : "bg-background border-border text-muted-foreground"
-                )}
-              >
-                {isCompleted ? <Check className="h-4 w-4" /> : stepNum}
-              </div>
-              <span
-                className={cn(
-                  "text-xs font-medium text-center whitespace-nowrap hidden sm:block",
-                  isCurrent ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                {label}
-              </span>
-            </div>
-            {stepNum < STEP_LABELS.length && (
-              <div className={cn("flex-1 h-0.5 mx-2 mb-0 sm:-mb-5 transition-colors", isCompleted ? "bg-accent" : "bg-border")} />
-            )}
+    <nav className={`fixed top-0 left-0 right-0 w-full z-40 transition-all duration-300 ${
+      isScrolled
+        ? "bg-white border-b border-primary/20 shadow-lg"
+        : "bg-white border-b border-primary/10"
+    }`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
+          <div className="flex-shrink-0">
+            <Link href="/">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="I.LUXURYEGYPT"
+                  className="h-12 w-auto cursor-pointer"
+                  data-testid="logo-home"
+                />
+              ) : (
+                <span className="text-2xl font-serif font-bold text-primary hover:text-accent transition-colors cursor-pointer"
+                    data-testid="logo-home">
+                  I.LUXURYEGYPT
+                </span>
+              )}
+            </Link>
           </div>
-        );
-      })}
-    </div>
-  );
-}
 
-export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModalProps) {
-  const { toast } = useToast();
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<FormState>(initialFormState);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const updateField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const toggleDestination = (destination: string) => {
-    setForm((prev) => ({
-      ...prev,
-      destinations: prev.destinations.includes(destination)
-        ? prev.destinations.filter((d) => d !== destination)
-        : [...prev.destinations, destination],
-    }));
-  };
-
-  const resetAndClose = () => {
-    setForm(initialFormState);
-    setStep(1);
-    onOpenChange(false);
-  };
-
-  const handleNext = () => {
-    if (step === 1 && form.destinations.length === 0) {
-      toast({
-        title: "Select a destination",
-        description: "Please choose at least one destination to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setStep((prev) => Math.min(prev + 1, 4));
-  };
-
-  const handleBack = () => {
-    setStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleFinish = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in your name and email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!form.acceptPrivacy) {
-      toast({
-        title: "Privacy Policy required",
-        description: "Please accept the Privacy Policy to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await apiRequest("POST", "/api/tour-bookings", {
-        tourTitle: form.destinations.length ? `Trip Builder: ${form.destinations.join(", ")}` : "Trip Builder Request",
-        fullName: `${form.firstName} ${form.lastName}`.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim() ? `${getDialCode(form.countryIso)} ${form.phone.trim()}` : undefined,
-        preferredDates: form.isFlexibleDates
-          ? "Flexible"
-          : form.travelDate
-            ? format(form.travelDate, "PPP")
-            : undefined,
-        numberOfGuests: form.travelers,
-        specialRequests: [
-          `Destinations: ${form.destinations.join(", ") || "Not specified"}`,
-          `Nights: ${form.nights || "Not specified"}`,
-          `Trip type: ${form.tripType || "Not specified"}`,
-          form.additionalDetails.trim() ? `Additional details: ${form.additionalDetails.trim()}` : null,
-          `Budget per person: ${form.budget || "Not specified"}`,
-          `Budget flexibility: ${form.budgetFlexibility || "Not specified"}`,
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      });
-
-      toast({
-        title: "Thank you!",
-        description: "Your bespoke trip request has been received. Our specialists will reach out within 24 hours.",
-      });
-      resetAndClose();
-    } catch (error: any) {
-      toast({
-        title: "Submission Error",
-        description: error?.message || "There was an error sending your request. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setStep(1);
-        }
-        onOpenChange(next);
-      }}
-    >
-      <DialogContent
-        aria-describedby={undefined}
-        className="w-[95vw] sm:w-[90vw] max-w-[1400px] p-0 overflow-hidden max-h-[90vh] flex flex-col gap-0"
-      >
-        {/* Header + progress */}
-        <div className="px-8 lg:px-12 pt-8 pb-6 border-b border-border shrink-0">
-          <DialogTitle className="text-2xl md:text-3xl font-serif font-bold text-primary mb-6">
-            Plan Your Bespoke Egypt Journey
-          </DialogTitle>
-          <ProgressBar currentStep={step} />
-        </div>
-
-        {/* Step content */}
-        <div className="overflow-y-auto flex-1">
-          {step === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr]">
-              <img
-                src="https://iluxuryegypt.com/api/assets/uploads/1079b196-39ee-4172-ba0b-847d1749503b.webp"
-                alt="Egypt luxury travel destination"
-                className="hidden md:block h-full min-h-[420px] w-full object-cover"
-              />
-              <div className="p-8 lg:p-12 space-y-6">
-                <div className="space-y-2">
-                  <Label>Where would you like to go?</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {DESTINATIONS.map((destination) => {
-                      const isSelected = form.destinations.includes(destination);
-                      return (
-                        <button
-                          key={destination}
-                          type="button"
-                          onClick={() => toggleDestination(destination)}
-                          className={cn(
-                            "px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200",
-                            isSelected
-                              ? "bg-accent text-accent-foreground border-accent shadow-sm"
-                              : "border-input bg-background text-muted-foreground hover:border-accent hover:text-accent"
-                          )}
-                          data-testid={`chip-destination-${destination.toLowerCase().replace(/\s+/g, "-")}`}
-                        >
-                          {destination}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Travel Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={form.isFlexibleDates}
-                        className="w-full justify-start text-left font-normal"
-                        data-testid="button-travel-date"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.travelDate ? format(form.travelDate, "PPP") : "Select a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={form.travelDate}
-                        onSelect={(date) => updateField("travelDate", date)}
-                        disabled={{ before: new Date() }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Checkbox
-                      id="tb-flexible"
-                      checked={form.isFlexibleDates}
-                      onCheckedChange={(checked) => updateField("isFlexibleDates", checked === true)}
-                      data-testid="checkbox-flexible-dates"
-                    />
-                    <Label htmlFor="tb-flexible" className="font-normal cursor-pointer">
-                      I'm flexible on dates
-                    </Label>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tb-nights">Number of Nights</Label>
-                  <Select value={form.nights} onValueChange={(v) => updateField("nights", v)}>
-                    <SelectTrigger id="tb-nights" data-testid="select-nights">
-                      <SelectValue placeholder="Select nights" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {NIGHT_OPTIONS.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Number of Travelers</Label>
-                  <div className="flex items-center gap-4">
+          <div className="hidden lg:block">
+            <div className="ml-10 flex items-center space-x-1">
+              {navItems.map((item) => (
+                item.type === "dropdown" ? (
+                  <div
+                    key={item.id}
+                    className="relative"
+                    onMouseEnter={() => setDropdownState(item.id, true)}
+                    onMouseLeave={() => setDropdownState(item.id, false)}
+                  >
                     <button
-                      type="button"
-                      onClick={() => updateField("travelers", Math.max(1, form.travelers - 1))}
-                      className="flex items-center justify-center w-10 h-10 rounded-full border border-input hover:border-accent hover:text-accent transition-colors disabled:opacity-50"
-                      disabled={form.travelers <= 1}
-                      data-testid="button-travelers-decrement"
+                      className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group flex items-center gap-1 ${
+                        location.startsWith(`/${item.id}`) ? 'text-accent bg-accent/10' : ''
+                      }`}
+                      data-testid={`nav-${item.id}`}
                     >
-                      <Minus className="h-4 w-4" />
+                      {item.label}
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${getDropdownState(item.id) ? 'rotate-180' : ''}`} />
+                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-accent transition-all duration-300 group-hover:w-full"></span>
                     </button>
-                    <span className="text-lg font-semibold text-primary w-8 text-center" data-testid="text-travelers-count">
-                      {form.travelers}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => updateField("travelers", form.travelers + 1)}
-                      className="flex items-center justify-center w-10 h-10 rounded-full border border-input hover:border-accent hover:text-accent transition-colors"
-                      data-testid="button-travelers-increment"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="p-8 lg:p-12 space-y-6">
-              <img
-                src="https://iluxuryegypt.com/api/assets/uploads/7f6865c5-78d4-4a48-958b-f70c645fec09.webp"
-                alt="Egypt travel style"
-                className="w-full h-40 md:h-56 rounded-xl object-cover"
-              />
-              <div className="space-y-2">
-                <Label>What type of journey interests you?</Label>
-                <TripTypeChips value={form.tripType} onChange={(v) => updateField("tripType", v)} testIdPrefix="chip-builder-trip-type" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="tb-details">Tell us more about what you're hoping for</Label>
-                <Textarea
-                  id="tb-details"
-                  rows={5}
-                  value={form.additionalDetails}
-                  onChange={(e) => updateField("additionalDetails", e.target.value)}
-                  data-testid="textarea-additional-details"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="p-8 lg:p-12">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_220px] gap-8">
-                <div className="space-y-6 order-2 md:order-1">
-                  <div className="space-y-2">
-                    <Label htmlFor="tb-budget">Budget per person, for the whole trip</Label>
-                    <Select value={form.budget} onValueChange={(v) => updateField("budget", v)}>
-                      <SelectTrigger id="tb-budget" data-testid="select-budget">
-                        <SelectValue placeholder="Select a budget range" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BUDGET_OPTIONS.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
+                    <div className={`absolute top-full left-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-primary/10 overflow-hidden transition-all duration-200 ${
+                      getDropdownState(item.id) ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'
+                    }`}>
+                      <div className="py-2">
+                        {item.subItems?.map((subItem) => (
+                          subItem.openInNewTab ? (
+                            <a
+                              key={subItem.href}
+                              href={subItem.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`block w-full text-left px-4 py-3 text-sm font-medium text-accent hover:bg-accent/5 hover:text-accent/70 transition-colors ${
+                                location === subItem.href ? 'bg-accent/10 text-accent/70' : ''
+                              }`}
+                            >
+                              {subItem.label}
+                            </a>
+                          ) : (
+                            <Link key={subItem.href} href={subItem.href}>
+                              <button
+                                className={`w-full text-left px-4 py-3 text-sm font-medium text-accent hover:bg-accent/5 hover:text-accent/70 transition-colors ${
+                                  location === subItem.href ? 'bg-accent/10 text-accent/70' : ''
+                                }`}
+                              >
+                                {subItem.label}
+                              </button>
+                            </Link>
+                          )
                         ))}
-                      </SelectContent>
-                    </Select>
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>How flexible is your budget?</Label>
-                    <RadioGroup
-                      value={form.budgetFlexibility}
-                      onValueChange={(v) => updateField("budgetFlexibility", v)}
-                      className="space-y-3"
+                ) : item.type === "page" ? (
+                  item.openInNewTab ? (
+                    <a
+                      key={item.id}
+                      href={item.href!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group ${
+                        location === item.href ? 'text-accent bg-accent/10' : ''
+                      }`}
+                      data-testid={`nav-${item.id}`}
                     >
-                      {BUDGET_FLEXIBILITY_OPTIONS.map((option) => (
-                        <div key={option} className="flex items-center gap-2">
-                          <RadioGroupItem
-                            value={option}
-                            id={`tb-budget-flex-${option}`}
-                            data-testid={`radio-budget-${option.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                          />
-                          <Label htmlFor={`tb-budget-flex-${option}`} className="font-normal cursor-pointer">
-                            {option}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                </div>
-
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/1d4ffc47-d263-41ee-a7a4-f0be83ef9d53.webp"
-                  alt="Luxury travel detail"
-                  className="order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-56 rounded-xl object-cover"
-                />
-              </div>
+                      {item.label}
+                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-accent transition-all duration-300 group-hover:w-full"></span>
+                    </a>
+                  ) : (
+                    <Link key={item.id} href={item.href!}>
+                      <button
+                        className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group ${
+                          location === item.href ? 'text-accent bg-accent/10' : ''
+                        }`}
+                        data-testid={`nav-${item.id}`}
+                      >
+                        {item.label}
+                        <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-accent transition-all duration-300 group-hover:w-full"></span>
+                      </button>
+                    </Link>
+                  )
+                ) : (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className="relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group"
+                    data-testid={`nav-${item.id}`}
+                  >
+                    {item.label}
+                    <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-accent transition-all duration-300 group-hover:w-full"></span>
+                  </button>
+                )
+              ))}
             </div>
-          )}
+          </div>
 
-          {step === 4 && (
-            <div className="p-8 lg:p-12 space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp"
-                  alt="Egypt travel highlight 1"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/33cd81bc-f856-451d-90a0-d255fff524f5.webp"
-                  alt="Egypt travel highlight 2"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/2f79462e-6808-45c0-aa91-8b272386ec38.webp"
-                  alt="Egypt travel highlight 3"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="tb-first-name">First Name</Label>
-                  <Input
-                    id="tb-first-name"
-                    required
-                    value={form.firstName}
-                    onChange={(e) => updateField("firstName", e.target.value)}
-                    data-testid="input-tb-first-name"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="tb-last-name">Last Name</Label>
-                  <Input
-                    id="tb-last-name"
-                    required
-                    value={form.lastName}
-                    onChange={(e) => updateField("lastName", e.target.value)}
-                    data-testid="input-tb-last-name"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tb-phone">Phone Number</Label>
-                <div className="flex items-center gap-2">
-                  <CountryCodeSelect
-                    value={form.countryIso}
-                    onChange={(iso) => updateField("countryIso", iso)}
-                    testId="select-tb-country-code"
-                  />
-                  <Input
-                    id="tb-phone"
-                    type="tel"
-                    placeholder="1XX XXX XXXX"
-                    value={form.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
-                    data-testid="input-tb-phone"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tb-email">Email Address</Label>
-                <Input
-                  id="tb-email"
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  data-testid="input-tb-email"
-                />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="tb-privacy"
-                  checked={form.acceptPrivacy}
-                  onCheckedChange={(checked) => updateField("acceptPrivacy", checked === true)}
-                  data-testid="checkbox-tb-privacy"
-                />
-                <Label htmlFor="tb-privacy" className="font-normal cursor-pointer leading-snug">
-                  I accept the{" "}
-                  <Link href="/privacy-policy" className="underline hover:text-accent">
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer navigation */}
-        <div className="px-8 lg:px-12 py-6 border-t border-border shrink-0 flex items-center justify-between">
-          <Button type="button" variant="outline" onClick={handleBack} disabled={step === 1} data-testid="button-tb-back">
-            Back
-          </Button>
-          {step < 4 ? (
-            <Button type="button" onClick={handleNext} data-testid="button-tb-next">
-              Next
-            </Button>
-          ) : (
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
-              type="button"
-              onClick={handleFinish}
-              disabled={isSubmitting}
-              className="font-semibold tracking-wide uppercase bg-[#101010] hover:bg-[#101010]/90 text-white"
-              data-testid="button-tb-finish"
+              onClick={() => setIsTripBuilderOpen(true)}
+              className="bg-[#101010] hover:bg-[#101010]/90 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
+              data-testid="button-nav-start-planning"
             >
-              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              Finish
+              Design My Egypt Story
             </Button>
-          )}
+
+            <div className="lg:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="h-12 w-12 text-primary hover:text-accent"
+                data-testid="button-mobile-menu"
+              >
+                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-primary/20 bg-white shadow-lg">
+            <div className="px-4 py-6 space-y-2">
+              {navItems.map((item) => (
+                item.type === "dropdown" ? (
+                  <div key={item.id}>
+                    <button
+                      onClick={() => toggleMobileDropdown(item.id)}
+                      className={`text-primary hover:text-accent hover:bg-accent/10 flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium w-full transition-all duration-300 ${
+                        location.startsWith(`/${item.id}`) ? 'text-accent bg-accent/10' : ''
+                      }`}
+                      data-testid={`nav-mobile-${item.id}`}
+                    >
+                      {item.label}
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${getMobileDropdownState(item.id) ? 'rotate-180' : ''}`} />
+                    </button>
+                    {getMobileDropdownState(item.id) && (
+                      <div className="ml-4 mt-2 space-y-1 border-l-2 border-primary/20 pl-4">
+                        {item.subItems?.map((subItem) => (
+                          subItem.openInNewTab ? (
+                            <a
+                              key={subItem.href}
+                              href={subItem.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-2 rounded-lg text-sm font-medium w-full text-left transition-all duration-300 ${
+                                location === subItem.href ? 'text-accent bg-accent/10' : ''
+                              }`}
+                            >
+                              {subItem.label}
+                            </a>
+                          ) : (
+                            <Link key={subItem.href} href={subItem.href}>
+                              <button
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-2 rounded-lg text-sm font-medium w-full text-left transition-all duration-300 ${
+                                  location === subItem.href ? 'text-accent bg-accent/10' : ''
+                                }`}
+                              >
+                                {subItem.label}
+                              </button>
+                            </Link>
+                          )
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : item.type === "page" ? (
+                  item.openInNewTab ? (
+                    <a
+                      key={item.id}
+                      href={item.href!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-3 rounded-lg text-base font-medium w-full text-left transition-all duration-300 ${
+                        location === item.href ? 'text-accent bg-accent/10' : ''
+                      }`}
+                      data-testid={`nav-mobile-${item.id}`}
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link key={item.id} href={item.href!}>
+                      <button
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-3 rounded-lg text-base font-medium w-full text-left transition-all duration-300 ${
+                          location === item.href ? 'text-accent bg-accent/10' : ''
+                        }`}
+                        data-testid={`nav-mobile-${item.id}`}
+                      >
+                        {item.label}
+                      </button>
+                    </Link>
+                  )
+                ) : (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className="text-primary hover:text-accent hover:bg-accent/10 block px-4 py-3 rounded-lg text-base font-medium w-full text-left transition-all duration-300"
+                    data-testid={`nav-mobile-${item.id}`}
+                  >
+                    {item.label}
+                  </button>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+    </nav>
   );
 }
