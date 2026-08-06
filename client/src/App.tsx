@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, lazy, Suspense } from "react";
 import WhatsAppButton from "@/components/whatsapp-button";
+import FloatingSpeakExpertButton from "@/components/floating-speak-expert-button";
 import SiteMetadata from "@/components/site-metadata";
 
 // Eagerly loaded (critical path)
@@ -20,8 +21,6 @@ const NileCruises = lazy(() => import("@/pages/nile-cruises"));
 const ASaraNileCruise = lazy(() => import("@/pages/tours/a-sara-nile-cruise"));
 const Experiences = lazy(() => import("@/pages/experiences"));
 const Stay = lazy(() => import("@/pages/stay"));
-const Stays = lazy(() => import("@/pages/stays"));
-const StaysDetail = lazy(() => import("@/pages/stays-detail"));
 const Blog = lazy(() => import("@/pages/blog"));
 const BlogPost = lazy(() => import("@/pages/blog-post"));
 const HotelDetail = lazy(() => import("@/pages/hotel-detail"));
@@ -79,7 +78,6 @@ const AdminTourBookings = lazy(() => import("@/pages/admin-tour-bookings"));
 const AdminBrochureDownloads = lazy(() => import("@/pages/admin-brochure-downloads"));
 const AdminPageEdits = lazy(() => import("@/pages/admin-page-edits"));
 const AdminStayPage = lazy(() => import("@/pages/admin-stay-page"));
-const AdminStaysSettings = lazy(() => import("@/pages/admin-stays-settings"));
 
 // Scroll to top on route change
 function ScrollToTop() {
@@ -149,8 +147,6 @@ function Router() {
             <Route path="/nile-cruises/:slug" component={ASaraNileCruise} />
 
             {/* Stays */}
-            <Route path="/stays" component={Stays} />
-            <Route path="/stays/:slug" component={StaysDetail} />
             <Route path="/stay" component={Stay} />
             <Route path="/hotel/:slug" component={HotelDetail} />
 
@@ -205,7 +201,6 @@ function Router() {
             <Route path="/admin/brochure-downloads" component={AdminBrochureDownloads} />
             <Route path="/admin/page-edits" component={AdminPageEdits} />
             <Route path="/admin/stay-page" component={AdminStayPage} />
-            <Route path="/admin/stays-settings" component={AdminStaysSettings} />
 
             {/* Tour detail - catch-all for tour slugs (must be before 404) */}
             <Route path="/:slug" component={TourDetail} />
@@ -227,6 +222,7 @@ function App() {
         <Toaster />
         <Router />
         <WhatsAppButton />
+        <FloatingSpeakExpertButton />
       </TooltipProvider>
     </QueryClientProvider>
   );
