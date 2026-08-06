@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { Link } from "wouter";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Check, CalendarIcon, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TripTypeChips from "@/components/trip-type-chips";
+import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
 
 const DESTINATIONS = ["Cairo", "Luxor", "Aswan", "Hurghada", "Sharm El Sheikh", "Alexandria", "Siwa"];
 const NIGHT_OPTIONS = ["1-3 nights", "4-6 nights", "7-9 nights", "10-13 nights", "14+ nights"];
@@ -43,6 +45,7 @@ const initialFormState = {
   budgetFlexibility: "",
   firstName: "",
   lastName: "",
+  countryIso: DEFAULT_COUNTRY_ISO,
   phone: "",
   email: "",
   acceptPrivacy: false,
@@ -155,7 +158,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
         tourTitle: form.destinations.length ? `Trip Builder: ${form.destinations.join(", ")}` : "Trip Builder Request",
         fullName: `${form.firstName} ${form.lastName}`.trim(),
         email: form.email.trim(),
-        phone: form.phone.trim() ? `+20 ${form.phone.trim()}` : undefined,
+        phone: form.phone.trim() ? `${getDialCode(form.countryIso)} ${form.phone.trim()}` : undefined,
         preferredDates: form.isFlexibleDates
           ? "Flexible"
           : form.travelDate
@@ -452,10 +455,11 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
               <div className="space-y-1.5">
                 <Label htmlFor="tb-phone">Phone Number</Label>
                 <div className="flex items-center gap-2">
-                  <span className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-input bg-muted text-sm text-foreground shrink-0">
-                    <span aria-hidden="true">🇪🇬</span>
-                    +20
-                  </span>
+                  <CountryCodeSelect
+                    value={form.countryIso}
+                    onChange={(iso) => updateField("countryIso", iso)}
+                    testId="select-tb-country-code"
+                  />
                   <Input
                     id="tb-phone"
                     type="tel"
@@ -487,7 +491,10 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
                   data-testid="checkbox-tb-privacy"
                 />
                 <Label htmlFor="tb-privacy" className="font-normal cursor-pointer leading-snug">
-                  I accept the Privacy Policy
+                  I accept the{" "}
+                  <Link href="/privacy-policy" className="underline hover:text-accent">
+                    Privacy Policy
+                  </Link>
                 </Label>
               </div>
             </div>
