@@ -22,10 +22,11 @@ import {
   type StayLuxuryFeature, type InsertStayLuxuryFeature,
   type StayNileSection, type InsertStayNileSection,
   type StayCta, type InsertStayCta,
+  type StayListingSettings, type InsertStayListingSettings,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
   guestExperienceSection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
-  stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta,
+  stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
   brochureDownloads
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
@@ -83,6 +84,11 @@ export interface IStorage {
   getHotelBySlug(slug: string): Promise<Hotel | undefined>;
   updateHotel(id: string, hotel: Partial<InsertHotel>): Promise<Hotel | undefined>;
   deleteHotel(id: string): Promise<boolean>;
+  reorderHotels(orderedIds: string[]): Promise<void>;
+
+  // Stay listing settings methods
+  getStayListingSettings(): Promise<StayListingSettings | undefined>;
+  upsertStayListingSettings(data: InsertStayListingSettings): Promise<StayListingSettings>;
 
   // Destination methods  
   createDestination(destination: InsertDestination): Promise<Destination>;
@@ -278,7 +284,7 @@ export class DatabaseStorage implements IStorage {
   // Hotel methods
   async getHotels() {
     try {
-      const hotelsList = await db.select().from(hotels).orderBy(hotels.createdAt);
+      const hotelsList = await db.select().from(hotels).orderBy(hotels.sortOrder, hotels.createdAt);
       return hotelsList;
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -326,6 +332,19 @@ export class DatabaseStorage implements IStorage {
       return hotel || undefined;
     } catch (error) {
       console.error("Error updating hotel:", error);
+      throw error;
+    }
+  }
+
+  async reorderHotels(orderedIds: string[]): Promise<void> {
+    try {
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          db.update(hotels).set({ sortOrder: index, updatedAt: new Date() }).where(eq(hotels.id, id))
+        )
+      );
+    } catch (error) {
+      console.error("Error reordering hotels:", error);
       throw error;
     }
   }
@@ -628,8 +647,7 @@ export class DatabaseStorage implements IStorage {
   async getNavItems(): Promise<NavItem[]> {
     return await db.select().from(navItems).orderBy(navItems.sortOrder);
   }
-
-  async getNavItem(id: string): Promise<NavItem | undefined> {
+    async getNavItem(id: string): Promise<NavItem | undefined> {
     const [item] = await db.select().from(navItems).where(eq(navItems.id, id));
     return item;
   }
@@ -1145,6 +1163,27 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
+
+  // Stay listing settings methods
+  async getStayListingSettings(): Promise<StayListingSettings | undefined> {
+    const [settingsRow] = await db.select().from(stayListingSettings).limit(1);
+    return settingsRow;
+  }
+
+  async upsertStayListingSettings(data: InsertStayListingSettings): Promise<StayListingSettings> {
+    const existing = await this.getStayListingSettings();
+    if (existing) {
+      const [updated] = await db
+        .update(stayListingSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(stayListingSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(stayListingSettings).values(data).returning();
+      return created;
+    }
+  }
 };
 
 // Memory Storage Implementation for Development
@@ -1258,7 +1297,7 @@ export class MemoryStorage implements IStorage {
         amenities: ["Nile Views", "Historic Architecture", "Royal Gardens", "Fine Dining"],
         image: "/api/assets/suite-nile_1757457083796.jpg",
         description: "A legendary hotel on the banks of the Nile in Aswan, offering timeless elegance and unparalleled views.",
-        featured: false,
+                featured: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: null
@@ -1775,7 +1814,6 @@ export async function seedDatabase() {
       const sampleHotels = [
         {
           name: "Mena House Hotel",
-          slug: "mena-house-hotel",
           location: "Giza",
           region: "Cairo & Giza",
           type: "Palace" as const,
@@ -1788,7 +1826,6 @@ export async function seedDatabase() {
         },
         {
           name: "Sofitel Winter Palace",
-          slug: "sofitel-winter-palace",
           location: "Luxor",
           region: "Luxor",
           type: "Palace" as const,
@@ -1801,7 +1838,6 @@ export async function seedDatabase() {
         },
         {
           name: "Four Seasons Hotel Cairo at Nile Plaza",
-          slug: "four-seasons-cairo-nile-plaza",
           location: "Cairo",
           region: "Cairo & Giza",
           type: "Resort" as const,
@@ -1851,15 +1887,11 @@ export async function seedDatabase() {
     // Seed settings if not already present
     const existingSettings = await storage.getAllSettings();
     if (existingSettings.length === 0) {
-      const adminUser = await storage.getUserByUsername("admin");
-      const adminId = adminUser?.id ?? null;
-      if (adminId) {
-        await storage.upsertSetting("contact_email", "info@luxortravel.com", adminId);
-        await storage.upsertSetting("inquiry_notification_email", "support@luxortravel.com", adminId);
-        await storage.upsertSetting("site_name", "Luxury Egypt Tours", adminId);
-        await storage.upsertSetting("site_tagline", "Experience the magic of Egypt.", adminId);
-        console.log("✓ Sample settings seeded");
-      }
+      await storage.upsertSetting("contact_email", "info@luxortravel.com", "admin");
+      await storage.upsertSetting("inquiry_notification_email", "support@luxortravel.com", "admin");
+      await storage.upsertSetting("site_name", "Luxury Egypt Tours", "admin");
+      await storage.upsertSetting("site_tagline", "Experience the magic of Egypt.", "admin");
+      console.log("✓ Sample settings seeded");
     }
 
     console.log("✓ Database seeding completed");
@@ -1869,4 +1901,3 @@ export async function seedDatabase() {
 }
 
 // Initialize database seeding
-seedDatabase();
