@@ -1,4 +1,3 @@
-// 5. client/src/components/speak-to-expert-modal.tsx
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -247,7 +246,7 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-auto py-4 text-base font-semibold tracking-wide uppercase bg-[#101010] hover:bg-[#101010]/90 text-white"
+              className="w-full h-auto py-4 text-base font-semibold tracking-wide uppercase bg-accent hover:bg-accent/90 text-accent-foreground"
               data-testid="button-submit-speak-expert"
             >
               {isSubmitting ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
