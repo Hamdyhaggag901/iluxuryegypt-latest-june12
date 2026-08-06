@@ -677,3 +677,86 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                   }}
                   data-testid="button-add-gallery-url"
                 >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="outline" className="relative" data-testid="button-upload-gallery">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleGalleryUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </Button>
+              </div>
+
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGalleryDragEnd}>
+                <SortableContext items={galleryIds} strategy={horizontalListSortingStrategy}>
+                  <div className="grid grid-cols-4 gap-4">
+                    {gallery.map((url, index) => (
+                      <SortableGalleryImage
+                        key={url}
+                        id={url}
+                        url={url}
+                        index={index}
+                        onRemove={() => removeArrayItem("gallery", index)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Cruise & SEO Tab */}
+        <TabsContent value="cruise-seo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Nile Cruise Details</CardTitle>
+              <CardDescription>Optional — only fill these in for Nile cruise entries. Shown near the hero when present.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="route">Route</Label>
+                <Input id="route" data-testid="input-route" {...form.register("route")} placeholder="e.g., Luxor → Aswan" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration</Label>
+                <Input id="duration" data-testid="input-duration" {...form.register("duration")} placeholder="e.g., 4 nights / 5 days" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Focus Keyword</CardTitle>
+              <CardDescription>Optional SEO target phrase for this hotel's page title, description, and alt text</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                data-testid="input-focus-keyword"
+                {...form.register("focusKeyword")}
+                placeholder="e.g., luxury hotel Giza pyramid view"
+              />
+              {showKeywordHint && (
+                <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>This keyword doesn't appear in the hotel name or article yet — consider weaving it in naturally.</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-end gap-4 pt-4 border-t">
+        <Button type="submit" disabled={isLoading} data-testid="button-submit-hotel">
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {initialData ? "Update Hotel" : "Create Hotel"}
+        </Button>
+      </div>
+    </form>
+  );
+}
