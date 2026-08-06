@@ -39,8 +39,8 @@ export default function CallToActionSection() {
 
           {/* Subheading */}
           <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-            Let our luxury travel experts craft your perfect Egyptian adventure.
-            From ancient wonders to modern comfort, every detail is tailored to you.
+            Our Egypt specialists design bespoke journeys for the discerning traveler — private access, elite
+            accommodations, and seamless service from arrival to departure. This is Egypt, without compromise.
           </p>
 
           {/* Action Buttons */}
@@ -101,29 +101,6 @@ export default function CallToActionSection() {
               <h3 className="text-lg font-semibold text-foreground mb-2">Free Consultation</h3>
               <p className="text-muted-foreground">30-minute planning session</p>
               <p className="text-sm text-muted-foreground/70 mt-1">No commitment required</p>
-            </div>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="mt-16 pt-8 border-t border-border">
-            <p className="text-muted-foreground mb-6">Trusted by luxury travelers worldwide</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 text-muted-foreground">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">500+</div>
-                <div className="text-sm">Luxury Tours</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">98%</div>
-                <div className="text-sm">Satisfaction Rate</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">24/7</div>
-                <div className="text-sm">Concierge Service</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">15+</div>
-                <div className="text-sm">Years Experience</div>
-              </div>
             </div>
           </div>
         </div>
