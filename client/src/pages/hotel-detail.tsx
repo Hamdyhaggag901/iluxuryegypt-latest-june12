@@ -1,28 +1,59 @@
-
 import { useRoute } from "wouter";
 import Navigation from "../components/navigation";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Sparkles, Users, Bed } from "lucide-react";
+import {
+  MapPin,
+  Quote,
+  Calendar,
+  Route as RouteIcon,
+  Waves,
+  Sparkles,
+  Utensils,
+  Wifi,
+  Car,
+  Shield,
+  Dumbbell,
+  Wind,
+  Coffee,
+  ParkingCircle,
+  PawPrint,
+  Star,
+} from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import type { Hotel, Room } from "@shared/schema";
+import type { Facility } from "@shared/schema";
+
+function getFacilityIcon(iconName: string) {
+  const className = "h-6 w-6 text-accent";
+  const icons: Record<string, JSX.Element> = {
+    pool: <Waves className={className} />,
+    spa: <Sparkles className={className} />,
+    dining: <Utensils className={className} />,
+    wifi: <Wifi className={className} />,
+    transfers: <Car className={className} />,
+    concierge: <Shield className={className} />,
+    gym: <Dumbbell className={className} />,
+    ac: <Wind className={className} />,
+    breakfast: <Coffee className={className} />,
+    parking: <ParkingCircle className={className} />,
+    pets: <PawPrint className={className} />,
+  };
+  return icons[iconName] || <Star className={className} />;
+}
 
 export default function HotelDetail() {
-  const [match, params] = useRoute("/hotel/:id");
+  const [match, params] = useRoute("/hotel/:slug");
 
-  if (!match || !params?.id) {
+  if (!match || !params?.slug) {
     return <div>Hotel not found</div>;
   }
 
-  // Fetch specific hotel data from API
   const { data: hotelResponse, isLoading, error } = useQuery({
-    queryKey: ["/api/hotels", params.id],
+    queryKey: ["/api/hotels", params.slug],
     queryFn: async () => {
-      const response = await fetch(`/api/hotels/${params.id}`);
+      const response = await fetch(`/api/hotels/${params.slug}`);
       if (!response.ok) {
         throw new Error("Hotel not found");
       }
@@ -64,149 +95,77 @@ export default function HotelDetail() {
   }
 
   const hotel = hotelResponse.hotel;
-  const rooms = (hotel.rooms || []) as Room[];
-  const highlights = (hotel.highlights || []) as string[];
+  const facilities = (hotel.facilities || []) as Facility[];
   const gallery = (hotel.gallery || []) as string[];
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-5 h-5 ${i < rating ? 'text-accent fill-accent' : 'text-muted-foreground'}`}
-      />
-    ));
-  };
+  const hasCruiseDetails = Boolean(hotel.route || hotel.duration);
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
 
-      {/* Hero Section */}
-      <section className="relative h-[70vh] md:h-screen flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${hotel.image})`
-          }}
-        />
-
-        <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
-          <div className="flex justify-center items-center mb-2 md:mb-4 [&_svg]:w-3 [&_svg]:h-3 md:[&_svg]:w-5 md:[&_svg]:h-5">
-            {renderStars(hotel.rating)}
-            <span className="ml-2 text-sm md:text-xl font-medium">{hotel.rating} Star</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-serif font-bold mb-3 md:mb-6 animate-fade-in px-2">
-            {hotel.name}
-          </h1>
-          <div className="flex flex-col sm:flex-row justify-center items-center mb-4 md:mb-6 text-sm md:text-xl gap-1 sm:gap-0">
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 md:w-6 md:h-6 mr-1 md:mr-2 text-accent" />
-              <span>{hotel.location}, {hotel.region}</span>
-            </div>
-            <span className="hidden sm:inline mx-4">•</span>
-            <span>{hotel.type}</span>
-          </div>
-          <p className="text-sm md:text-xl lg:text-2xl mb-6 md:mb-8 leading-relaxed max-w-3xl mx-auto px-2 line-clamp-3 md:line-clamp-none">
-            {hotel.description}
-          </p>
-          {rooms.length > 0 && (
-            <div className="flex justify-center">
-              <Button
-                size="lg"
-                variant="outline"
-                className="px-6 md:px-8 py-3 md:py-4 text-sm md:text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20"
-                onClick={() => document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth' })}
-                data-testid="button-view-rooms"
-              >
-                View Rooms & Suites
-              </Button>
-            </div>
-          )}
-        </div>
-      </section>
-
       <main>
-        {/* Hotel Overview */}
-        <section className="py-10 md:py-20 bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Section Header */}
-            <div className="text-center mb-8 md:mb-16">
-              <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3 md:mb-6">About {hotel.name}</h2>
-              <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-            </div>
+        {/* Hero — full-width image, hotel name overlaid, no buttons */}
+        <section className="relative h-[60vh] md:h-[75vh] flex items-end overflow-hidden">
+          <img
+            src={hotel.image}
+            alt={`${hotel.name} — ${hotel.location}, Egypt`}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
-              <div className="lg:col-span-2 space-y-8 md:space-y-12">
-                {/* Full Description */}
-                {hotel.fullDescription && (
-                  <div>
-                    <p className="text-sm md:text-lg text-muted-foreground leading-relaxed text-center lg:text-left max-w-4xl">
-                      {hotel.fullDescription}
-                    </p>
+          <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 md:pb-14 text-white">
+            <div className="flex items-center gap-2 text-sm md:text-base text-white/80 mb-2">
+              <MapPin className="w-4 h-4 text-accent" />
+              <span>{hotel.location} · {hotel.type}</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif font-bold">{hotel.name}</h1>
+
+            {hasCruiseDetails && (
+              <div className="flex flex-wrap gap-6 mt-4 text-sm md:text-base text-white/90">
+                {hotel.route && (
+                  <div className="flex items-center gap-2">
+                    <RouteIcon className="w-4 h-4 text-accent" />
+                    <span>{hotel.route}</span>
                   </div>
                 )}
-
-                {/* Highlights */}
-                {highlights.length > 0 && (
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-serif font-bold text-primary mb-4 md:mb-8 text-center lg:text-left">Hotel Highlights</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                      {highlights.map((highlight, index) => (
-                        <div key={index} className="flex items-start space-x-3 md:space-x-4 group">
-                          <div className="w-8 h-8 md:w-10 md:h-10 bg-accent/10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-accent/20 transition-colors">
-                            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-accent" />
-                          </div>
-                          <span className="text-sm md:text-base text-muted-foreground leading-relaxed pt-1 md:pt-2">{highlight}</span>
-                        </div>
-                      ))}
-                    </div>
+                {hotel.duration && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-accent" />
+                    <span>{hotel.duration}</span>
                   </div>
                 )}
               </div>
-
-              {/* Sidebar - Amenities */}
-              {hotel.amenities && hotel.amenities.length > 0 && (
-                <div className="space-y-6">
-                  <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                    <CardContent className="p-4 md:p-8">
-                      <h3 className="text-xl md:text-2xl font-serif font-bold text-primary mb-4 md:mb-6">Amenities</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {hotel.amenities.map((amenity: string, index: number) => (
-                          <Badge
-                            key={index}
-                            variant="secondary"
-                            className="bg-accent/10 text-accent hover:bg-accent/20 border-0 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm"
-                          >
-                            {amenity}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </section>
 
-        {/* Photo Gallery */}
-        {gallery.length > 0 && (
-          <section className="py-10 md:py-20 bg-muted">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8 md:mb-12">
-                <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3 md:mb-6">Hotel Gallery</h2>
-                <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-              </div>
+        {/* Article — free-form rich text */}
+        {hotel.article && (
+          <section className="py-14 md:py-20">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div
+                className="prose prose-xl max-w-none prose-primary"
+                dangerouslySetInnerHTML={{ __html: hotel.article }}
+              />
+            </div>
+          </section>
+        )}
 
-              <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-                {gallery.map((image, index) => (
-                  <div key={index} className="relative group cursor-pointer overflow-hidden rounded-lg shadow-lg">
-                    <img
-                      src={image}
-                      alt={`${hotel.name} gallery image ${index + 1}`}
-                      className="w-full h-32 md:h-64 object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {/* Facilities & Amenities */}
+        {facilities.length > 0 && (
+          <section className="py-14 md:py-20 bg-muted/40">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-10 text-center">
+                Facilities &amp; Amenities
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+                {facilities.map((facility, index) => (
+                  <div key={`${facility.label}-${index}`} className="flex flex-col items-center text-center gap-3">
+                    <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center">
+                      {getFacilityIcon(facility.icon)}
+                    </div>
+                    <span className="text-sm font-medium text-primary">{facility.label}</span>
                   </div>
                 ))}
               </div>
@@ -214,132 +173,58 @@ export default function HotelDetail() {
           </section>
         )}
 
-        {/* Room Types Section */}
-        {rooms.length > 0 && (
-          <section id="rooms" className="py-10 md:py-20 bg-background">
+        {/* Gallery — horizontal scroll strip */}
+        {gallery.length > 0 && (
+          <section className="py-14 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-8 md:mb-16">
-                <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-3 md:mb-6">Rooms & Suites</h2>
-                <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-                <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-                  Choose from our selection of elegantly appointed rooms and suites, each designed to provide the ultimate in comfort and luxury.
-                </p>
-              </div>
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8">Gallery</h2>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-4 px-4 sm:px-6 lg:px-8 snap-x snap-mandatory">
+              {gallery.map((image, index) => (
+                <div
+                  key={index}
+                  className="relative shrink-0 w-[75vw] sm:w-[380px] h-64 sm:h-80 rounded-xl overflow-hidden shadow-lg snap-start"
+                >
+                  <img
+                    src={image}
+                    alt={`${hotel.name} — atmosphere photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
-              <div className="space-y-12">
-                {rooms.map((room, index) => (
-                  <Card key={room.id} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className={`grid grid-cols-1 lg:grid-cols-2 ${index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''}`}>
-                      {/* Room Images */}
-                      <div className={`relative ${index % 2 === 1 ? 'lg:col-start-2' : ''}`}>
-                        <div className={`grid ${room.images && room.images.length > 1 ? 'grid-cols-2' : 'grid-cols-1'} gap-2 h-full min-h-[300px]`}>
-                          {room.images && room.images.length > 0 ? (
-                            room.images.map((image, imgIndex) => (
-                              <img
-                                key={imgIndex}
-                                src={image}
-                                alt={`${room.name} image ${imgIndex + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            ))
-                          ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                              <span className="text-muted-foreground">No image</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Room Details */}
-                      <CardContent className={`p-8 flex flex-col justify-center ${index % 2 === 1 ? 'lg:col-start-1' : ''}`}>
-                        <div className="space-y-6">
-                          <div>
-                            <h3 className="text-2xl font-serif font-bold text-primary mb-3">{room.name}</h3>
-                            <p className="text-muted-foreground leading-relaxed">{room.description}</p>
-                          </div>
-
-                          {/* Room Specs */}
-                          <div className="grid grid-cols-2 gap-4 py-4 border-y border-accent/20">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                                <Bed className="w-4 h-4 text-accent" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-primary">Size</div>
-                                <div className="text-xs text-muted-foreground">{room.size}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center">
-                                <Users className="w-4 h-4 text-accent" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-primary">Occupancy</div>
-                                <div className="text-xs text-muted-foreground">{room.occupancy} guests</div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Room Amenities */}
-                          {room.amenities && room.amenities.length > 0 && (
-                            <div>
-                              <h4 className="text-lg font-semibold text-primary mb-3">Room Amenities</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {room.amenities.map((amenity, amenityIndex) => (
-                                  <Badge
-                                    key={amenityIndex}
-                                    variant="secondary"
-                                    className="bg-accent/10 text-accent hover:bg-accent/20 border-0 text-xs"
-                                  >
-                                    {amenity}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+        {/* Why We Chose This Hotel — full-width brand-color focal point */}
+        {hotel.whyWeChoseQuote && (
+          <section className="py-20 md:py-28 bg-primary">
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <Quote className="w-8 h-8 text-accent mx-auto mb-6" />
+              <p className="text-2xl md:text-4xl font-serif italic text-primary-foreground leading-relaxed">
+                {hotel.whyWeChoseQuote}
+              </p>
+              <div className="w-16 h-px bg-accent mx-auto my-8" />
+              <p className="text-sm tracking-[0.2em] uppercase text-primary-foreground/70">
+                — iLuxury Egypt Team
+              </p>
             </div>
           </section>
         )}
 
         {/* Call to Action */}
-        <section className="py-12 md:py-20 bg-primary">
-          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary-foreground mb-4 md:mb-6">
+        <section className="py-14 md:py-20 bg-muted/40">
+          <div className="max-w-3xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4">
               Discover More Luxury Accommodations
             </h2>
-            <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-            <p className="text-sm md:text-xl text-primary-foreground/90 mb-6 md:mb-10 leading-relaxed max-w-2xl mx-auto px-2">
-              Explore our curated selection of Egypt's finest hotels and resorts.
-              Each property offers unique experiences designed for discerning travelers.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-3 md:gap-4">
-              <Link href="/stay">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="px-6 md:px-8 py-3 md:py-4 text-sm md:text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 w-full sm:w-auto"
-                  data-testid="button-view-all-hotels"
-                >
-                  View All Hotels
-                </Button>
-              </Link>
-              <Link href="/destinations">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="px-6 md:px-8 py-3 md:py-4 text-sm md:text-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 w-full sm:w-auto"
-                  data-testid="button-explore-destinations"
-                >
-                  Explore Destinations
-                </Button>
-              </Link>
-            </div>
+            <div className="w-16 h-px bg-accent mx-auto mb-8" />
+            <Link href="/stay">
+              <Button size="lg" data-testid="button-view-all-hotels">
+                View All Hotels
+              </Button>
+            </Link>
           </div>
         </section>
       </main>
