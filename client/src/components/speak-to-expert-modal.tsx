@@ -10,20 +10,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MessageCircle, Loader2, Star } from "lucide-react";
 import { Link } from "wouter";
-import { cn } from "@/lib/utils";
+import TripTypeChips from "@/components/trip-type-chips";
+import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
 
 const BACKGROUND_IMAGE_URL = "https://iluxuryegypt.com/api/assets/uploads/ee366046-f7f3-4c54-a946-878414a60aa0.jpg";
 const WHATSAPP_NUMBER = "201121012676";
-
-const TRIP_TYPES = [
-  "Small Group Tours",
-  "Luxury Family",
-  "Luxury Solo",
-  "Spiritual Journeys",
-  "Luxury Honeymoon",
-  "Solar Eclipse",
-  "Tailor Made Tour",
-];
 
 interface SpeakToExpertModalProps {
   open: boolean;
@@ -34,6 +25,7 @@ const initialFormState = {
   title: "Mr",
   firstName: "",
   lastName: "",
+  countryIso: DEFAULT_COUNTRY_ISO,
   phone: "",
   email: "",
   tripType: "",
@@ -78,7 +70,7 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
         tourTitle: "General Inquiry - Speak to an Expert",
         fullName: `${form.title} ${form.firstName} ${form.lastName}`.trim(),
         email: form.email.trim(),
-        phone: form.phone.trim() ? `+20 ${form.phone.trim()}` : undefined,
+        phone: form.phone.trim() ? `${getDialCode(form.countryIso)} ${form.phone.trim()}` : undefined,
         specialRequests: [
           form.tripType ? `Trip type: ${form.tripType}` : null,
           form.message.trim() ? `Message: ${form.message.trim()}` : null,
@@ -179,10 +171,11 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
             <div className="space-y-1.5">
               <Label htmlFor="ste-phone">Phone Number</Label>
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-3 h-10 rounded-md border border-input bg-muted text-sm text-foreground shrink-0">
-                  <span aria-hidden="true">🇪🇬</span>
-                  +20
-                </span>
+                <CountryCodeSelect
+                  value={form.countryIso}
+                  onChange={(iso) => updateField("countryIso", iso)}
+                  testId="select-ste-country-code"
+                />
                 <Input
                   id="ste-phone"
                   type="tel"
@@ -208,27 +201,7 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
 
             <div className="space-y-2">
               <Label>What type of journey interests you?</Label>
-              <div className="flex flex-wrap gap-2">
-                {TRIP_TYPES.map((type) => {
-                  const isSelected = form.tripType === type;
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => updateField("tripType", isSelected ? "" : type)}
-                      className={cn(
-                        "px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200",
-                        isSelected
-                          ? "bg-accent text-accent-foreground border-accent shadow-sm"
-                          : "border-input bg-background text-muted-foreground hover:border-accent hover:text-accent"
-                      )}
-                      data-testid={`chip-trip-type-${type.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
+              <TripTypeChips value={form.tripType} onChange={(v) => updateField("tripType", v)} />
             </div>
 
             <div className="space-y-1.5">
