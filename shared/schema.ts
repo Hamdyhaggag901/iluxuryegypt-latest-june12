@@ -101,15 +101,19 @@ export const hotels = pgTable("hotels", {
   amenities: text("amenities").array().notNull(),
   image: text("image").notNull(),
   description: text("description").notNull(),
-  fullDescription: text("full_description"),
-  articleBody: text("article_body"),
-  highlights: text("highlights").array().notNull().default([]),
-  gallery: text("gallery").array().notNull().default([]),
-  rooms: jsonb("rooms").notNull().default([]),
-  hotelFaqs: jsonb("hotel_faqs").notNull().default([]),
-  metaTitle: text("meta_title"),
-  metaDescription: text("meta_description"),
-  featured: boolean("featured").notNull().default(false),
+  fullDescription: text("full_description"), // Extended description for about section
+  highlights: text("highlights").array().notNull().default([]), // Hotel highlights
+  gallery: text("gallery").array().notNull().default([]), // Gallery images
+  rooms: jsonb("rooms").notNull().default([]), // Deprecated: no longer rendered (kept to avoid destructive migration)
+  facilities: jsonb("facilities").notNull().default([]), // Array of {icon, label} facility items
+  article: text("article"), // Free-form rich-text long-form content
+  whyWeChoseQuote: text("why_we_chose_quote"), // Pull-quote for the "Why We Chose This Hotel" section
+  route: text("route"), // Nile cruise only, e.g. "Luxor → Aswan"
+  duration: text("duration"), // Nile cruise only, e.g. "4 nights / 5 days"
+  status: text("status").notNull().default("published"), // published | draft
+  sortOrder: integer("sort_order").notNull().default(0), // Manual grid ordering
+  focusKeyword: text("focus_keyword"), // Optional SEO focus keyword
+  featured: boolean("featured").notNull().default(false), // Deprecated: featured hotel is now chosen via stayListingSettings.featuredHotelId
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -131,6 +135,15 @@ export const destinations = pgTable("destinations", {
   region: text("region").notNull(),
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
+  seoTitle: text("seo_title"),
+  metaDescription: text("meta_description"),
+  focusKeyword: text("focus_keyword"),
+  schemaType: text("schema_type"),
+  ogImage: text("og_image"),
+  canonicalUrl: text("canonical_url"),
+  robots: text("robots"),
+  schemaMarkup: text("schema_markup"),
+  faqs: jsonb("faqs").notNull().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -430,6 +443,18 @@ export const stayCta = pgTable("stay_cta", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Stay listing (/stay) page settings — header, filters, and which hotel is featured
+export const stayListingSettings = pgTable("stay_listing_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eyebrow: text("eyebrow").notNull().default(""),
+  title: text("title").notNull().default(""),
+  description: text("description").notNull().default(""),
+  typeChips: text("type_chips").array().notNull().default([]),
+  cityChips: text("city_chips").array().notNull().default([]),
+  featuredHotelId: varchar("featured_hotel_id").references(() => hotels.id),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Tour Bookings/Submissions
 export const tourBookings = pgTable("tour_bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -493,7 +518,6 @@ export const insertSectionSchema = createInsertSchema(sections).omit({
   id: true,
   createdAt: true,
 });
-
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
@@ -516,16 +540,23 @@ export const roomSchema = z.object({
   images: z.array(z.string()).default([]),
 });
 
+export const facilitySchema = z.object({
+  icon: z.string().min(1, "Icon is required"),
+  label: z.string().min(1, "Label is required"),
+});
+
 export const attractionSchema = z.object({
   id: z.string(),
   name: z.string().min(1, "Attraction name is required"),
   description: z.string().min(1, "Attraction description is required"),
   image: z.string().min(1, "Attraction image is required"),
+  imageAlt: z.string().optional().default(""),
 });
 
-export const faqItemSchema = z.object({
-  question: z.string().min(1),
-  answer: z.string().min(1),
+export const faqSchema = z.object({
+  id: z.string(),
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
 });
 
 export const insertHotelSchema = createInsertSchema(hotels).omit({
@@ -539,17 +570,21 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   type: z.string().min(1, "Hotel type is required"),
   rating: z.number().min(1).max(5, "Rating must be between 1 and 5"),
   priceTier: z.string().min(1, "Price tier is required"),
-  amenities: z.array(z.string()).min(1, "At least one amenity is required"),
+  amenities: z.array(z.string()).default([]), // Deprecated: superseded by `facilities`, no longer collected in the admin form
   image: z.string().min(1, "Hero image is required"),
   description: z.string().min(1, "Description is required"),
-  fullDescription: z.string().optional(),
-  articleBody: z.string().optional(),
+  fullDescription: z.string().optional(), // Deprecated: superseded by `article`
   highlights: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
   rooms: z.array(roomSchema).default([]),
-  hotelFaqs: z.array(faqItemSchema).default([]),
-  metaTitle: z.string().optional(),
-  metaDescription: z.string().optional(),
+  facilities: z.array(facilitySchema).default([]),
+  article: z.string().optional(),
+  whyWeChoseQuote: z.string().optional(),
+  route: z.string().optional(),
+  duration: z.string().optional(),
+  status: z.enum(["published", "draft"]).default("published"),
+  sortOrder: z.number().default(0),
+  focusKeyword: z.string().optional(),
   featured: z.boolean().default(false),
 });
 
@@ -568,6 +603,10 @@ export const insertDestinationSchema = createInsertSchema(destinations).omit({
   attractions: z.array(attractionSchema).default([]),
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
+  seoTitle: z.string().max(60, "SEO title must be 60 characters or less").optional().nullable(),
+  metaDescription: z.string().max(160, "Meta description must be 160 characters or less").optional().nullable(),
+  schemaMarkup: z.string().optional().nullable(),
+  faqs: z.array(faqSchema).default([]),
 });
 
 export const insertTourSchema = createInsertSchema(tours).omit({
@@ -872,6 +911,18 @@ export const insertStayCtaSchema = createInsertSchema(stayCta).omit({
   secondaryButtonLink: z.string().optional(),
 });
 
+export const insertStayListingSettingsSchema = createInsertSchema(stayListingSettings).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  eyebrow: z.string().default(""),
+  title: z.string().default(""),
+  description: z.string().default(""),
+  typeChips: z.array(z.string()).default([]),
+  cityChips: z.array(z.string()).default([]),
+  featuredHotelId: z.string().optional(),
+});
+
 // Login Schema
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -965,6 +1016,7 @@ export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;
 export type SiteInfoRequest = z.infer<typeof siteInfoSchema>;
 export type EmailSettingsRequest = z.infer<typeof emailSettingsSchema>;
 export type Room = z.infer<typeof roomSchema>;
+export type Facility = z.infer<typeof facilitySchema>;
 export type Attraction = z.infer<typeof attractionSchema>;
 export type InsertStayPageHero = z.infer<typeof insertStayPageHeroSchema>;
 export type StayPageHero = typeof stayPageHero.$inferSelect;
@@ -976,3 +1028,5 @@ export type InsertStayNileSection = z.infer<typeof insertStayNileSectionSchema>;
 export type StayNileSection = typeof stayNileSection.$inferSelect;
 export type InsertStayCta = z.infer<typeof insertStayCtaSchema>;
 export type StayCta = typeof stayCta.$inferSelect;
+export type InsertStayListingSettings = z.infer<typeof insertStayListingSettingsSchema>;
+export type StayListingSettings = typeof stayListingSettings.$inferSelect;
