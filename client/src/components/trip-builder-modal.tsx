@@ -43,6 +43,7 @@ const initialFormState = {
   additionalDetails: "",
   budget: "",
   budgetFlexibility: "",
+  title: "Mr",
   firstName: "",
   lastName: "",
   countryIso: DEFAULT_COUNTRY_ISO,
@@ -117,11 +118,40 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
     onOpenChange(false);
   };
 
+  const validateStep = (currentStep: number): string | null => {
+    if (currentStep === 1) {
+      if (form.destinations.length === 0) {
+        return "Please choose at least one destination to continue.";
+      }
+      if (!form.isFlexibleDates && !form.travelDate) {
+        return "Please select a travel date, or check that you're flexible on dates.";
+      }
+      if (!form.nights) {
+        return "Please select the number of nights.";
+      }
+    }
+    if (currentStep === 2) {
+      if (!form.tripType) {
+        return "Please select the type of journey that interests you.";
+      }
+    }
+    if (currentStep === 3) {
+      if (!form.budget) {
+        return "Please select a budget range.";
+      }
+      if (!form.budgetFlexibility) {
+        return "Please let us know how flexible your budget is.";
+      }
+    }
+    return null;
+  };
+
   const handleNext = () => {
-    if (step === 1 && form.destinations.length === 0) {
+    const error = validateStep(step);
+    if (error) {
       toast({
-        title: "Select a destination",
-        description: "Please choose at least one destination to continue.",
+        title: "Missing information",
+        description: error,
         variant: "destructive",
       });
       return;
@@ -134,10 +164,10 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
   };
 
   const handleFinish = async () => {
-    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim() || !form.phone.trim()) {
       toast({
         title: "Missing information",
-        description: "Please fill in your name and email address.",
+        description: "Please fill in your name, phone number, and email address.",
         variant: "destructive",
       });
       return;
@@ -156,7 +186,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
     try {
       await apiRequest("POST", "/api/tour-bookings", {
         tourTitle: form.destinations.length ? `Trip Builder: ${form.destinations.join(", ")}` : "Trip Builder Request",
-        fullName: `${form.firstName} ${form.lastName}`.trim(),
+        fullName: `${form.title} ${form.firstName} ${form.lastName}`.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() ? `${getDialCode(form.countryIso)} ${form.phone.trim()}` : undefined,
         preferredDates: form.isFlexibleDates
@@ -371,159 +401,3 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
                         {BUDGET_OPTIONS.map((option) => (
                           <SelectItem key={option} value={option}>
                             {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>How flexible is your budget?</Label>
-                    <RadioGroup
-                      value={form.budgetFlexibility}
-                      onValueChange={(v) => updateField("budgetFlexibility", v)}
-                      className="space-y-3"
-                    >
-                      {BUDGET_FLEXIBILITY_OPTIONS.map((option) => (
-                        <div key={option} className="flex items-center gap-2">
-                          <RadioGroupItem
-                            value={option}
-                            id={`tb-budget-flex-${option}`}
-                            data-testid={`radio-budget-${option.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                          />
-                          <Label htmlFor={`tb-budget-flex-${option}`} className="font-normal cursor-pointer">
-                            {option}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                </div>
-
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/1d4ffc47-d263-41ee-a7a4-f0be83ef9d53.webp"
-                  alt="Luxury travel detail"
-                  className="order-1 md:order-2 w-full aspect-square md:aspect-auto md:h-56 rounded-xl object-cover"
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="p-8 lg:p-12 space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp"
-                  alt="Egypt travel highlight 1"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/ad97288a-ef4c-4074-8b88-57d03c441bbc.webp"
-                  alt="Egypt travel highlight 2"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-                <img
-                  src="https://iluxuryegypt.com/api/assets/uploads/22804d05-02fc-4e28-ae32-25c5e07d64b7.avif"
-                  alt="Egypt travel highlight 3"
-                  className="aspect-square rounded-lg object-cover w-full"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="tb-first-name">First Name</Label>
-                  <Input
-                    id="tb-first-name"
-                    required
-                    value={form.firstName}
-                    onChange={(e) => updateField("firstName", e.target.value)}
-                    data-testid="input-tb-first-name"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="tb-last-name">Last Name</Label>
-                  <Input
-                    id="tb-last-name"
-                    required
-                    value={form.lastName}
-                    onChange={(e) => updateField("lastName", e.target.value)}
-                    data-testid="input-tb-last-name"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tb-phone">Phone Number</Label>
-                <div className="flex items-center gap-2">
-                  <CountryCodeSelect
-                    value={form.countryIso}
-                    onChange={(iso) => updateField("countryIso", iso)}
-                    testId="select-tb-country-code"
-                  />
-                  <Input
-                    id="tb-phone"
-                    type="tel"
-                    placeholder="1XX XXX XXXX"
-                    value={form.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
-                    data-testid="input-tb-phone"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tb-email">Email Address</Label>
-                <Input
-                  id="tb-email"
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  data-testid="input-tb-email"
-                />
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Checkbox
-                  id="tb-privacy"
-                  checked={form.acceptPrivacy}
-                  onCheckedChange={(checked) => updateField("acceptPrivacy", checked === true)}
-                  data-testid="checkbox-tb-privacy"
-                />
-                <Label htmlFor="tb-privacy" className="font-normal cursor-pointer leading-snug">
-                  I accept the{" "}
-                  <Link href="/privacy-policy" className="underline hover:text-accent">
-                    Privacy Policy
-                  </Link>
-                </Label>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer navigation */}
-        <div className="px-8 lg:px-12 py-6 border-t border-border shrink-0 flex items-center justify-between">
-          <Button type="button" variant="outline" onClick={handleBack} disabled={step === 1} data-testid="button-tb-back">
-            Back
-          </Button>
-          {step < 4 ? (
-            <Button type="button" onClick={handleNext} data-testid="button-tb-next">
-              Next
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              onClick={handleFinish}
-              disabled={isSubmitting}
-              className="font-semibold tracking-wide uppercase bg-accent hover:bg-accent/90 text-accent-foreground"
-              data-testid="button-tb-finish"
-            >
-              {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              Finish
-            </Button>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
