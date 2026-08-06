@@ -263,7 +263,7 @@ export default function Navigation() {
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
               onClick={() => setIsTripBuilderOpen(true)}
-              className="bg-[#101010] hover:bg-[#101010]/90 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
               data-testid="button-nav-start-planning"
             >
               Design My Egypt Story
