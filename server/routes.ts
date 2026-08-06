@@ -27,6 +27,7 @@ import {
   insertGuestExperienceSectionSchema,
   insertWhyChooseSectionSchema,
   insertWhyChooseCardSchema,
+  insertStayListingSettingsSchema,
   loginSchema
 } from "@shared/schema";
 import multer from "multer";
@@ -697,8 +698,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, post });
     } catch (error) {
       console.error('Error fetching post:', error);
-      res.status(500).json({ message: 'Error fetching post' });
-          }
+            res.status(500).json({ message: 'Error fetching post' });
+    }
   });
 
   // Update post
@@ -859,6 +860,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting hotel:', error);
       res.status(500).json({ message: 'Error deleting hotel' });
+    }
+  });
+
+  // Reorder hotels for the /stay grid (admin/editor access)
+  app.post("/api/cms/hotels/reorder", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const orderedIds = z.array(z.string()).parse(req.body.orderedIds);
+      await storage.reorderHotels(orderedIds);
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input data', errors: error.errors });
+      }
+      console.error('Error reordering hotels:', error);
+      res.status(500).json({ message: 'Error reordering hotels' });
     }
   });
 
@@ -1382,7 +1398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error updating destination:', error);
       res.status(500).json({ message: 'Error updating destination' });
     }
-  });
+      });
 
   // Delete destination (admin/editor access)
   app.delete("/api/cms/destinations/:id", requireAuth, requireEditor, async (req, res) => {
@@ -1398,7 +1414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error deleting destination' });
     }
   });
-  
+
   // Dashboard stats endpoint
   app.get("/api/cms/stats", requireAuth, requireEditor, async (req, res) => {
     try {
@@ -2098,7 +2114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update navigation item
   app.put("/api/cms/nav-items/:id", requireAuth, requireEditor, async (req, res) => {
-        try {
+    try {
       const data = insertNavItemSchema.partial().parse(req.body);
       const item = await storage.updateNavItem(req.params.id, data);
       if (!item) {
@@ -2782,7 +2798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error fetching guest experience section:', error);
       res.status(500).json({ message: 'Error fetching guest experience section' });
     }
-  });
+      });
 
   // CMS: Update/Create guest experience section
   app.post("/api/cms/guest-experience-section", requireAuth, requireEditor, async (req, res) => {
@@ -2798,7 +2814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error updating guest experience section' });
     }
   });
-  
+
   // ==================== WHY CHOOSE SECTION ROUTES ====================
 
   // Public: Get why choose section and cards
@@ -3014,13 +3030,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const luxuryFeatures = await storage.getStayLuxuryFeatures();
       const nileSection = await storage.getStayNileSection();
       const cta = await storage.getStayCta();
+      const listingSettings = await storage.getStayListingSettings();
+      const featuredHotel = listingSettings?.featuredHotelId
+        ? await storage.getHotel(listingSettings.featuredHotelId)
+        : undefined;
 
       res.json({
         hero,
         accommodationTypes: accommodationTypes.filter(t => t.isActive),
         luxuryFeatures: luxuryFeatures.filter(f => f.isActive),
         nileSection,
-        cta
+        cta,
+        listingSettings,
+        featuredHotel
       });
     } catch (error) {
       console.error('Error fetching stay page content:', error);
@@ -3191,6 +3213,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating CTA:', error);
       res.status(500).json({ message: 'Error updating CTA' });
+    }
+  });
+
+  // CMS: Get stay listing page settings (header, filters, featured hotel)
+  app.get("/api/cms/stay-page/listing-settings", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const settings = await storage.getStayListingSettings();
+      res.json({ settings });
+    } catch (error) {
+      console.error('Error fetching stay listing settings:', error);
+      res.status(500).json({ message: 'Error fetching stay listing settings' });
+    }
+  });
+
+  // CMS: Update stay listing page settings
+  app.post("/api/cms/stay-page/listing-settings", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertStayListingSettingsSchema.parse(req.body);
+      const settings = await storage.upsertStayListingSettings(data);
+      res.json({ settings });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input data', errors: error.errors });
+      }
+      console.error('Error updating stay listing settings:', error);
+      res.status(500).json({ message: 'Error updating stay listing settings' });
     }
   });
 
