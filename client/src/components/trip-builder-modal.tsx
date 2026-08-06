@@ -67,7 +67,7 @@ function ProgressBar({ currentStep }: { currentStep: number }) {
                 className={cn(
                   "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold border-2 transition-colors shrink-0",
                   isCompleted || isCurrent
-                    ? "bg-[#101010] border-[#101010] text-white"
+                    ? "bg-primary border-primary text-primary-foreground"
                     : "bg-background border-border text-muted-foreground"
                 )}
               >
@@ -515,7 +515,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
               type="button"
               onClick={handleFinish}
               disabled={isSubmitting}
-              className="font-semibold tracking-wide uppercase bg-[#101010] hover:bg-[#101010]/90 text-white"
+              className="font-semibold tracking-wide uppercase bg-accent hover:bg-accent/90 text-accent-foreground"
               data-testid="button-tb-finish"
             >
               {isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
