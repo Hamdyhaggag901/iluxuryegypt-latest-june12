@@ -266,7 +266,7 @@ export default function Navigation() {
               className="bg-[#101010] hover:bg-[#101010]/90 text-white text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
               data-testid="button-nav-start-planning"
             >
-              Start Planning
+              Design My Egypt Story
             </Button>
 
             <div className="lg:hidden">
