@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AdminLayout from "@/components/admin-layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Pencil, Trash2, GripVertical, Star, Waves, Sparkles, Shield, Utensils, Car, Wifi, Image } from "lucide-react";
+import { Loader2, Plus, X, Pencil, Trash2, Star, Waves, Sparkles, Shield, Utensils, Car, Wifi, ArrowRight } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const iconOptions = [
@@ -37,49 +39,29 @@ export default function AdminStayPage() {
   const queryClient = useQueryClient();
 
   // Dialog states
-  const [accommodationDialog, setAccommodationDialog] = useState(false);
   const [featureDialog, setFeatureDialog] = useState(false);
-  const [editingAccommodation, setEditingAccommodation] = useState<any>(null);
   const [editingFeature, setEditingFeature] = useState<any>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: string; id: string } | null>(null);
 
-  // Form states for hero
-  const [heroForm, setHeroForm] = useState({
-    title: "",
-    subtitle: "",
-    backgroundImage: "",
-    primaryButtonText: "",
-    primaryButtonLink: "",
-    secondaryButtonText: "",
-    secondaryButtonLink: "",
-  });
-
-  // Form states for accommodation types
-  const [accommodationForm, setAccommodationForm] = useState({
-    icon: "star",
+  // Form state for listing settings (header, chips, featured hotel)
+  const [listingForm, setListingForm] = useState({
+    eyebrow: "",
     title: "",
     description: "",
-    count: "",
-    sortOrder: 0,
-    isActive: true,
+    typeChips: [] as string[],
+    cityChips: [] as string[],
+    featuredHotelId: "",
   });
+  const [typeChipInput, setTypeChipInput] = useState("");
+  const [cityChipInput, setCityChipInput] = useState("");
 
-  // Form states for luxury features
+  // Form states for luxury features (rendered on /stay as "Why Book Through Us")
   const [featureForm, setFeatureForm] = useState({
     icon: "star",
     title: "",
     description: "",
     sortOrder: 0,
     isActive: true,
-  });
-
-  // Form states for nile section
-  const [nileForm, setNileForm] = useState({
-    title: "",
-    paragraphs: ["", "", ""],
-    buttonText: "",
-    buttonLink: "",
-    images: ["", "", "", ""],
   });
 
   // Form states for CTA
@@ -92,53 +74,36 @@ export default function AdminStayPage() {
     secondaryButtonLink: "",
   });
 
-  // Fetch hero
-  const { data: heroData, isLoading: heroLoading } = useQuery({
-    queryKey: ["/api/cms/stay-page/hero"],
+  // Fetch listing settings
+  const { data: listingSettingsData, isLoading: listingLoading } = useQuery({
+    queryKey: ["/api/cms/stay-page/listing-settings"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/cms/stay-page/hero");
-      if (res.hero) {
-        setHeroForm({
-          title: res.hero.title || "",
-          subtitle: res.hero.subtitle || "",
-          backgroundImage: res.hero.backgroundImage || "",
-          primaryButtonText: res.hero.primaryButtonText || "",
-          primaryButtonLink: res.hero.primaryButtonLink || "",
-          secondaryButtonText: res.hero.secondaryButtonText || "",
-          secondaryButtonLink: res.hero.secondaryButtonLink || "",
+      const res = await apiRequest("GET", "/api/cms/stay-page/listing-settings");
+      if (res.settings) {
+        setListingForm({
+          eyebrow: res.settings.eyebrow || "",
+          title: res.settings.title || "",
+          description: res.settings.description || "",
+          typeChips: res.settings.typeChips || [],
+          cityChips: res.settings.cityChips || [],
+          featuredHotelId: res.settings.featuredHotelId || "",
         });
       }
       return res;
     },
   });
 
-  // Fetch accommodation types
-  const { data: accommodationData, isLoading: accommodationLoading } = useQuery({
-    queryKey: ["/api/cms/stay-page/accommodation-types"],
+  // Fetch hotels (for the Featured Stay selector)
+  const { data: hotelsData, isLoading: hotelsLoading } = useQuery({
+    queryKey: ["/api/cms/hotels"],
   });
+  const hotels = (hotelsData as any)?.hotels || [];
 
   // Fetch luxury features
-  const { data: featuresData, isLoading: featuresLoading } = useQuery({
+  const { data: featuresDataRaw, isLoading: featuresLoading } = useQuery({
     queryKey: ["/api/cms/stay-page/luxury-features"],
   });
-
-  // Fetch nile section
-  const { data: nileData, isLoading: nileLoading } = useQuery({
-    queryKey: ["/api/cms/stay-page/nile-section"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/cms/stay-page/nile-section");
-      if (res.section) {
-        setNileForm({
-          title: res.section.title || "",
-          paragraphs: res.section.paragraphs?.length > 0 ? res.section.paragraphs : ["", "", ""],
-          buttonText: res.section.buttonText || "",
-          buttonLink: res.section.buttonLink || "",
-          images: res.section.images?.length > 0 ? res.section.images : ["", "", "", ""],
-        });
-      }
-      return res;
-    },
-  });
+  const featuresData = featuresDataRaw as { features?: any[] } | undefined;
 
   // Fetch CTA
   const { data: ctaData, isLoading: ctaLoading } = useQuery({
@@ -160,61 +125,17 @@ export default function AdminStayPage() {
   });
 
   // Mutations
-  const saveHeroMutation = useMutation({
-    mutationFn: async (data: typeof heroForm) => {
-      return await apiRequest("POST", "/api/cms/stay-page/hero", data);
+  const saveListingSettingsMutation = useMutation({
+    mutationFn: async (data: typeof listingForm) => {
+      return await apiRequest("POST", "/api/cms/stay-page/listing-settings", data);
     },
     onSuccess: () => {
-      toast({ title: "Hero section saved successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/hero"] });
+      toast({ title: "Stay listing settings saved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/listing-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/public/stay-page"] });
     },
     onError: () => {
-      toast({ title: "Error saving hero section", variant: "destructive" });
-    },
-  });
-
-  const createAccommodationMutation = useMutation({
-    mutationFn: async (data: typeof accommodationForm) => {
-      return await apiRequest("POST", "/api/cms/stay-page/accommodation-types", data);
-    },
-    onSuccess: () => {
-      toast({ title: "Accommodation type created" });
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/accommodation-types"] });
-      setAccommodationDialog(false);
-      resetAccommodationForm();
-    },
-    onError: () => {
-      toast({ title: "Error creating accommodation type", variant: "destructive" });
-    },
-  });
-
-  const updateAccommodationMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof accommodationForm }) => {
-      return await apiRequest("PUT", `/api/cms/stay-page/accommodation-types/${id}`, data);
-    },
-    onSuccess: () => {
-      toast({ title: "Accommodation type updated" });
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/accommodation-types"] });
-      setAccommodationDialog(false);
-      setEditingAccommodation(null);
-      resetAccommodationForm();
-    },
-    onError: () => {
-      toast({ title: "Error updating accommodation type", variant: "destructive" });
-    },
-  });
-
-  const deleteAccommodationMutation = useMutation({
-    mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/cms/stay-page/accommodation-types/${id}`);
-    },
-    onSuccess: () => {
-      toast({ title: "Accommodation type deleted" });
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/accommodation-types"] });
-      setDeleteConfirm(null);
-    },
-    onError: () => {
-      toast({ title: "Error deleting accommodation type", variant: "destructive" });
+      toast({ title: "Error saving listing settings", variant: "destructive" });
     },
   });
 
@@ -223,13 +144,13 @@ export default function AdminStayPage() {
       return await apiRequest("POST", "/api/cms/stay-page/luxury-features", data);
     },
     onSuccess: () => {
-      toast({ title: "Luxury feature created" });
+      toast({ title: "Point created" });
       queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/luxury-features"] });
       setFeatureDialog(false);
       resetFeatureForm();
     },
     onError: () => {
-      toast({ title: "Error creating luxury feature", variant: "destructive" });
+      toast({ title: "Error creating point", variant: "destructive" });
     },
   });
 
@@ -238,14 +159,14 @@ export default function AdminStayPage() {
       return await apiRequest("PUT", `/api/cms/stay-page/luxury-features/${id}`, data);
     },
     onSuccess: () => {
-      toast({ title: "Luxury feature updated" });
+      toast({ title: "Point updated" });
       queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/luxury-features"] });
       setFeatureDialog(false);
       setEditingFeature(null);
       resetFeatureForm();
     },
     onError: () => {
-      toast({ title: "Error updating luxury feature", variant: "destructive" });
+      toast({ title: "Error updating point", variant: "destructive" });
     },
   });
 
@@ -254,25 +175,12 @@ export default function AdminStayPage() {
       return await apiRequest("DELETE", `/api/cms/stay-page/luxury-features/${id}`);
     },
     onSuccess: () => {
-      toast({ title: "Luxury feature deleted" });
+      toast({ title: "Point deleted" });
       queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/luxury-features"] });
       setDeleteConfirm(null);
     },
     onError: () => {
-      toast({ title: "Error deleting luxury feature", variant: "destructive" });
-    },
-  });
-
-  const saveNileMutation = useMutation({
-    mutationFn: async (data: typeof nileForm) => {
-      return await apiRequest("POST", "/api/cms/stay-page/nile-section", data);
-    },
-    onSuccess: () => {
-      toast({ title: "Nile section saved successfully" });
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/stay-page/nile-section"] });
-    },
-    onError: () => {
-      toast({ title: "Error saving nile section", variant: "destructive" });
+      toast({ title: "Error deleting point", variant: "destructive" });
     },
   });
 
@@ -289,17 +197,6 @@ export default function AdminStayPage() {
     },
   });
 
-  const resetAccommodationForm = () => {
-    setAccommodationForm({
-      icon: "star",
-      title: "",
-      description: "",
-      count: "",
-      sortOrder: 0,
-      isActive: true,
-    });
-  };
-
   const resetFeatureForm = () => {
     setFeatureForm({
       icon: "star",
@@ -308,19 +205,6 @@ export default function AdminStayPage() {
       sortOrder: 0,
       isActive: true,
     });
-  };
-
-  const openEditAccommodation = (item: any) => {
-    setEditingAccommodation(item);
-    setAccommodationForm({
-      icon: item.icon || "star",
-      title: item.title || "",
-      description: item.description || "",
-      count: item.count || "",
-      sortOrder: item.sortOrder || 0,
-      isActive: item.isActive ?? true,
-    });
-    setAccommodationDialog(true);
   };
 
   const openEditFeature = (item: any) => {
@@ -335,14 +219,6 @@ export default function AdminStayPage() {
     setFeatureDialog(true);
   };
 
-  const handleSaveAccommodation = () => {
-    if (editingAccommodation) {
-      updateAccommodationMutation.mutate({ id: editingAccommodation.id, data: accommodationForm });
-    } else {
-      createAccommodationMutation.mutate(accommodationForm);
-    }
-  };
-
   const handleSaveFeature = () => {
     if (editingFeature) {
       updateFeatureMutation.mutate({ id: editingFeature.id, data: featureForm });
@@ -353,163 +229,193 @@ export default function AdminStayPage() {
 
   const handleDelete = () => {
     if (!deleteConfirm) return;
-    if (deleteConfirm.type === "accommodation") {
-      deleteAccommodationMutation.mutate(deleteConfirm.id);
-    } else if (deleteConfirm.type === "feature") {
+    if (deleteConfirm.type === "feature") {
       deleteFeatureMutation.mutate(deleteConfirm.id);
     }
   };
 
-  const isLoading = heroLoading || accommodationLoading || featuresLoading || nileLoading || ctaLoading;
+  const addTypeChip = () => {
+    if (!typeChipInput.trim()) return;
+    setListingForm({ ...listingForm, typeChips: [...listingForm.typeChips, typeChipInput.trim()] });
+    setTypeChipInput("");
+  };
+
+  const removeTypeChip = (index: number) => {
+    setListingForm({ ...listingForm, typeChips: listingForm.typeChips.filter((_, i) => i !== index) });
+  };
+
+  const addCityChip = () => {
+    if (!cityChipInput.trim()) return;
+    setListingForm({ ...listingForm, cityChips: [...listingForm.cityChips, cityChipInput.trim()] });
+    setCityChipInput("");
+  };
+
+  const removeCityChip = (index: number) => {
+    setListingForm({ ...listingForm, cityChips: listingForm.cityChips.filter((_, i) => i !== index) });
+  };
+
+  const isLoading = listingLoading || hotelsLoading || featuresLoading || ctaLoading;
 
   if (isLoading) {
     return (
-      <AdminLayout>
+      <AdminLayout title="Stay Page" description="Edit the /stay listing page">
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </AdminLayout>
     );
   }
-
-  return (
-    <AdminLayout>
+    return (
+    <AdminLayout title="Stay Page" description="Edit the /stay listing page">
       <div className="space-y-8 pb-10">
         <div>
           <h1 className="text-3xl font-bold">Stay Page Editor</h1>
           <p className="text-muted-foreground mt-1">
-            Edit the content sections of the Stay page
+            Edit the /stay listing page — header, filters, featured stay, and the closing CTA
           </p>
         </div>
 
-        {/* Hero Section */}
+        {/* Stay Listing Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Hero Section</CardTitle>
-            <CardDescription>The main banner at the top of the page</CardDescription>
+            <CardTitle>Header &amp; Filters</CardTitle>
+            <CardDescription>The intro text at the top of /stay and the filter chips visitors can use</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Title</Label>
+                <Label>Eyebrow</Label>
                 <Input
-                  value={heroForm.title}
-                  onChange={(e) => setHeroForm({ ...heroForm, title: e.target.value })}
-                  placeholder="Luxury Accommodations"
+                  value={listingForm.eyebrow}
+                  onChange={(e) => setListingForm({ ...listingForm, eyebrow: e.target.value })}
+                  placeholder="The Collection"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Background Image URL</Label>
+                <Label>Title (H1)</Label>
                 <Input
-                  value={heroForm.backgroundImage}
-                  onChange={(e) => setHeroForm({ ...heroForm, backgroundImage: e.target.value })}
-                  placeholder="https://..."
+                  value={listingForm.title}
+                  onChange={(e) => setListingForm({ ...listingForm, title: e.target.value })}
+                  placeholder="Where You'll Stay in Egypt"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Subtitle</Label>
+              <Label>Description</Label>
               <Textarea
-                value={heroForm.subtitle}
-                onChange={(e) => setHeroForm({ ...heroForm, subtitle: e.target.value })}
-                placeholder="From historic palaces to modern resorts..."
+                value={listingForm.description}
+                onChange={(e) => setListingForm({ ...listingForm, description: e.target.value })}
+                placeholder="A handpicked portfolio of Egypt's finest hotels..."
                 rows={2}
               />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Primary Button Text</Label>
+
+            <div className="space-y-2">
+              <Label>Type Chips</Label>
+              <p className="text-xs text-muted-foreground">
+                Should match the hotel "Type" values used in the Hotels form (e.g. Nile-view, Historic palace, Desert resort, Nile cruise)
+              </p>
+              <div className="flex gap-2">
                 <Input
-                  value={heroForm.primaryButtonText}
-                  onChange={(e) => setHeroForm({ ...heroForm, primaryButtonText: e.target.value })}
-                  placeholder="Book Your Stay"
+                  value={typeChipInput}
+                  onChange={(e) => setTypeChipInput(e.target.value)}
+                  placeholder="e.g., Nile-view"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTypeChip(); } }}
+                  data-testid="input-type-chip"
                 />
+                <Button type="button" onClick={addTypeChip} data-testid="button-add-type-chip">
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Primary Button Link</Label>
-                <Input
-                  value={heroForm.primaryButtonLink}
-                  onChange={(e) => setHeroForm({ ...heroForm, primaryButtonLink: e.target.value })}
-                  placeholder="/contact"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Secondary Button Text</Label>
-                <Input
-                  value={heroForm.secondaryButtonText}
-                  onChange={(e) => setHeroForm({ ...heroForm, secondaryButtonText: e.target.value })}
-                  placeholder="Explore Destinations"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Secondary Button Link</Label>
-                <Input
-                  value={heroForm.secondaryButtonLink}
-                  onChange={(e) => setHeroForm({ ...heroForm, secondaryButtonLink: e.target.value })}
-                  placeholder="/destinations"
-                />
+              <div className="flex flex-wrap gap-2">
+                {listingForm.typeChips.map((chip, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {chip}
+                    <button type="button" onClick={() => removeTypeChip(index)} data-testid={`button-remove-type-chip-${index}`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
             </div>
-            <Button onClick={() => saveHeroMutation.mutate(heroForm)} disabled={saveHeroMutation.isPending}>
-              {saveHeroMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Hero Section
+
+            <div className="space-y-2">
+              <Label>City Chips</Label>
+              <p className="text-xs text-muted-foreground">Should match hotel "City / Region" values (e.g. Cairo & Giza, Luxor, Aswan, Red Sea)</p>
+              <div className="flex gap-2">
+                <Input
+                  value={cityChipInput}
+                  onChange={(e) => setCityChipInput(e.target.value)}
+                  placeholder="e.g., Cairo"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCityChip(); } }}
+                  data-testid="input-city-chip"
+                />
+                <Button type="button" onClick={addCityChip} data-testid="button-add-city-chip">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {listingForm.cityChips.map((chip, index) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {chip}
+                    <button type="button" onClick={() => removeCityChip(index)} data-testid={`button-remove-city-chip-${index}`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Featured Stay</Label>
+              <p className="text-xs text-muted-foreground">The one property shown in the large spotlight card at the top of the grid</p>
+              <Select
+                value={listingForm.featuredHotelId || "none"}
+                onValueChange={(v) => setListingForm({ ...listingForm, featuredHotelId: v === "none" ? "" : v })}
+              >
+                <SelectTrigger data-testid="select-featured-hotel">
+                  <SelectValue placeholder="No featured stay" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {hotels.map((hotel: any) => (
+                    <SelectItem key={hotel.id} value={hotel.id}>{hotel.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t">
+              <p className="text-sm text-muted-foreground">
+                Grid order and adding/removing hotels is managed on the Hotels page.
+              </p>
+              <Link href="/admin/hotels">
+                <Button variant="outline" size="sm" data-testid="link-manage-hotels">
+                  Manage Hotels <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+
+            <Button
+              onClick={() => saveListingSettingsMutation.mutate(listingForm)}
+              disabled={saveListingSettingsMutation.isPending}
+              data-testid="button-save-listing-settings"
+            >
+              {saveListingSettingsMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Header &amp; Filters
             </Button>
           </CardContent>
         </Card>
 
-        {/* Accommodation Types */}
+        {/* Why Book Through Us */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Accommodation Types</CardTitle>
-              <CardDescription>The 4 cards showing accommodation categories</CardDescription>
+              <CardTitle>Why Book Through Us</CardTitle>
+              <CardDescription>The 3 trust points shown once on /stay (e.g. Concierge Service, Exclusive Access, Personally Vetted)</CardDescription>
             </div>
-            <Button onClick={() => { resetAccommodationForm(); setEditingAccommodation(null); setAccommodationDialog(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Add Type
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {accommodationData?.types?.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-                      {getIconComponent(item.icon)}
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">{item.count}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded ${item.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                      {item.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                    <Button variant="ghost" size="icon" onClick={() => openEditAccommodation(item)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm({ type: "accommodation", id: item.id })}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {(!accommodationData?.types || accommodationData.types.length === 0) && (
-                <p className="text-center text-muted-foreground py-8">No accommodation types yet. Add one to get started.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Luxury Features */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Luxury Features & Services</CardTitle>
-              <CardDescription>Features displayed in the luxury services section</CardDescription>
-            </div>
-            <Button onClick={() => { resetFeatureForm(); setEditingFeature(null); setFeatureDialog(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Add Feature
+            <Button onClick={() => { resetFeatureForm(); setEditingFeature(null); setFeatureDialog(true); }} data-testid="button-add-why-book-point">
+              <Plus className="h-4 w-4 mr-2" /> Add Point
             </Button>
           </CardHeader>
           <CardContent>
@@ -520,105 +426,30 @@ export default function AdminStayPage() {
                     <div className="w-8 h-8 bg-accent/10 rounded-full flex items-center justify-center text-accent">
                       {getIconComponent(item.icon)}
                     </div>
-                    <div>
-                      <p className="font-medium text-sm">{item.title}</p>
-                    </div>
+                    <p className="font-medium text-sm">{item.title}</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEditFeature(item)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEditFeature(item)} data-testid={`button-edit-why-book-${item.id}`}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm({ type: "feature", id: item.id })}>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteConfirm({ type: "feature", id: item.id })} data-testid={`button-delete-why-book-${item.id}`}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </div>
               ))}
               {(!featuresData?.features || featuresData.features.length === 0) && (
-                <p className="col-span-2 text-center text-muted-foreground py-8">No luxury features yet. Add one to get started.</p>
+                <p className="col-span-2 text-center text-muted-foreground py-8">No points yet. Add one to get started.</p>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Nile Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Nile-View Suites Section</CardTitle>
-            <CardDescription>The featured Nile suite showcase section</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={nileForm.title}
-                onChange={(e) => setNileForm({ ...nileForm, title: e.target.value })}
-                placeholder="Nile-View Suites"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Paragraphs</Label>
-              {nileForm.paragraphs.map((p, i) => (
-                <Textarea
-                  key={i}
-                  value={p}
-                  onChange={(e) => {
-                    const newParagraphs = [...nileForm.paragraphs];
-                    newParagraphs[i] = e.target.value;
-                    setNileForm({ ...nileForm, paragraphs: newParagraphs });
-                  }}
-                  placeholder={`Paragraph ${i + 1}`}
-                  rows={2}
-                />
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Button Text</Label>
-                <Input
-                  value={nileForm.buttonText}
-                  onChange={(e) => setNileForm({ ...nileForm, buttonText: e.target.value })}
-                  placeholder="Reserve Nile Suite"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Button Link</Label>
-                <Input
-                  value={nileForm.buttonLink}
-                  onChange={(e) => setNileForm({ ...nileForm, buttonLink: e.target.value })}
-                  placeholder="/contact"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Images (4 images)</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {nileForm.images.map((img, i) => (
-                  <Input
-                    key={i}
-                    value={img}
-                    onChange={(e) => {
-                      const newImages = [...nileForm.images];
-                      newImages[i] = e.target.value;
-                      setNileForm({ ...nileForm, images: newImages });
-                    }}
-                    placeholder={`Image ${i + 1} URL`}
-                  />
-                ))}
-              </div>
-            </div>
-            <Button onClick={() => saveNileMutation.mutate(nileForm)} disabled={saveNileMutation.isPending}>
-              {saveNileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Nile Section
-            </Button>
           </CardContent>
         </Card>
 
         {/* CTA Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Call to Action Section</CardTitle>
-            <CardDescription>The final CTA at the bottom of the page</CardDescription>
+            <CardTitle>Closing CTA Band</CardTitle>
+            <CardDescription>The band at the bottom of /stay. Only the primary button is shown on the page.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -626,7 +457,7 @@ export default function AdminStayPage() {
               <Input
                 value={ctaForm.title}
                 onChange={(e) => setCtaForm({ ...ctaForm, title: e.target.value })}
-                placeholder="Book Your Perfect Stay"
+                placeholder="Can't decide? Let us choose for you."
               />
             </div>
             <div className="space-y-2">
@@ -634,134 +465,41 @@ export default function AdminStayPage() {
               <Textarea
                 value={ctaForm.subtitle}
                 onChange={(e) => setCtaForm({ ...ctaForm, subtitle: e.target.value })}
-                placeholder="Our luxury travel specialists will secure the perfect accommodation..."
+                placeholder="Tell us what you're after and our specialists will match you to the right property."
                 rows={2}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Primary Button Text</Label>
+                <Label>Button Text</Label>
                 <Input
                   value={ctaForm.primaryButtonText}
                   onChange={(e) => setCtaForm({ ...ctaForm, primaryButtonText: e.target.value })}
-                  placeholder="Contact Our Specialists"
+                  placeholder="Speak with a Specialist"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Primary Button Link</Label>
+                <Label>Button Link</Label>
                 <Input
                   value={ctaForm.primaryButtonLink}
                   onChange={(e) => setCtaForm({ ...ctaForm, primaryButtonLink: e.target.value })}
                   placeholder="/contact"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Secondary Button Text</Label>
-                <Input
-                  value={ctaForm.secondaryButtonText}
-                  onChange={(e) => setCtaForm({ ...ctaForm, secondaryButtonText: e.target.value })}
-                  placeholder="View All Destinations"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Secondary Button Link</Label>
-                <Input
-                  value={ctaForm.secondaryButtonLink}
-                  onChange={(e) => setCtaForm({ ...ctaForm, secondaryButtonLink: e.target.value })}
-                  placeholder="/destinations"
-                />
-              </div>
             </div>
-            <Button onClick={() => saveCtaMutation.mutate(ctaForm)} disabled={saveCtaMutation.isPending}>
+            <Button onClick={() => saveCtaMutation.mutate(ctaForm)} disabled={saveCtaMutation.isPending} data-testid="button-save-cta">
               {saveCtaMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save CTA Section
+              Save Closing CTA
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Accommodation Type Dialog */}
-      <Dialog open={accommodationDialog} onOpenChange={(open) => { if (!open) { setEditingAccommodation(null); resetAccommodationForm(); } setAccommodationDialog(open); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingAccommodation ? "Edit Accommodation Type" : "Add Accommodation Type"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Icon</Label>
-              <Select value={accommodationForm.icon} onValueChange={(v) => setAccommodationForm({ ...accommodationForm, icon: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {iconOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      <div className="flex items-center gap-2">
-                        <opt.icon className="h-4 w-4" />
-                        {opt.label}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Title</Label>
-              <Input
-                value={accommodationForm.title}
-                onChange={(e) => setAccommodationForm({ ...accommodationForm, title: e.target.value })}
-                placeholder="Luxury Hotels"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={accommodationForm.description}
-                onChange={(e) => setAccommodationForm({ ...accommodationForm, description: e.target.value })}
-                placeholder="Five-star properties with world-class service..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Count</Label>
-              <Input
-                value={accommodationForm.count}
-                onChange={(e) => setAccommodationForm({ ...accommodationForm, count: e.target.value })}
-                placeholder="15+ Partners"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Sort Order</Label>
-                <Input
-                  type="number"
-                  value={accommodationForm.sortOrder}
-                  onChange={(e) => setAccommodationForm({ ...accommodationForm, sortOrder: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="flex items-center gap-2 pt-6">
-                <Switch
-                  checked={accommodationForm.isActive}
-                  onCheckedChange={(v) => setAccommodationForm({ ...accommodationForm, isActive: v })}
-                />
-                <Label>Active</Label>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAccommodationDialog(false)}>Cancel</Button>
-            <Button onClick={handleSaveAccommodation} disabled={createAccommodationMutation.isPending || updateAccommodationMutation.isPending}>
-              {(createAccommodationMutation.isPending || updateAccommodationMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Luxury Feature Dialog */}
+      {/* Why Book Through Us Point Dialog */}
       <Dialog open={featureDialog} onOpenChange={(open) => { if (!open) { setEditingFeature(null); resetFeatureForm(); } setFeatureDialog(open); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingFeature ? "Edit Luxury Feature" : "Add Luxury Feature"}</DialogTitle>
+            <DialogTitle>{editingFeature ? "Edit Point" : "Add Point"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -787,7 +525,7 @@ export default function AdminStayPage() {
               <Input
                 value={featureForm.title}
                 onChange={(e) => setFeatureForm({ ...featureForm, title: e.target.value })}
-                placeholder="Gourmet Dining"
+                placeholder="Concierge Service"
               />
             </div>
             <div className="space-y-2">
@@ -795,7 +533,7 @@ export default function AdminStayPage() {
               <Textarea
                 value={featureForm.description}
                 onChange={(e) => setFeatureForm({ ...featureForm, description: e.target.value })}
-                placeholder="World-class restaurants featuring..."
+                placeholder="24/7 dedicated concierge to arrange tours, dining, and every detail of your stay."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -832,13 +570,13 @@ export default function AdminStayPage() {
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this {deleteConfirm?.type === "accommodation" ? "accommodation type" : "luxury feature"}? This action cannot be undone.
+              Are you sure you want to delete this point? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteAccommodationMutation.isPending || deleteFeatureMutation.isPending}>
-              {(deleteAccommodationMutation.isPending || deleteFeatureMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteFeatureMutation.isPending}>
+              {deleteFeatureMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </Button>
           </DialogFooter>
