@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WysiwygEditor } from "@/components/ui/wysiwyg-editor";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, X, Loader2, GripVertical, Upload, AlertTriangle } from "lucide-react";
 import {
   DndContext,
@@ -56,6 +57,41 @@ const hotelFormSchema = insertHotelSchema.extend({
 
 type HotelFormData = z.infer<typeof hotelFormSchema>;
 type FacilityData = z.infer<typeof facilitySchema>;
+
+// Which tab each field lives in, so a validation error can jump the user
+// straight to the tab that needs fixing instead of failing silently.
+const FIELD_TAB_MAP: Record<string, string> = {
+  name: "overview",
+  slug: "overview",
+  type: "overview",
+  rating: "overview",
+  location: "overview",
+  region: "overview",
+  priceTier: "overview",
+  status: "overview",
+  description: "content",
+  article: "content",
+  whyWeChoseQuote: "content",
+  facilities: "facilities",
+  image: "media",
+  gallery: "media",
+  route: "cruise-seo",
+  duration: "cruise-seo",
+  focusKeyword: "cruise-seo",
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  name: "Hotel Name",
+  slug: "Slug",
+  type: "Type",
+  rating: "Star Rating",
+  location: "Location",
+  region: "City / Region",
+  priceTier: "Price Tier",
+  status: "Status",
+  description: "Short Description",
+  image: "Hero Image URL",
+};
 
 interface HotelFormProps {
   initialData?: Partial<any>;
@@ -123,6 +159,8 @@ function SortableGalleryImage({
 }
 
 export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("overview");
   const [highlightsInput, setHighlightsInput] = useState("");
   const [galleryUrlInput, setGalleryUrlInput] = useState("");
   const [facilityIcon, setFacilityIcon] = useState("pool");
@@ -257,6 +295,28 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
     onSubmit(transformedData);
   };
 
+  const onInvalid = (errors: FieldErrors<HotelFormData>) => {
+    const errorFields = Object.keys(errors);
+    if (errorFields.length === 0) return;
+
+    const firstTab = FIELD_TAB_MAP[errorFields[0]] || "overview";
+    setActiveTab(firstTab);
+
+    const description = errorFields
+      .map((field) => {
+        const label = FIELD_LABELS[field] || field;
+        const message = (errors as Record<string, { message?: string }>)[field]?.message || "This field is invalid.";
+        return `${label}: ${message}`;
+      })
+      .join("\n");
+
+    toast({
+      title: "Please fix the following before saving",
+      description,
+      variant: "destructive",
+    });
+  };
+
   const facilities: FacilityData[] = form.watch("facilities") || [];
   const gallery: string[] = form.watch("gallery") || [];
   const galleryIds = gallery.map((url) => url);
@@ -270,8 +330,8 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
     !stripHtml(article).toLowerCase().includes(focusKeyword.toLowerCase());
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-      <Tabs defaultValue="overview" className="w-full">
+    <form onSubmit={form.handleSubmit(handleSubmit, onInvalid)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-hotel-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
