@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import type { Facility } from "@shared/schema";
 
 const SITE_NAME = "iLuxury Egypt";
 const SITE_URL = "https://iluxuryegypt.com";
@@ -11,6 +12,7 @@ export interface PageMeta {
   description: string;
   image: string;
   type: string;
+  jsonLd?: object | object[];
 }
 
 function truncate(text: string, max: number): string {
@@ -34,6 +36,15 @@ function withSiteName(title: string): string {
 interface StaticMeta {
   title: string;
   description: string;
+}
+
+// `tours.itinerary` is untyped jsonb (`z.any()` in shared/schema.ts) — this
+// mirrors the shape client/src/pages/tour-detail.tsx already assumes when
+// rendering it, so the two stay in sync without a shared type to import.
+interface TourItineraryDay {
+  day?: number;
+  title?: string;
+  description?: string;
 }
 
 // Every static route registered in client/src/App.tsx (i.e. anything that is
@@ -214,6 +225,101 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
 
   if (normalized.startsWith("/admin")) return null;
 
+  // FAQ page needs FAQPage JSON-LD built from live DB data on top of its
+  // otherwise-static title/description, so it's special-cased ahead of the
+  // plain static lookup below.
+  if (normalized === "/faq") {
+    const meta = STATIC_PAGE_META["/faq"];
+    try {
+      const visibleFaqs = await storage.getVisibleFaqs();
+      const jsonLd =
+        visibleFaqs.length > 0
+          ? {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: visibleFaqs.map((faq) => ({
+                "@type": "Question",
+                name: faq.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: faq.answer,
+                },
+              })),
+            }
+          : undefined;
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd,
+      };
+    } catch (err) {
+      console.error("[seo-meta] Failed to resolve FAQ schema:", err);
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+      };
+    }
+  }
+
+  // Homepage Organization schema — built from the same site-config key/value
+  // store and social-links table the header/footer already read from, so
+  // updating the logo, contact info, or socials in the admin updates this
+  // automatically with no code change.
+  if (normalized === "/") {
+    const meta = STATIC_PAGE_META["/"];
+    try {
+      const [configRows, allSocialLinks] = await Promise.all([storage.getAllSiteConfig(), storage.getSocialLinks()]);
+      const config = configRows.reduce((acc, item) => {
+        acc[item.key] = item.value;
+        return acc;
+      }, {} as Record<string, string>);
+      const logo = config.header_logo || config.footer_logo || DEFAULT_IMAGE;
+      const sameAs = allSocialLinks
+        .filter((link) => link.isVisible && link.url && link.url !== "#")
+        .map((link) => link.url);
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo,
+        image: logo,
+        description: config.footer_description || DEFAULT_DESCRIPTION,
+        ...(config.contact_email ? { email: config.contact_email } : {}),
+        ...(config.contact_phone ? { telephone: config.contact_phone } : {}),
+        ...(config.contact_address
+          ? {
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: config.contact_address,
+                addressCountry: "EG",
+              },
+            }
+          : {}),
+        ...(sameAs.length > 0 ? { sameAs } : {}),
+      };
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd,
+      };
+    } catch (err) {
+      console.error("[seo-meta] Failed to resolve Organization schema:", err);
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+      };
+    }
+  }
+
   const staticMeta = STATIC_PAGE_META[normalized];
   if (staticMeta) {
     return {
@@ -244,11 +350,43 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     if ((match = pathname.match(/^\/blog\/([^/]+)\/?$/))) {
       const post = await storage.getPostBySlug(decodeURIComponent(match[1]));
       if (!post || post.status !== "published") return null;
+      const description = truncate(post.metaDescription || post.excerpt || DEFAULT_DESCRIPTION, 160);
+      const image = post.featuredImage || DEFAULT_IMAGE;
+      // No byline field exists on posts (only `createdBy`, an internal admin
+      // user id) — every article is published under this fixed team name.
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: post.titleEn,
+        description,
+        image,
+        url: `${SITE_URL}/blog/${post.slug}`,
+        datePublished: (post.publishedAt || post.createdAt).toISOString(),
+        dateModified: post.updatedAt.toISOString(),
+        author: {
+          "@type": "Organization",
+          name: "iLuxury Egypt Team",
+        },
+        publisher: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          logo: {
+            "@type": "ImageObject",
+            url: DEFAULT_IMAGE,
+          },
+        },
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": `${SITE_URL}/blog/${post.slug}`,
+        },
+        ...(post.tags && post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
+      };
       return {
         title: withSiteName(post.metaTitle || post.titleEn),
-        description: truncate(post.metaDescription || post.excerpt || DEFAULT_DESCRIPTION, 160),
-        image: post.featuredImage || DEFAULT_IMAGE,
+        description,
+        image,
         type: "article",
+        jsonLd,
       };
     }
 
@@ -278,11 +416,45 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const description = keyword && !baseDescription.toLowerCase().includes(keyword.toLowerCase())
         ? `${keyword} — ${baseDescription}`
         : baseDescription;
+      // Facilities (not the dormant `amenities` column — that field is
+      // captured in the admin form but never rendered on the public hotel
+      // page, so it would produce a schema that describes content visitors
+      // never actually see) drive amenityFeature.
+      const facilities = Array.isArray(hotel.facilities) ? (hotel.facilities as Facility[]) : [];
+      const gallery = Array.isArray(hotel.gallery) ? hotel.gallery : [];
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Hotel",
+        name: hotel.name,
+        description: hotel.description,
+        image: [hotel.image, ...gallery].filter(Boolean),
+        url: `${SITE_URL}/hotel/${hotel.slug}`,
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: hotel.location,
+          addressRegion: hotel.region,
+          addressCountry: "EG",
+        },
+        starRating: {
+          "@type": "Rating",
+          ratingValue: hotel.rating,
+        },
+        priceRange: hotel.priceTier,
+        ...(facilities.length > 0
+          ? {
+              amenityFeature: facilities.map((facility) => ({
+                "@type": "LocationFeatureSpecification",
+                name: facility.label,
+              })),
+            }
+          : {}),
+      };
       return {
         title: withSiteName(title),
         description: truncate(description, 160),
         image: hotel.image || DEFAULT_IMAGE,
         type: "website",
+        jsonLd,
       };
     }
 
@@ -338,11 +510,50 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     if ((match = pathname.match(/^\/([^/]+)\/?$/))) {
       const tour = await storage.getTourBySlug(decodeURIComponent(match[1]));
       if (!tour || tour.published === false) return null;
+      const description = truncate(tour.shortDescription || tour.description || DEFAULT_DESCRIPTION, 160);
+      const image = tour.heroImage || DEFAULT_IMAGE;
+      const gallery = Array.isArray(tour.gallery) ? tour.gallery : [];
+      const itineraryDays: TourItineraryDay[] = Array.isArray(tour.itinerary) ? tour.itinerary : [];
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "TouristTrip",
+        name: tour.title,
+        description,
+        image: [tour.heroImage, ...gallery].filter(Boolean),
+        url: `${SITE_URL}/${tour.slug}`,
+        touristType: tour.category,
+        offers: {
+          "@type": "Offer",
+          price: tour.price,
+          priceCurrency: tour.currency,
+          availability: "https://schema.org/InStock",
+          url: `${SITE_URL}/${tour.slug}`,
+        },
+        provider: {
+          "@type": "TravelAgency",
+          name: SITE_NAME,
+          url: SITE_URL,
+        },
+        ...(itineraryDays.length > 0
+          ? {
+              itinerary: {
+                "@type": "ItemList",
+                itemListElement: itineraryDays.map((day, index) => ({
+                  "@type": "ListItem",
+                  position: day?.day ?? index + 1,
+                  name: day?.title || `Day ${index + 1}`,
+                  ...(day?.description ? { description: day.description } : {}),
+                })),
+              },
+            }
+          : {}),
+      };
       return {
         title: withSiteName(tour.title),
-        description: truncate(tour.shortDescription || tour.description || DEFAULT_DESCRIPTION, 160),
-        image: tour.heroImage || DEFAULT_IMAGE,
+        description,
+        image,
         type: "website",
+        jsonLd,
       };
     }
 
@@ -411,6 +622,17 @@ export function injectMetaTags(html: string, url: string, meta: PageMeta): strin
     result = result.replace(/<link rel="canonical" href="[^"]*"\s*\/?>/, `<link rel="canonical" href="${safeUrl}" />`);
   } else {
     result = result.replace("</head>", `    <link rel="canonical" href="${safeUrl}" />\n  </head>`);
+  }
+
+  // JSON-LD structured data — one <script> per schema object. `<` is escaped
+  // as \u003c so a value containing a literal "</script>" can never close the
+  // tag early; this is safe JSON since \u003c decodes back to "<" on parse.
+  if (meta.jsonLd) {
+    const items = Array.isArray(meta.jsonLd) ? meta.jsonLd : [meta.jsonLd];
+    const scripts = items
+      .map((item) => `    <script type="application/ld+json">${JSON.stringify(item).replace(/</g, "\\u003c")}</script>`)
+      .join("\n");
+    result = result.replace("</head>", `${scripts}\n  </head>`);
   }
 
   return result;
