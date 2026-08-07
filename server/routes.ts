@@ -28,6 +28,7 @@ import {
   insertWhyChooseSectionSchema,
   insertWhyChooseCardSchema,
   insertStayListingSettingsSchema,
+  insertLegalPageSchema,
   loginSchema
 } from "@shared/schema";
 import multer from "multer";
@@ -698,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, post });
     } catch (error) {
       console.error('Error fetching post:', error);
-            res.status(500).json({ message: 'Error fetching post' });
+      res.status(500).json({ message: 'Error fetching post' });
     }
   });
 
@@ -1398,7 +1399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error updating destination:', error);
       res.status(500).json({ message: 'Error updating destination' });
     }
-      });
+  });
 
   // Delete destination (admin/editor access)
   app.delete("/api/cms/destinations/:id", requireAuth, requireEditor, async (req, res) => {
@@ -1736,8 +1737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error changing username' });
     }
   });
-
-  // Change password
+    // Change password
   app.post("/api/cms/settings/change-password", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
@@ -2798,7 +2798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error fetching guest experience section:', error);
       res.status(500).json({ message: 'Error fetching guest experience section' });
     }
-      });
+  });
 
   // CMS: Update/Create guest experience section
   app.post("/api/cms/guest-experience-section", requireAuth, requireEditor, async (req, res) => {
@@ -3050,6 +3050,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public: list published legal pages (used for e.g. an admin-facing overview or future sitemap work)
+  app.get("/api/public/legal-pages", async (req, res) => {
+    try {
+      const pages = await storage.getLegalPages();
+      res.json({ legalPages: pages.filter(p => p.status === "published") });
+    } catch (error) {
+      console.error('Error fetching legal pages:', error);
+      res.status(500).json({ message: 'Error fetching legal pages' });
+    }
+  });
+
+  // Public: get a single legal page by slug — powers both the 5 legacy routes and /legal/:slug
+  app.get("/api/public/legal-pages/:slug", async (req, res) => {
+    try {
+      const page = await storage.getLegalPageBySlug(req.params.slug);
+      if (!page || page.status !== "published") {
+        return res.status(404).json({ message: 'Legal page not found' });
+      }
+      res.json({ legalPage: page });
+    } catch (error) {
+      console.error('Error fetching legal page:', error);
+      res.status(500).json({ message: 'Error fetching legal page' });
+    }
+  });
+
   // CMS: Get stay page hero
   app.get("/api/cms/stay-page/hero", requireAuth, requireEditor, async (req, res) => {
     try {
@@ -3239,6 +3264,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error('Error updating stay listing settings:', error);
       res.status(500).json({ message: 'Error updating stay listing settings' });
+    }
+  });
+
+  // CMS: List legal pages (admin/editor access)
+  app.get("/api/cms/legal-pages", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const pages = await storage.getLegalPages();
+      res.json({ legalPages: pages });
+    } catch (error) {
+      console.error('Error fetching legal pages for CMS:', error);
+      res.status(500).json({ message: 'Error fetching legal pages' });
+    }
+  });
+
+  // CMS: Get single legal page for editing (admin/editor access)
+  app.get("/api/cms/legal-pages/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const page = await storage.getLegalPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: 'Legal page not found' });
+      }
+      res.json({ legalPage: page });
+    } catch (error) {
+      console.error('Error fetching legal page:', error);
+      res.status(500).json({ message: 'Error fetching legal page' });
+    }
+  });
+
+  // CMS: Create legal page (admin/editor access)
+  app.post("/api/cms/legal-pages", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertLegalPageSchema.parse(req.body);
+      const existing = await storage.getLegalPageBySlug(data.slug);
+      if (existing) {
+        return res.status(400).json({ message: `A legal page with the slug "${data.slug}" already exists` });
+      }
+      const page = await storage.createLegalPage(data);
+      res.json({ success: true, legalPage: page });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input data', errors: error.errors });
+      }
+      console.error('Error creating legal page:', error);
+      res.status(500).json({ message: 'Error creating legal page' });
+    }
+  });
+
+  // CMS: Update legal page (admin/editor access)
+  app.put("/api/cms/legal-pages/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertLegalPageSchema.partial().parse(req.body);
+      if (data.slug) {
+        const existing = await storage.getLegalPageBySlug(data.slug);
+        if (existing && existing.id !== req.params.id) {
+          return res.status(400).json({ message: `A legal page with the slug "${data.slug}" already exists` });
+        }
+      }
+      const page = await storage.updateLegalPage(req.params.id, data);
+      if (!page) {
+        return res.status(404).json({ message: 'Legal page not found' });
+      }
+      res.json({ success: true, legalPage: page });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input data', errors: error.errors });
+      }
+      console.error('Error updating legal page:', error);
+      res.status(500).json({ message: 'Error updating legal page' });
+    }
+  });
+
+  // CMS: Delete legal page (admin/editor access)
+  app.delete("/api/cms/legal-pages/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const deleted = await storage.deleteLegalPage(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Legal page not found' });
+      }
+      res.json({ success: true, message: 'Legal page deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting legal page:', error);
+      res.status(500).json({ message: 'Error deleting legal page' });
     }
   });
 
