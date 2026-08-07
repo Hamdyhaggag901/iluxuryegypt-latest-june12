@@ -42,12 +42,8 @@ const FamilyLuxury = lazy(() => import("@/pages/family-luxury"));
 const SpiritualJourneys = lazy(() => import("@/pages/spiritual-journeys"));
 const AdventureTours = lazy(() => import("@/pages/adventure-tours"));
 
-// Lazy loaded - Legal pages
-const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
-const TermsConditions = lazy(() => import("@/pages/terms-conditions"));
-const CookiePolicy = lazy(() => import("@/pages/cookie-policy"));
-const ResponsibleTravel = lazy(() => import("@/pages/responsible-travel"));
-const Disclaimer = lazy(() => import("@/pages/disclaimer"));
+// Lazy loaded - Legal pages (single dynamic component, CMS-backed)
+const LegalPage = lazy(() => import("@/pages/legal-page"));
 
 // Lazy loaded - Admin pages
 const AdminLogin = lazy(() => import("@/pages/admin-login"));
@@ -60,6 +56,9 @@ const AdminToursBulk = lazy(() => import("@/pages/admin-tours-bulk"));
 const AdminHotels = lazy(() => import("@/pages/admin-hotels"));
 const AdminHotelsNew = lazy(() => import("@/pages/admin-hotels-new"));
 const AdminHotelsEdit = lazy(() => import("@/pages/admin-hotels-edit"));
+const AdminLegalPages = lazy(() => import("@/pages/admin-legal-pages"));
+const AdminLegalPagesNew = lazy(() => import("@/pages/admin-legal-pages-new"));
+const AdminLegalPagesEdit = lazy(() => import("@/pages/admin-legal-pages-edit"));
 const AdminDestinations = lazy(() => import("@/pages/admin-destinations"));
 const AdminDestinationsNew = lazy(() => import("@/pages/admin-destinations-new"));
 const AdminDestinationsEdit = lazy(() => import("@/pages/admin-destinations-edit"));
@@ -163,12 +162,15 @@ function Router() {
             {/* Tailor Made */}
             <Route path="/tailor-made" component={TailorMade} />
 
-            {/* Legal pages */}
-            <Route path="/privacy-policy" component={PrivacyPolicy} />
-            <Route path="/terms-conditions" component={TermsConditions} />
-            <Route path="/cookie-policy" component={CookiePolicy} />
-            <Route path="/responsible-travel" component={ResponsibleTravel} />
-            <Route path="/disclaimer" component={Disclaimer} />
+            {/* Legal pages — the 5 original slugs keep their exact fixed URLs (indexed by
+                Google, linked from the footer and booking forms) for zero SEO impact.
+                Any legal page added later from the admin gets /legal/:slug instead. */}
+            <Route path="/privacy-policy"><LegalPage slug="privacy-policy" /></Route>
+            <Route path="/terms-conditions"><LegalPage slug="terms-conditions" /></Route>
+            <Route path="/cookie-policy"><LegalPage slug="cookie-policy" /></Route>
+            <Route path="/responsible-travel"><LegalPage slug="responsible-travel" /></Route>
+            <Route path="/disclaimer"><LegalPage slug="disclaimer" /></Route>
+            <Route path="/legal/:slug"><LegalPage /></Route>
 
             {/* Admin pages */}
             <Route path="/admin/login" component={AdminLogin} />
@@ -182,6 +184,9 @@ function Router() {
             <Route path="/admin/hotels" component={AdminHotels} />
             <Route path="/admin/hotels/new" component={AdminHotelsNew} />
             <Route path="/admin/hotels/edit/:id" component={AdminHotelsEdit} />
+            <Route path="/admin/legal-pages" component={AdminLegalPages} />
+            <Route path="/admin/legal-pages/new" component={AdminLegalPagesNew} />
+            <Route path="/admin/legal-pages/edit/:id" component={AdminLegalPagesEdit} />
             <Route path="/admin/destinations" component={AdminDestinations} />
             <Route path="/admin/destinations/new" component={AdminDestinationsNew} />
             <Route path="/admin/destinations/edit/:id" component={AdminDestinationsEdit} />
