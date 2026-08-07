@@ -28,7 +28,8 @@ import {
   PenSquare,
   ExternalLink,
   Bed,
-  Download
+  Download,
+  Scale
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -160,15 +161,15 @@ export default function AdminLayout({ children, title, description }: AdminLayou
     },
     {
       id: "stay-page",
-      label: "Stay Page (Legacy)",
+      label: "Stay Page",
       icon: Bed,
       href: "/admin/stay-page",
     },
     {
-      id: "stays-settings",
-      label: "Stays Page Settings",
-      icon: Bed,
-      href: "/admin/stays-settings",
+      id: "legal-pages",
+      label: "Legal Pages",
+      icon: Scale,
+      href: "/admin/legal-pages",
     },
     {
       id: "header",
