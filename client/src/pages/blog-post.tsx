@@ -9,6 +9,7 @@ import { Link, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { getPostImageAlt } from "@/lib/seo-alt-text";
 
 // Sample blog posts data (fallback)
 const sampleBlogPosts = [
@@ -506,11 +507,11 @@ export default function BlogPost() {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative bg-black overflow-hidden h-[56vw] min-h-[280px] md:h-[500px]">
+      <section className="relative h-[600px] overflow-hidden">
         <img
           src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
-          alt={post.titleEn}
-          className="absolute inset-0 w-full h-full object-contain md:object-cover"
+          alt={getPostImageAlt(post)}
+          className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
@@ -717,4 +718,3 @@ export default function BlogPost() {
     </div>
   );
 }
-
