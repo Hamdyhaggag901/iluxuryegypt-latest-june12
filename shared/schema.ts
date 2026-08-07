@@ -455,6 +455,28 @@ export const stayListingSettings = pgTable("stay_listing_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Legal Pages (Privacy Policy, Terms & Conditions, Cookie Policy, etc.) — CMS-managed,
+// supports both the 5 original pages (fixed legacy routes) and freely-added new ones (/legal/:slug)
+export const legalPages = pgTable("legal_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  introTitle: text("intro_title"),
+  introDescription: text("intro_description"),
+  highlights: jsonb("highlights").notNull().default([]), // Array of {icon, title, description} — the 4 icon cards
+  content: text("content"), // Rich-text body (WYSIWYG), replaces the old fixed section list
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  contactAddress: text("contact_address"),
+  showInFooter: boolean("show_in_footer").notNull().default(true), // Mirrors into footerLinks "legal" section
+  sortOrder: integer("sort_order").notNull().default(0),
+  status: text("status").notNull().default("published"), // published | draft
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // Doubles as the public "Last updated" date
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
 // Tour Bookings/Submissions
 export const tourBookings = pgTable("tour_bookings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -487,7 +509,6 @@ export const brochureDownloads = pgTable("brochure_downloads", {
   tourSlug: text("tour_slug"),
   downloadedAt: timestamp("downloaded_at").defaultNow().notNull(),
 });
-
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -588,6 +609,7 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   focusKeyword: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   featured: z.boolean().default(false),
 });
+
 export const insertDestinationSchema = createInsertSchema(destinations).omit({
   id: true,
   createdAt: true,
@@ -922,6 +944,49 @@ export const insertStayListingSettingsSchema = createInsertSchema(stayListingSet
   cityChips: z.array(z.string()).default([]),
   featuredHotelId: z.string().optional(),
 });
+// Legal Pages Schema
+export const legalHighlightSchema = z.object({
+  icon: z.string().min(1, "Icon is required"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+});
+
+// Legal page slugs that existed before the /legal/:slug system was introduced — these
+// keep their original fixed top-level routes so indexed/shared links never break.
+// Everything added after this point gets /legal/:slug instead.
+export const LEGACY_LEGAL_SLUGS = [
+  "privacy-policy",
+  "terms-conditions",
+  "cookie-policy",
+  "responsible-travel",
+  "disclaimer",
+] as const;
+
+export function getLegalPageHref(slug: string): string {
+  return (LEGACY_LEGAL_SLUGS as readonly string[]).includes(slug) ? `/${slug}` : `/legal/${slug}`;
+}
+
+export const insertLegalPageSchema = createInsertSchema(legalPages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  slug: z.string()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens only (e.g. refund-policy)"),
+  title: z.string().min(1, "Title is required"),
+  subtitle: z.string().nullable().optional(),
+  introTitle: z.string().nullable().optional(),
+  introDescription: z.string().nullable().optional(),
+  highlights: z.array(legalHighlightSchema).default([]),
+  content: z.string().nullable().optional(),
+  contactEmail: z.string().nullable().optional(),
+  contactPhone: z.string().nullable().optional(),
+  contactAddress: z.string().nullable().optional(),
+  showInFooter: z.boolean().default(true),
+  sortOrder: z.number().default(0),
+  status: z.enum(["published", "draft"]).default("published"),
+});
 
 // Login Schema
 export const loginSchema = z.object({
@@ -1030,3 +1095,6 @@ export type InsertStayCta = z.infer<typeof insertStayCtaSchema>;
 export type StayCta = typeof stayCta.$inferSelect;
 export type InsertStayListingSettings = z.infer<typeof insertStayListingSettingsSchema>;
 export type StayListingSettings = typeof stayListingSettings.$inferSelect;
+export type LegalHighlight = z.infer<typeof legalHighlightSchema>;
+export type InsertLegalPage = z.infer<typeof insertLegalPageSchema>;
+export type LegalPage = typeof legalPages.$inferSelect;
