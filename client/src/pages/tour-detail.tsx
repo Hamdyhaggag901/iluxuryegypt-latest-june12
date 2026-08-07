@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import type { Tour } from "@shared/schema";
+import { getTourImageAlt } from "@/lib/seo-alt-text";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -224,12 +225,12 @@ export default function TourDetail() {
       <Navigation />
 
       {/* Hero Section - Full Screen */}
-      <section className="relative h-[70vh] md:h-screen w-full bg-black">
+      <section className="relative h-[70vh] md:h-screen w-full">
         <div className="absolute inset-0">
           <img
             src={tour.heroImage}
-            alt={tour.title}
-            className="w-full h-full object-contain md:object-cover"
+            alt={getTourImageAlt(tour)}
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
         </div>
@@ -345,7 +346,7 @@ export default function TourDetail() {
                        onClick={() => setIsLightboxOpen(true)}>
                     <img
                       src={allImages[selectedImage]}
-                      alt={`${tour.title} - Image ${selectedImage + 1}`}
+                      alt={getTourImageAlt(tour, selectedImage)}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -380,7 +381,7 @@ export default function TourDetail() {
                             : 'opacity-50 hover:opacity-80'
                         }`}
                       >
-                        <img src={img} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img src={img} alt={getTourImageAlt(tour, idx)} className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -716,7 +717,7 @@ export default function TourDetail() {
                     <div className="relative aspect-[4/3] md:aspect-[4/5] overflow-hidden rounded-xl md:rounded-2xl shadow-lg mb-3 md:mb-4">
                       <img
                         src={t.heroImage}
-                        alt={t.title}
+                        alt={getTourImageAlt(t)}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -770,7 +771,7 @@ export default function TourDetail() {
           </button>
           <img
             src={allImages[selectedImage]}
-            alt={`${tour.title} - Image ${selectedImage + 1}`}
+            alt={getTourImageAlt(tour, selectedImage)}
             className="max-w-[90vw] max-h-[85vh] object-contain"
             onClick={(e) => e.stopPropagation()}
           />
