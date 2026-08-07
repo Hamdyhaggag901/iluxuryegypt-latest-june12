@@ -422,12 +422,22 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       // never actually see) drive amenityFeature.
       const facilities = Array.isArray(hotel.facilities) ? (hotel.facilities as Facility[]) : [];
       const gallery = Array.isArray(hotel.gallery) ? hotel.gallery : [];
+      const galleryAlt =
+        hotel.galleryAlt && typeof hotel.galleryAlt === "object" ? (hotel.galleryAlt as Record<string, string>) : {};
+      // Admin-written alt text (see galleryAlt column) becomes an ImageObject's
+      // caption so the same description shows up in the schema, not just the
+      // <img alt> tag. Images without one stay plain URL strings — both forms
+      // are valid inside schema.org's `image` array.
+      const galleryImages = gallery.map((url) => {
+        const alt = galleryAlt[url]?.trim();
+        return alt ? { "@type": "ImageObject", url, caption: alt } : url;
+      });
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "Hotel",
         name: hotel.name,
         description: hotel.description,
-        image: [hotel.image, ...gallery].filter(Boolean),
+        image: [hotel.image, ...galleryImages].filter(Boolean),
         url: `${SITE_URL}/hotel/${hotel.slug}`,
         address: {
           "@type": "PostalAddress",
