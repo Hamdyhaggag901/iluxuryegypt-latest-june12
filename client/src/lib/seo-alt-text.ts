@@ -8,6 +8,8 @@ interface HotelForAlt {
   name: string;
   location?: string | null;
   type?: string | null;
+  gallery?: string[] | null;
+  galleryAlt?: Record<string, string> | null;
 }
 
 interface TourForAlt {
@@ -29,6 +31,9 @@ export function getHotelImageAlt(hotel: HotelForAlt, index?: number): string {
     const type = hotel.type ? ` — ${hotel.type}` : "";
     return `${hotel.name}${location}, Egypt${type}`;
   }
+  const url = hotel.gallery?.[index];
+  const customAlt = url ? hotel.galleryAlt?.[url]?.trim() : undefined;
+  if (customAlt) return customAlt;
   return `${hotel.name}${location} — gallery photo ${index + 1}`;
 }
 
