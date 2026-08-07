@@ -131,23 +131,30 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
     description:
       "Create your perfect Egypt journey. Our travel experts craft personalized luxury itineraries tailored to your preferences.",
   },
-  "/privacy-policy": {
+};
+
+// Fallback meta for the 5 original legal pages, used only until an admin saves
+// real data for that slug in the legal_pages table (mirrors LEGACY_LEGAL_SLUGS
+// in shared/schema.ts). Kept separate from STATIC_PAGE_META so a saved DB title
+// always takes priority — see the legal-page matcher in resolvePageMeta below.
+const LEGACY_LEGAL_META: Record<string, StaticMeta> = {
+  "privacy-policy": {
     title: "Privacy Policy",
     description: "I.LuxuryEgypt privacy policy. How we collect, use, and protect your personal information.",
   },
-  "/terms-conditions": {
+  "terms-conditions": {
     title: "Terms & Conditions",
     description: "I.LuxuryEgypt terms and conditions of service for luxury Egypt travel bookings.",
   },
-  "/cookie-policy": {
+  "cookie-policy": {
     title: "Cookie Policy",
     description: "I.LuxuryEgypt cookie policy. How we use cookies to improve your browsing experience.",
   },
-  "/responsible-travel": {
+  "responsible-travel": {
     title: "Responsible Travel",
     description: "Our commitment to responsible and sustainable luxury travel in Egypt.",
   },
-  "/disclaimer": {
+  disclaimer: {
     title: "Disclaimer",
     description: "I.LuxuryEgypt legal disclaimer for website content and travel services.",
   },
@@ -277,6 +284,32 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         image: hotel.image || DEFAULT_IMAGE,
         type: "website",
       };
+    }
+
+    if (
+      (match = pathname.match(/^\/(privacy-policy|terms-conditions|cookie-policy|responsible-travel|disclaimer)\/?$/)) ||
+      (match = pathname.match(/^\/legal\/([^/]+)\/?$/))
+    ) {
+      const slug = decodeURIComponent(match[1]);
+      const legalPage = await storage.getLegalPageBySlug(slug);
+      if (legalPage && legalPage.status === "published") {
+        return {
+          title: withSiteName(legalPage.title),
+          description: truncate(legalPage.subtitle || DEFAULT_DESCRIPTION, 160),
+          image: DEFAULT_IMAGE,
+          type: "website",
+        };
+      }
+      const fallback = LEGACY_LEGAL_META[slug];
+      if (fallback) {
+        return {
+          title: withSiteName(fallback.title),
+          description: truncate(fallback.description, 160),
+          image: DEFAULT_IMAGE,
+          type: "website",
+        };
+      }
+      return null;
     }
 
     if (
