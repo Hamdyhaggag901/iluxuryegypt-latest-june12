@@ -518,6 +518,7 @@ export const insertSectionSchema = createInsertSchema(sections).omit({
   id: true,
   createdAt: true,
 });
+
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
@@ -573,21 +574,20 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   amenities: z.array(z.string()).default([]), // Deprecated: superseded by `facilities`, no longer collected in the admin form
   image: z.string().min(1, "Hero image is required"),
   description: z.string().min(1, "Description is required"),
-  fullDescription: z.string().optional(), // Deprecated: superseded by `article`
+  fullDescription: z.string().nullable().optional(), // Deprecated: superseded by `article`; column is nullable, existing rows have NULL
   highlights: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
   rooms: z.array(roomSchema).default([]),
   facilities: z.array(facilitySchema).default([]),
-  article: z.string().optional(),
-  whyWeChoseQuote: z.string().optional(),
-  route: z.string().optional(),
-  duration: z.string().optional(),
+  article: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
+  whyWeChoseQuote: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
+  route: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
+  duration: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   status: z.enum(["published", "draft"]).default("published"),
   sortOrder: z.number().default(0),
-  focusKeyword: z.string().optional(),
+  focusKeyword: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   featured: z.boolean().default(false),
 });
-
 export const insertDestinationSchema = createInsertSchema(destinations).omit({
   id: true,
   createdAt: true,
