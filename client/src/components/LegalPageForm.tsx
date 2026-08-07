@@ -264,4 +264,192 @@ export function LegalPageForm({ initialData, onSubmit, isLoading }: LegalPageFor
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem val
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Draft pages return a 404 on the live site</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="showInFooter">Show in Footer</Label>
+                  <div className="flex items-center gap-2 h-10">
+                    <Switch
+                      id="showInFooter"
+                      checked={form.watch("showInFooter")}
+                      onCheckedChange={(v) => form.setValue("showInFooter", v)}
+                      data-testid="switch-show-in-footer"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {form.watch("showInFooter") ? "Visible under Legal & Policies" : "Hidden from footer"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Highlights Tab */}
+        <TabsContent value="highlights" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Intro Section</CardTitle>
+              <CardDescription>The heading and paragraph shown above the highlight cards</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="introTitle">Intro Title</Label>
+                <Input
+                  id="introTitle"
+                  data-testid="input-intro-title"
+                  {...form.register("introTitle")}
+                  placeholder="e.g., Our Privacy Commitment"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="introDescription">Intro Description</Label>
+                <Textarea id="introDescription" data-testid="input-intro-description" {...form.register("introDescription")} rows={3} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Highlight Cards</CardTitle>
+              <CardDescription>
+                Icon + title + description cards shown under the intro (the original pages use 4, but any number works)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-[160px_1fr_1fr_auto] gap-2">
+                <Select value={highlightIcon} onValueChange={setHighlightIcon}>
+                  <SelectTrigger data-testid="select-highlight-icon">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <option.icon className="h-4 w-4" />
+                          {option.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={highlightTitle}
+                  onChange={(e) => setHighlightTitle(e.target.value)}
+                  placeholder="Title"
+                  data-testid="input-highlight-title"
+                />
+                <Input
+                  value={highlightDescription}
+                  onChange={(e) => setHighlightDescription(e.target.value)}
+                  placeholder="Short description"
+                  data-testid="input-highlight-description"
+                />
+                <Button type="button" onClick={addHighlight} data-testid="button-add-highlight">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {highlights.map((highlight, index) => {
+                  const Icon = getIconComponent(highlight.icon);
+                  return (
+                    <div
+                      key={`${highlight.title}-${index}`}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                      data-testid={`highlight-row-${index}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-accent/10 rounded-full flex items-center justify-center">
+                          <Icon className="h-4 w-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{highlight.title}</p>
+                          <p className="text-xs text-muted-foreground">{highlight.description}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeHighlight(index)}
+                        data-testid={`button-remove-highlight-${index}`}
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  );
+                })}
+                {highlights.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No highlight cards added yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Content Tab */}
+        <TabsContent value="content" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Body Content</CardTitle>
+              <CardDescription>The main article — write headings, paragraphs, and lists freely</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WysiwygEditor
+                value={form.watch("content") || ""}
+                onChange={(value) => form.setValue("content", value)}
+                placeholder="Write the full policy text here..."
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Block</CardTitle>
+              <CardDescription>Shown at the end of the page. Leave blank to hide this section entirely.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">Email</Label>
+                <Input
+                  id="contactEmail"
+                  data-testid="input-contact-email"
+                  {...form.register("contactEmail")}
+                  placeholder="privacy@i.luxuryegypt.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactPhone">Phone</Label>
+                <Input
+                  id="contactPhone"
+                  data-testid="input-contact-phone"
+                  {...form.register("contactPhone")}
+                  placeholder="+20 xxx xxx xxxx"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="contactAddress">Address</Label>
+                <Input
+                  id="contactAddress"
+                  data-testid="input-contact-address"
+                  {...form.register("contactAddress")}
+                  placeholder="Cairo, Egypt"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-end gap-4 pt-4 border-t">
+        <Button type="submit" disabled={isLoading} data-testid="button-submit-legal-page">
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {initialData ? "Update Page" : "Create Page"}
+        </Button>
+      </div>
+    </form>
+  );
+}
