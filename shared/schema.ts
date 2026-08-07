@@ -104,6 +104,7 @@ export const hotels = pgTable("hotels", {
   fullDescription: text("full_description"), // Extended description for about section
   highlights: text("highlights").array().notNull().default([]), // Hotel highlights
   gallery: text("gallery").array().notNull().default([]), // Gallery images
+  galleryAlt: jsonb("gallery_alt").notNull().default({}), // Admin-written alt text, keyed by gallery image URL. Falls back to auto-generated text when a URL has no entry.
   rooms: jsonb("rooms").notNull().default([]), // Deprecated: no longer rendered (kept to avoid destructive migration)
   facilities: jsonb("facilities").notNull().default([]), // Array of {icon, label} facility items
   article: text("article"), // Free-form rich-text long-form content
@@ -509,6 +510,7 @@ export const brochureDownloads = pgTable("brochure_downloads", {
   tourSlug: text("tour_slug"),
   downloadedAt: timestamp("downloaded_at").defaultNow().notNull(),
 });
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -598,6 +600,7 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   fullDescription: z.string().nullable().optional(), // Deprecated: superseded by `article`; column is nullable, existing rows have NULL
   highlights: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
+  galleryAlt: z.record(z.string()).default({}), // Keyed by gallery image URL; entries are optional per-image, missing keys fall back to auto-generated alt text
   rooms: z.array(roomSchema).default([]),
   facilities: z.array(facilitySchema).default([]),
   article: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
@@ -944,6 +947,7 @@ export const insertStayListingSettingsSchema = createInsertSchema(stayListingSet
   cityChips: z.array(z.string()).default([]),
   featuredHotelId: z.string().optional(),
 });
+
 // Legal Pages Schema
 export const legalHighlightSchema = z.object({
   icon: z.string().min(1, "Icon is required"),
