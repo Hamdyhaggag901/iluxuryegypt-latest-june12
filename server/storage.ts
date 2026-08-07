@@ -23,13 +23,15 @@ import {
   type StayNileSection, type InsertStayNileSection,
   type StayCta, type InsertStayCta,
   type StayListingSettings, type InsertStayListingSettings,
+  type LegalPage, type InsertLegalPage,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
   guestExperienceSection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
+  legalPages, getLegalPageHref,
   brochureDownloads
 } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 
@@ -89,6 +91,14 @@ export interface IStorage {
   // Stay listing settings methods
   getStayListingSettings(): Promise<StayListingSettings | undefined>;
   upsertStayListingSettings(data: InsertStayListingSettings): Promise<StayListingSettings>;
+
+  // Legal Page methods
+  getLegalPages(): Promise<LegalPage[]>;
+  getLegalPage(id: string): Promise<LegalPage | undefined>;
+  getLegalPageBySlug(slug: string): Promise<LegalPage | undefined>;
+  createLegalPage(data: InsertLegalPage): Promise<LegalPage>;
+  updateLegalPage(id: string, data: Partial<InsertLegalPage>): Promise<LegalPage | undefined>;
+  deleteLegalPage(id: string): Promise<boolean>;
 
   // Destination methods  
   createDestination(destination: InsertDestination): Promise<Destination>;
@@ -642,12 +652,12 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
-
-  // Navigation Items methods
+    // Navigation Items methods
   async getNavItems(): Promise<NavItem[]> {
     return await db.select().from(navItems).orderBy(navItems.sortOrder);
   }
-    async getNavItem(id: string): Promise<NavItem | undefined> {
+
+  async getNavItem(id: string): Promise<NavItem | undefined> {
     const [item] = await db.select().from(navItems).where(eq(navItems.id, id));
     return item;
   }
@@ -1184,6 +1194,111 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
+
+  // Legal Page methods
+  async getLegalPages(): Promise<LegalPage[]> {
+    try {
+      return await db.select().from(legalPages).orderBy(legalPages.sortOrder, legalPages.createdAt);
+    } catch (error) {
+      console.error("Error fetching legal pages:", error);
+      return [];
+    }
+  }
+
+  async getLegalPage(id: string): Promise<LegalPage | undefined> {
+    try {
+      const [page] = await db.select().from(legalPages).where(eq(legalPages.id, id));
+      return page || undefined;
+    } catch (error) {
+      console.error("Error fetching legal page:", error);
+      return undefined;
+    }
+  }
+
+  async getLegalPageBySlug(slug: string): Promise<LegalPage | undefined> {
+    try {
+      const [page] = await db.select().from(legalPages).where(eq(legalPages.slug, slug));
+      return page || undefined;
+    } catch (error) {
+      console.error("Error fetching legal page by slug:", error);
+      return undefined;
+    }
+  }
+
+  async createLegalPage(data: InsertLegalPage): Promise<LegalPage> {
+    try {
+      const [page] = await db.insert(legalPages).values(data).returning();
+      await this.syncLegalPageFooterLink(page);
+      return page;
+    } catch (error) {
+      console.error("Error creating legal page:", error);
+      throw error;
+    }
+  }
+
+  async updateLegalPage(id: string, data: Partial<InsertLegalPage>): Promise<LegalPage | undefined> {
+    try {
+      const [page] = await db
+        .update(legalPages)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(legalPages.id, id))
+        .returning();
+      if (page) {
+        await this.syncLegalPageFooterLink(page);
+      }
+      return page || undefined;
+    } catch (error) {
+      console.error("Error updating legal page:", error);
+      throw error;
+    }
+  }
+
+  async deleteLegalPage(id: string): Promise<boolean> {
+    try {
+      const [page] = await db.select().from(legalPages).where(eq(legalPages.id, id));
+      const result = await db.delete(legalPages).where(eq(legalPages.id, id));
+      if (page) {
+        await this.removeLegalPageFooterLink(page.slug);
+      }
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Error deleting legal page:", error);
+      return false;
+    }
+  }
+
+  // Keeps the footerLinks "legal" section in sync with a legal page's showInFooter/status
+  // flags, so admins manage visibility from the legal page form instead of two separate places.
+  private async syncLegalPageFooterLink(page: LegalPage): Promise<void> {
+    const href = getLegalPageHref(page.slug);
+    const shouldShow = page.showInFooter && page.status === "published";
+
+    const [existing] = await db
+      .select()
+      .from(footerLinks)
+      .where(and(eq(footerLinks.section, "legal"), eq(footerLinks.href, href)));
+
+    if (existing) {
+      await db
+        .update(footerLinks)
+        .set({ label: page.title, isVisible: shouldShow, updatedAt: new Date() })
+        .where(eq(footerLinks.id, existing.id));
+    } else if (shouldShow) {
+      await db.insert(footerLinks).values({
+        section: "legal",
+        label: page.title,
+        href,
+        sortOrder: page.sortOrder,
+        isVisible: true,
+        openInNewTab: false,
+      });
+    }
+  }
+
+  private async removeLegalPageFooterLink(slug: string): Promise<void> {
+    const href = getLegalPageHref(slug);
+    await db.delete(footerLinks).where(and(eq(footerLinks.section, "legal"), eq(footerLinks.href, href)));
+  }
 };
 
 // Memory Storage Implementation for Development
@@ -1297,7 +1412,7 @@ export class MemoryStorage implements IStorage {
         amenities: ["Nile Views", "Historic Architecture", "Royal Gardens", "Fine Dining"],
         image: "/api/assets/suite-nile_1757457083796.jpg",
         description: "A legendary hotel on the banks of the Nile in Aswan, offering timeless elegance and unparalleled views.",
-                featured: false,
+        featured: false,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdBy: null
@@ -1387,8 +1502,7 @@ export class MemoryStorage implements IStorage {
       this.settings.set(setting.id, setting);
     });
   }
-
-  // User methods
+    // User methods
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
@@ -1901,3 +2015,4 @@ export async function seedDatabase() {
 }
 
 // Initialize database seeding
+seedDatabase();
