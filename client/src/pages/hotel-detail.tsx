@@ -24,6 +24,7 @@ import {
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Facility } from "@shared/schema";
+import { getHotelImageAlt } from "@/lib/seo-alt-text";
 
 function getFacilityIcon(iconName: string) {
   const className = "h-6 w-6 text-accent";
@@ -108,7 +109,7 @@ export default function HotelDetail() {
         <section className="relative h-[60vh] md:h-[75vh] flex items-end overflow-hidden">
           <img
             src={hotel.image}
-            alt={`${hotel.name} — ${hotel.location}, Egypt`}
+            alt={getHotelImageAlt(hotel)}
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
           />
@@ -187,7 +188,7 @@ export default function HotelDetail() {
                 >
                   <img
                     src={image}
-                    alt={`${hotel.name} — atmosphere photo ${index + 1}`}
+                    alt={getHotelImageAlt(hotel, index)}
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
