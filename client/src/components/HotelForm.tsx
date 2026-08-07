@@ -114,12 +114,16 @@ function SortableGalleryImage({
   id,
   url,
   index,
+  alt,
   onRemove,
+  onAltChange,
 }: {
   id: string;
   url: string;
   index: number;
+  alt: string;
   onRemove: () => void;
+  onAltChange: (value: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
@@ -129,31 +133,40 @@ function SortableGalleryImage({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group">
-      <img
-        src={url}
-        alt={`Gallery ${index + 1}`}
-        className="w-full h-24 object-cover rounded-lg"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "https://via.placeholder.com/200x100?text=Invalid+URL";
-        }}
-      />
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute top-1 left-1 bg-black/60 text-white rounded p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-        data-testid={`gallery-drag-handle-${index}`}
-      >
-        <GripVertical className="h-3 w-3" />
+    <div ref={setNodeRef} style={style} className="relative group space-y-1">
+      <div className="relative">
+        <img
+          src={url}
+          alt={`Gallery ${index + 1}`}
+          className="w-full h-24 object-cover rounded-lg"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://via.placeholder.com/200x100?text=Invalid+URL";
+          }}
+        />
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-1 left-1 bg-black/60 text-white rounded p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          data-testid={`gallery-drag-handle-${index}`}
+        >
+          <GripVertical className="h-3 w-3" />
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          data-testid={`button-remove-gallery-${index}`}
+        >
+          <X className="h-3 w-3" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-        data-testid={`button-remove-gallery-${index}`}
-      >
-        <X className="h-3 w-3" />
-      </button>
+      <Textarea
+        value={alt}
+        onChange={(e) => onAltChange(e.target.value)}
+        placeholder="Alt Text (optional) — e.g. Elegant guest room with private balcony and panoramic Nile River views."
+        className="text-xs min-h-14 resize-none"
+        data-testid={`input-gallery-alt-${index}`}
+      />
     </div>
   );
 }
@@ -186,6 +199,7 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       description: "",
       highlights: [],
       gallery: [],
+      galleryAlt: {},
       rooms: [],
       facilities: [],
       article: "",
@@ -223,6 +237,21 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
   const removeArrayItem = (field: "highlights" | "gallery", index: number) => {
     const current = form.getValues(field) || [];
     form.setValue(field, current.filter((_: any, i: number) => i !== index));
+  };
+
+  const removeGalleryImage = (index: number) => {
+    const current = form.getValues("gallery") || [];
+    const removedUrl = current[index];
+    form.setValue("gallery", current.filter((_, i) => i !== index));
+    if (removedUrl) {
+      const currentAlt = { ...(form.getValues("galleryAlt") || {}) };
+      delete currentAlt[removedUrl];
+      form.setValue("galleryAlt", currentAlt);
+    }
+  };
+
+  const setGalleryAlt = (url: string, value: string) => {
+    form.setValue("galleryAlt", { ...(form.getValues("galleryAlt") || {}), [url]: value });
   };
 
   const addFacility = () => {
@@ -285,11 +314,18 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
   };
 
   const handleSubmit = (data: HotelFormData) => {
+    const cleanGallery = (data.gallery || []).filter((g) => g.trim().length > 0);
+    const cleanGalleryAlt = Object.fromEntries(
+      Object.entries(data.galleryAlt || {}).filter(
+        ([url, alt]) => cleanGallery.includes(url) && typeof alt === "string" && alt.trim().length > 0,
+      ),
+    );
     const transformedData = {
       ...data,
       rating: Number(data.rating),
       highlights: (data.highlights || []).filter((h) => h.trim().length > 0),
-      gallery: (data.gallery || []).filter((g) => g.trim().length > 0),
+      gallery: cleanGallery,
+      galleryAlt: cleanGalleryAlt,
       facilities: data.facilities || [],
     };
     onSubmit(transformedData);
@@ -319,6 +355,7 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
 
   const facilities: FacilityData[] = form.watch("facilities") || [];
   const gallery: string[] = form.watch("gallery") || [];
+  const galleryAlt: Record<string, string> = form.watch("galleryAlt") || {};
   const galleryIds = gallery.map((url) => url);
 
   const focusKeyword = form.watch("focusKeyword") || "";
@@ -507,7 +544,8 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
             </CardContent>
           </Card>
         </TabsContent>
-                {/* Content Tab */}
+
+        {/* Content Tab */}
         <TabsContent value="content" className="space-y-4">
           <Card>
             <CardHeader>
@@ -760,7 +798,9 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                         id={url}
                         url={url}
                         index={index}
-                        onRemove={() => removeArrayItem("gallery", index)}
+                        alt={galleryAlt[url] || ""}
+                        onRemove={() => removeGalleryImage(index)}
+                        onAltChange={(value) => setGalleryAlt(url, value)}
                       />
                     ))}
                   </div>
