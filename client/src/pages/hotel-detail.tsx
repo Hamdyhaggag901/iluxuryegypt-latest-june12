@@ -25,6 +25,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Facility } from "@shared/schema";
 import { getHotelImageAlt } from "@/lib/seo-alt-text";
+import { Card, CardContent } from "@/components/ui/card";
 
 function getFacilityIcon(iconName: string) {
   const className = "h-6 w-6 text-accent";
@@ -44,6 +45,33 @@ function getFacilityIcon(iconName: string) {
   return icons[iconName] || <Star className={className} />;
 }
 
+function RelatedHotelCard({ hotel }: { hotel: any }) {
+  return (
+    <Card
+      className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      data-testid={`related-hotel-card-${hotel.slug}`}
+    >
+      <Link href={`/hotel/${hotel.slug}`}>
+        <div className="relative h-44 overflow-hidden">
+          <img
+            src={hotel.image}
+            alt={getHotelImageAlt(hotel)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+        </div>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+            <MapPin className="w-3 h-3 text-accent" />
+            <span>{hotel.location}</span>
+          </div>
+          <h3 className="font-serif font-bold text-base text-primary leading-tight">{hotel.name}</h3>
+        </CardContent>
+      </Link>
+    </Card>
+  );
+}
+
 export default function HotelDetail() {
   const [match, params] = useRoute("/hotel/:slug");
 
@@ -58,6 +86,15 @@ export default function HotelDetail() {
       if (!response.ok) {
         throw new Error("Hotel not found");
       }
+      return response.json();
+    },
+  });
+
+  const { data: allHotelsResponse } = useQuery({
+    queryKey: ["/api/hotels"],
+    queryFn: async () => {
+      const response = await fetch("/api/hotels");
+      if (!response.ok) throw new Error("Failed to fetch hotels");
       return response.json();
     },
   });
@@ -99,6 +136,9 @@ export default function HotelDetail() {
   const facilities = (hotel.facilities || []) as Facility[];
   const gallery = (hotel.gallery || []) as string[];
   const hasCruiseDetails = Boolean(hotel.route || hotel.duration);
+  const relatedHotels = ((allHotelsResponse?.hotels || []) as any[])
+    .filter((h) => h.status === "published" && h.region === hotel.region && h.slug !== hotel.slug)
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,6 +250,22 @@ export default function HotelDetail() {
               <p className="text-sm tracking-[0.2em] uppercase text-primary-foreground/70">
                 — iLuxury Egypt Team
               </p>
+            </div>
+          </section>
+        )}
+
+        {/* You Might Also Like — other hotels in the same region */}
+        {relatedHotels.length > 0 && (
+          <section className="py-14 md:py-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8 text-center">
+                You Might Also Like
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {relatedHotels.map((related) => (
+                  <RelatedHotelCard key={related.id} hotel={related} />
+                ))}
+              </div>
             </div>
           </section>
         )}
