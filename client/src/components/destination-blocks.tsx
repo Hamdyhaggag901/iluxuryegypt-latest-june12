@@ -112,41 +112,61 @@ export default function LuxuryPackagesSection({
           {tours.map((tour) => (
             <Link key={tour.id} href={`/${tour.slug}`}>
               <article
-                className="group cursor-pointer"
+                className="bg-card border border-card-border rounded-lg overflow-hidden flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow duration-300"
                 data-testid={`card-package-${tour.slug}`}
               >
-                <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-lg">
-                  {/* Image */}
+                <div className="relative h-64 overflow-hidden">
                   <img
                     src={tour.heroImage}
                     alt={tour.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
                   />
+                </div>
 
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-                  {/* Content positioned at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 z-20">
-                    {/* Duration badge */}
-                    <span className="inline-block text-accent text-xs tracking-[0.2em] uppercase font-light mb-2">
-                      {tour.duration}
+                <div className="p-6 flex flex-col flex-grow">
+                  <div className="flex flex-col gap-3 flex-grow">
+                    <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
+                      {tour.category}
                     </span>
 
-                    {/* Title - always visible */}
                     <h3
-                      className="text-xl md:text-2xl font-serif text-white leading-tight"
+                      className="font-serif text-xl text-primary leading-tight group-hover:text-accent transition-colors"
                       data-testid={`text-title-${tour.slug}`}
                     >
                       {tour.title}
                     </h3>
 
-                    {/* Description - slides up on hover */}
-                    <div className="overflow-hidden">
-                      <p className="text-white/80 text-sm leading-relaxed mt-3 line-clamp-3 translate-y-full opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                        {tour.shortDescription || tour.description}
-                      </p>
+                    <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
+                      {tour.duration}
+                      {tour.groupSize ? ` · ${tour.groupSize}` : ""}
+                    </p>
+
+                    {tour.destinations.length > 0 && (
+                      <div className="mt-2">
+                        <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
+                          The Route
+                        </span>
+                        <p className="text-sm text-muted-foreground/70 leading-relaxed">
+                          {tour.destinations.join(" → ")}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <hr className="border-t border-border my-6" />
+
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <span className="text-xs text-muted-foreground block mb-1">From</span>
+                      <span className="font-serif text-lg text-primary">
+                        {tour.currency === "USD" ? "$" : `${tour.currency} `}
+                        {tour.price.toLocaleString()}
+                      </span>
                     </div>
+                    <span className="text-sm font-semibold text-primary group-hover:text-accent transition-colors">
+                      View Journey
+                    </span>
                   </div>
                 </div>
               </article>
