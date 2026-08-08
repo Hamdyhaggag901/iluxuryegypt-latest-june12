@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import type { Facility } from "@shared/schema";
+import { getLegalPageHref } from "@shared/schema";
 
 const SITE_NAME = "iLuxury Egypt";
 const SITE_URL = "https://iluxuryegypt.com";
@@ -31,6 +32,37 @@ function withSiteName(title: string): string {
   const stripped = trimmed.replace(SITE_NAME_SUFFIX_RE, "").trim();
   if (!stripped) return SITE_NAME;
   return `${stripped} | ${SITE_NAME}`;
+}
+
+interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
+// Builds a schema.org BreadcrumbList from the trail AFTER the homepage —
+// Home is always prepended automatically, so callers only pass the segments
+// specific to their page.
+function buildBreadcrumbJsonLd(segments: BreadcrumbItem[]) {
+  const items: BreadcrumbItem[] = [{ name: "Home", url: "/" }, ...segments];
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: `${SITE_URL}${item.url}`,
+    })),
+  };
+}
+
+// Appends a BreadcrumbList alongside whatever schema a page already has
+// (Hotel, BlogPosting, TouristTrip, FAQPage, Organization...) without
+// disturbing it — injectMetaTags already renders one <script> per array item.
+function withBreadcrumbs(jsonLd: object | object[] | undefined, segments: BreadcrumbItem[]): object | object[] {
+  const breadcrumbs = buildBreadcrumbJsonLd(segments);
+  if (!jsonLd) return breadcrumbs;
+  return Array.isArray(jsonLd) ? [...jsonLd, breadcrumbs] : [jsonLd, breadcrumbs];
 }
 
 interface StaticMeta {
@@ -144,6 +176,44 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
   },
 };
 
+// Breadcrumb trail for each static route, as the segments AFTER Home (Home is
+// prepended by buildBreadcrumbJsonLd). The 4 /about/* pages skip an
+// intermediate "About" crumb — there's no standalone /about landing route in
+// App.tsx to point it at, and a BreadcrumbList item without a real URL isn't
+// valid, so it's simpler to keep those 2-level (Home > page).
+const STATIC_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
+  "/contact": [{ name: "Contact", url: "/contact" }],
+  "/about/who-we-are": [{ name: "Who We Are", url: "/about/who-we-are" }],
+  "/about/iluxury-difference": [{ name: "The iLuxury Difference", url: "/about/iluxury-difference" }],
+  "/about/your-experience": [{ name: "Your Experience", url: "/about/your-experience" }],
+  "/about/trusted-worldwide": [{ name: "Trusted Worldwide", url: "/about/trusted-worldwide" }],
+  "/destinations": [{ name: "Destinations", url: "/destinations" }],
+  "/egypt-tour-packages": [{ name: "Egypt Tour Packages", url: "/egypt-tour-packages" }],
+  "/egypt-tour-packages/classic-egypt": [
+    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
+    { name: "Classic Egypt", url: "/egypt-tour-packages/classic-egypt" },
+  ],
+  "/egypt-tour-packages/ultra-luxury": [
+    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
+    { name: "Ultra Luxury", url: "/egypt-tour-packages/ultra-luxury" },
+  ],
+  "/egypt-tour-packages/family-luxury": [
+    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
+    { name: "Family Luxury", url: "/egypt-tour-packages/family-luxury" },
+  ],
+  "/egypt-tour-packages/spiritual-journeys": [
+    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
+    { name: "Spiritual Journeys", url: "/egypt-tour-packages/spiritual-journeys" },
+  ],
+  "/egypt-day-tours": [{ name: "Egypt Day Tours", url: "/egypt-day-tours" }],
+  "/egypt-nile-cruise-tours": [{ name: "Egypt Nile Cruise Tours", url: "/egypt-nile-cruise-tours" }],
+  "/nile-cruises": [{ name: "Nile Cruises", url: "/nile-cruises" }],
+  "/stay": [{ name: "Stay", url: "/stay" }],
+  "/blog": [{ name: "Blog", url: "/blog" }],
+  "/faq": [{ name: "FAQ", url: "/faq" }],
+  "/tailor-made": [{ name: "Tailor-Made", url: "/tailor-made" }],
+};
+
 // Fallback meta for the 5 original legal pages, used only until an admin saves
 // real data for that slug in the legal_pages table (mirrors LEGACY_LEGAL_SLUGS
 // in shared/schema.ts). Kept separate from STATIC_PAGE_META so a saved DB title
@@ -252,7 +322,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
-        jsonLd,
+        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/faq"]),
       };
     } catch (err) {
       console.error("[seo-meta] Failed to resolve FAQ schema:", err);
@@ -261,6 +331,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
+        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/faq"]),
       };
     }
   }
@@ -322,11 +393,13 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
 
   const staticMeta = STATIC_PAGE_META[normalized];
   if (staticMeta) {
+    const breadcrumbSegments = STATIC_BREADCRUMBS[normalized];
     return {
       title: staticMeta.title,
       description: truncate(staticMeta.description, 160),
       image: DEFAULT_IMAGE,
       type: "website",
+      ...(breadcrumbSegments ? { jsonLd: buildBreadcrumbJsonLd(breadcrumbSegments) } : {}),
     };
   }
 
@@ -341,6 +414,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       description: truncate(meta.description, 160),
       image: DEFAULT_IMAGE,
       type: "website",
+      jsonLd: buildBreadcrumbJsonLd(STATIC_BREADCRUMBS["/nile-cruises"]),
     };
   }
 
@@ -386,7 +460,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description,
         image,
         type: "article",
-        jsonLd,
+        jsonLd: withBreadcrumbs(jsonLd, [
+          { name: "Blog", url: "/blog" },
+          { name: post.titleEn, url: `/blog/${post.slug}` },
+        ]),
       };
     }
 
@@ -401,6 +478,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         ),
         image: destination.ogImage || destination.heroImage || DEFAULT_IMAGE,
         type: "website",
+        jsonLd: buildBreadcrumbJsonLd([
+          { name: "Destinations", url: "/destinations" },
+          { name: destination.name, url: `/destinations/${destination.slug}` },
+        ]),
       };
     }
 
@@ -424,10 +505,12 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const gallery = Array.isArray(hotel.gallery) ? hotel.gallery : [];
       const galleryAlt =
         hotel.galleryAlt && typeof hotel.galleryAlt === "object" ? (hotel.galleryAlt as Record<string, string>) : {};
-      // Admin-written alt text (see galleryAlt column) becomes an ImageObject's
-      // caption so the same description shows up in the schema, not just the
-      // <img alt> tag. Images without one stay plain URL strings — both forms
-      // are valid inside schema.org's `image` array.
+      // Admin-written alt text (see imageAlt/galleryAlt columns) becomes an
+      // ImageObject's caption so the same description shows up in the schema,
+      // not just the <img alt> tag. Images without one stay plain URL strings
+      // — both forms are valid inside schema.org's `image` array.
+      const heroAlt = hotel.imageAlt?.trim();
+      const heroImage = heroAlt ? { "@type": "ImageObject", url: hotel.image, caption: heroAlt } : hotel.image;
       const galleryImages = gallery.map((url) => {
         const alt = galleryAlt[url]?.trim();
         return alt ? { "@type": "ImageObject", url, caption: alt } : url;
@@ -437,7 +520,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         "@type": "Hotel",
         name: hotel.name,
         description: hotel.description,
-        image: [hotel.image, ...galleryImages].filter(Boolean),
+        image: [heroImage, ...galleryImages].filter(Boolean),
         url: `${SITE_URL}/hotel/${hotel.slug}`,
         address: {
           "@type": "PostalAddress",
@@ -464,7 +547,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(description, 160),
         image: hotel.image || DEFAULT_IMAGE,
         type: "website",
-        jsonLd,
+        jsonLd: withBreadcrumbs(jsonLd, [
+          { name: "Stay", url: "/stay" },
+          { name: hotel.name, url: `/hotel/${hotel.slug}` },
+        ]),
       };
     }
 
@@ -480,6 +566,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           description: truncate(legalPage.subtitle || DEFAULT_DESCRIPTION, 160),
           image: DEFAULT_IMAGE,
           type: "website",
+          jsonLd: buildBreadcrumbJsonLd([{ name: legalPage.title, url: getLegalPageHref(slug) }]),
         };
       }
       const fallback = LEGACY_LEGAL_META[slug];
@@ -489,6 +576,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           description: truncate(fallback.description, 160),
           image: DEFAULT_IMAGE,
           type: "website",
+          jsonLd: buildBreadcrumbJsonLd([{ name: fallback.title, url: getLegalPageHref(slug) }]),
         };
       }
       return null;
@@ -503,6 +591,17 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const category = await storage.getCategoryBySlug(slug);
       if (!category) return null;
       const override = CATEGORY_META_OVERRIDES[slug];
+      // /categories/:slug has no standalone listing page to link a parent
+      // crumb to (App.tsx only registers the three real group pages), so it
+      // stays a 2-level trail; the other three prefixes get their listing
+      // page as the middle crumb.
+      const categoryParent: BreadcrumbItem | null = pathname.startsWith("/egypt-day-tours/")
+        ? { name: "Egypt Day Tours", url: "/egypt-day-tours" }
+        : pathname.startsWith("/egypt-nile-cruise-tours/")
+          ? { name: "Egypt Nile Cruise Tours", url: "/egypt-nile-cruise-tours" }
+          : pathname.startsWith("/categories/")
+            ? null
+            : { name: "Egypt Tour Packages", url: "/egypt-tour-packages" };
       return {
         title: override?.title || withSiteName(category.name),
         description: truncate(
@@ -511,6 +610,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         ),
         image: category.image || DEFAULT_IMAGE,
         type: "website",
+        jsonLd: buildBreadcrumbJsonLd([
+          ...(categoryParent ? [categoryParent] : []),
+          { name: category.name, url: pathname },
+        ]),
       };
     }
 
@@ -563,7 +666,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description,
         image,
         type: "website",
-        jsonLd,
+        jsonLd: withBreadcrumbs(jsonLd, [{ name: tour.title, url: `/${tour.slug}` }]),
       };
     }
 
