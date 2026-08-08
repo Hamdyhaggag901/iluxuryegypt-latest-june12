@@ -417,6 +417,32 @@ const sampleBlogPosts = [
   }
 ];
 
+function RelatedPostCard({ post }: { post: any }) {
+  return (
+    <Card
+      className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      data-testid={`related-post-card-${post.slug}`}
+    >
+      <Link href={`/blog/${post.slug}`}>
+        <div className="relative h-40 overflow-hidden">
+          <img
+            src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
+            alt={getPostImageAlt(post)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+        </div>
+        <CardContent className="p-4">
+          {post.category && (
+            <p className="text-xs text-accent font-medium mb-1">{post.category}</p>
+          )}
+          <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{post.titleEn}</h3>
+        </CardContent>
+      </Link>
+    </Card>
+  );
+}
+
 export default function BlogPost() {
   const { slug } = useParams();
   const { toast } = useToast();
@@ -427,6 +453,14 @@ export default function BlogPost() {
   });
 
   const post = (postResponse as any)?.post;
+
+  const { data: allPostsResponse } = useQuery({
+    queryKey: ["/api/blog/posts"],
+  });
+
+  const relatedPosts = ((allPostsResponse as any)?.posts || [])
+    .filter((p: any) => post?.category && p.category === post.category && p.slug !== post?.slug)
+    .slice(0, 4);
 
   useSEO({
     title: post?.title,
@@ -512,6 +546,7 @@ export default function BlogPost() {
           src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
           alt={getPostImageAlt(post)}
           className="absolute inset-0 w-full h-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
@@ -688,6 +723,22 @@ export default function BlogPost() {
           </div>
         </div>
       </section>
+
+      {/* Related Articles — other posts in the same category */}
+      {relatedPosts.length > 0 && (
+        <section className="py-20 bg-background">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8 text-center">
+              Related Articles
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedPosts.map((related: any) => (
+                <RelatedPostCard key={related.id} post={related} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Call to Action */}
       <section className="py-20 bg-muted">
