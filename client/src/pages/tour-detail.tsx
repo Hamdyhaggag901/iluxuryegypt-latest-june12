@@ -231,6 +231,7 @@ export default function TourDetail() {
             src={tour.heroImage}
             alt={getTourImageAlt(tour)}
             className="w-full h-full object-cover"
+            loading="eager"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
         </div>
@@ -348,6 +349,7 @@ export default function TourDetail() {
                       src={allImages[selectedImage]}
                       alt={getTourImageAlt(tour, selectedImage)}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
 
@@ -381,7 +383,7 @@ export default function TourDetail() {
                             : 'opacity-50 hover:opacity-80'
                         }`}
                       >
-                        <img src={img} alt={getTourImageAlt(tour, idx)} className="w-full h-full object-cover" />
+                        <img src={img} alt={getTourImageAlt(tour, idx)} className="w-full h-full object-cover" loading="lazy" />
                       </button>
                     ))}
                   </div>
@@ -713,29 +715,59 @@ export default function TourDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
               {relatedTours.map((t) => (
                 <Link key={t.id} href={`/${t.slug}`}>
-                  <div className="group cursor-pointer">
-                    <div className="relative aspect-[4/3] md:aspect-[4/5] overflow-hidden rounded-xl md:rounded-2xl shadow-lg mb-3 md:mb-4">
+                  <article className="bg-card border border-card-border rounded-lg overflow-hidden flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow duration-300">
+                    <div className="relative h-56 md:h-64 overflow-hidden">
                       <img
                         src={t.heroImage}
                         alt={getTourImageAlt(t)}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      <div className="absolute bottom-4 md:bottom-6 left-4 md:left-6 right-4 md:right-6">
-                        <span className="text-accent text-xs tracking-[0.2em] uppercase">{t.duration}</span>
-                        <h3 className="text-base md:text-xl font-serif text-white mt-1 md:mt-2 group-hover:text-accent transition-colors">
+                    </div>
+
+                    <div className="p-5 md:p-6 flex flex-col flex-grow">
+                      <div className="flex flex-col gap-2 md:gap-3 flex-grow">
+                        <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
+                          {t.category}
+                        </span>
+
+                        <h3 className="font-serif text-base md:text-xl text-primary leading-tight group-hover:text-accent transition-colors">
                           {t.title}
                         </h3>
+
+                        <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
+                          {t.duration}
+                          {t.groupSize ? ` · ${t.groupSize}` : ""}
+                        </p>
+
+                        {t.destinations.length > 0 && (
+                          <div className="mt-1 md:mt-2">
+                            <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
+                              The Route
+                            </span>
+                            <p className="text-xs md:text-sm text-muted-foreground/70 leading-relaxed">
+                              {t.destinations.join(" → ")}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <hr className="border-t border-border my-4 md:my-6" />
+
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <span className="text-xs text-muted-foreground block mb-1">From</span>
+                          <span className="font-serif text-base md:text-lg text-primary">
+                            {t.currency === "USD" ? "$" : `${t.currency} `}
+                            {t.price.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className="text-xs md:text-sm font-semibold text-primary group-hover:text-accent transition-colors">
+                          View Journey
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-muted-foreground text-xs md:text-sm">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 md:h-4 md:w-4" />
-                        {t.destinations?.[0] || "Egypt"}
-                      </span>
-                      <span className="text-primary font-medium">From ${t.price.toLocaleString()}</span>
-                    </div>
-                  </div>
+                  </article>
                 </Link>
               ))}
             </div>
@@ -773,6 +805,7 @@ export default function TourDetail() {
             src={allImages[selectedImage]}
             alt={getTourImageAlt(tour, selectedImage)}
             className="max-w-[90vw] max-h-[85vh] object-contain"
+            loading="eager"
             onClick={(e) => e.stopPropagation()}
           />
           <button
