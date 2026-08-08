@@ -196,6 +196,7 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       priceTier: "",
       amenities: [],
       image: "",
+      imageAlt: "",
       description: "",
       highlights: [],
       gallery: [],
@@ -750,6 +751,16 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                     }}
                   />
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="imageAlt">Alt Text (optional)</Label>
+                <Textarea
+                  id="imageAlt"
+                  data-testid="input-hero-alt"
+                  {...form.register("imageAlt")}
+                  placeholder="e.g. Luxury exterior view of Four Seasons Hotel Cairo at Nile Plaza overlooking the Nile River at sunset."
+                  className="text-sm min-h-14 resize-none"
+                />
               </div>
             </CardContent>
           </Card>
