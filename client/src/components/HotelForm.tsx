@@ -1,18 +1,53 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState } from "react";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { insertHotelSchema, roomSchema } from "@shared/schema";
+import { useMutation } from "@tanstack/react-query";
+import { insertHotelSchema, facilitySchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2, Trash2, ImagePlus } from "lucide-react";
+import { WysiwygEditor } from "@/components/ui/wysiwyg-editor";
+import { useToast } from "@/hooks/use-toast";
+import { Plus, X, Loader2, GripVertical, Upload, AlertTriangle } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+const HOTEL_TYPE_OPTIONS = ["Nile-view", "Historic palace", "Desert resort", "Nile cruise"];
+
+const FACILITY_ICON_OPTIONS = [
+  { value: "pool", label: "Pool" },
+  { value: "spa", label: "Spa" },
+  { value: "dining", label: "Dining" },
+  { value: "wifi", label: "Wifi" },
+  { value: "transfers", label: "Transfers" },
+  { value: "concierge", label: "Concierge" },
+  { value: "gym", label: "Gym" },
+  { value: "ac", label: "Air Conditioning" },
+  { value: "breakfast", label: "Breakfast" },
+  { value: "parking", label: "Parking" },
+  { value: "pets", label: "Pet Friendly" },
+];
 
 const hotelFormSchema = insertHotelSchema.extend({
   rating: z.union([z.number(), z.string().min(1)]).transform((val) =>
@@ -21,7 +56,42 @@ const hotelFormSchema = insertHotelSchema.extend({
 });
 
 type HotelFormData = z.infer<typeof hotelFormSchema>;
-type RoomData = z.infer<typeof roomSchema>;
+type FacilityData = z.infer<typeof facilitySchema>;
+
+// Which tab each field lives in, so a validation error can jump the user
+// straight to the tab that needs fixing instead of failing silently.
+const FIELD_TAB_MAP: Record<string, string> = {
+  name: "overview",
+  slug: "overview",
+  type: "overview",
+  rating: "overview",
+  location: "overview",
+  region: "overview",
+  priceTier: "overview",
+  status: "overview",
+  description: "content",
+  article: "content",
+  whyWeChoseQuote: "content",
+  facilities: "facilities",
+  image: "media",
+  gallery: "media",
+  route: "cruise-seo",
+  duration: "cruise-seo",
+  focusKeyword: "cruise-seo",
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  name: "Hotel Name",
+  slug: "Slug",
+  type: "Type",
+  rating: "Star Rating",
+  location: "Location",
+  region: "City / Region",
+  priceTier: "Price Tier",
+  status: "Status",
+  description: "Short Description",
+  image: "Hero Image URL",
+};
 
 interface HotelFormProps {
   initialData?: Partial<any>;
@@ -29,11 +99,90 @@ interface HotelFormProps {
   isLoading?: boolean;
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function SortableGalleryImage({
+  id,
+  url,
+  index,
+  alt,
+  onRemove,
+  onAltChange,
+}: {
+  id: string;
+  url: string;
+  index: number;
+  alt: string;
+  onRemove: () => void;
+  onAltChange: (value: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group space-y-1">
+      <div className="relative">
+        <img
+          src={url}
+          alt={`Gallery ${index + 1}`}
+          className="w-full h-24 object-cover rounded-lg"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://via.placeholder.com/200x100?text=Invalid+URL";
+          }}
+        />
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-1 left-1 bg-black/60 text-white rounded p-1 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          data-testid={`gallery-drag-handle-${index}`}
+        >
+          <GripVertical className="h-3 w-3" />
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          data-testid={`button-remove-gallery-${index}`}
+        >
+          <X className="h-3 w-3" />
+        </button>
+      </div>
+      <Textarea
+        value={alt}
+        onChange={(e) => onAltChange(e.target.value)}
+        placeholder="Alt Text (optional) — e.g. Elegant guest room with private balcony and panoramic Nile River views."
+        className="text-xs min-h-14 resize-none"
+        data-testid={`input-gallery-alt-${index}`}
+      />
+    </div>
+  );
+}
+
 export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) {
-  const [amenitiesInput, setAmenitiesInput] = useState("");
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("overview");
   const [highlightsInput, setHighlightsInput] = useState("");
-  const [galleryInput, setGalleryInput] = useState("");
-  const [roomAmenitiesInput, setRoomAmenitiesInput] = useState<Record<number, string>>({});
+  const [galleryUrlInput, setGalleryUrlInput] = useState("");
+  const [facilityIcon, setFacilityIcon] = useState("pool");
+  const [facilityLabel, setFacilityLabel] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const form = useForm<HotelFormData>({
     resolver: zodResolver(hotelFormSchema),
@@ -47,30 +196,23 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       priceTier: "",
       amenities: [],
       image: "",
+      imageAlt: "",
       description: "",
-      fullDescription: "",
       highlights: [],
       gallery: [],
+      galleryAlt: {},
       rooms: [],
+      facilities: [],
+      article: "",
+      whyWeChoseQuote: "",
+      route: "",
+      duration: "",
+      status: "published",
+      focusKeyword: "",
       featured: false,
       ...initialData,
     },
   });
-
-  useEffect(() => {
-    if (initialData) {
-      Object.keys(initialData).forEach((key) => {
-        form.setValue(key as any, initialData[key]);
-      });
-    }
-  }, [initialData, form]);
-
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
@@ -80,110 +222,160 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
     }
   };
 
-  const addArrayItem = (field: "amenities" | "highlights" | "gallery", value: string) => {
+  const suggestSlugWithKeyword = () => {
+    const name = form.getValues("name");
+    const keyword = form.getValues("focusKeyword");
+    if (!name) return;
+    form.setValue("slug", generateSlug(keyword ? `${name} ${keyword}` : name));
+  };
+
+  const addArrayItem = (field: "highlights" | "gallery", value: string) => {
     if (!value.trim()) return;
-    const currentValues = form.getValues(field) || [];
-    form.setValue(field, [...currentValues, value.trim()]);
+    const current = form.getValues(field) || [];
+    form.setValue(field, [...current, value.trim()]);
   };
 
-  const removeArrayItem = (field: "amenities" | "highlights" | "gallery", index: number) => {
-    const currentValues = form.getValues(field) || [];
-    form.setValue(field, currentValues.filter((_: any, i: number) => i !== index));
+  const removeArrayItem = (field: "highlights" | "gallery", index: number) => {
+    const current = form.getValues(field) || [];
+    form.setValue(field, current.filter((_: any, i: number) => i !== index));
   };
 
-  // Room management functions
-  const addRoom = () => {
-    const currentRooms = form.getValues("rooms") || [];
-    const newRoom: RoomData = {
-      id: `room-${Date.now()}`,
-      name: "",
-      description: "",
-      size: "",
-      occupancy: 2,
-      amenities: [],
-      images: [],
-    };
-    form.setValue("rooms", [...currentRooms, newRoom]);
-  };
-
-  const removeRoom = (index: number) => {
-    const currentRooms = form.getValues("rooms") || [];
-    form.setValue("rooms", currentRooms.filter((_: any, i: number) => i !== index));
-  };
-
-  const updateRoom = (index: number, field: keyof RoomData, value: any) => {
-    const currentRooms = form.getValues("rooms") || [];
-    const updatedRooms = [...currentRooms];
-    updatedRooms[index] = { ...updatedRooms[index], [field]: value };
-    form.setValue("rooms", updatedRooms);
-  };
-
-  const addRoomAmenity = (roomIndex: number, value: string) => {
-    if (!value.trim()) return;
-    const currentRooms = form.getValues("rooms") || [];
-    const room = currentRooms[roomIndex];
-    if (room) {
-      const updatedAmenities = [...(room.amenities || []), value.trim()];
-      updateRoom(roomIndex, "amenities", updatedAmenities);
+  const removeGalleryImage = (index: number) => {
+    const current = form.getValues("gallery") || [];
+    const removedUrl = current[index];
+    form.setValue("gallery", current.filter((_, i) => i !== index));
+    if (removedUrl) {
+      const currentAlt = { ...(form.getValues("galleryAlt") || {}) };
+      delete currentAlt[removedUrl];
+      form.setValue("galleryAlt", currentAlt);
     }
   };
 
-  const removeRoomAmenity = (roomIndex: number, amenityIndex: number) => {
-    const currentRooms = form.getValues("rooms") || [];
-    const room = currentRooms[roomIndex];
-    if (room) {
-      const updatedAmenities = (room.amenities || []).filter((_: any, i: number) => i !== amenityIndex);
-      updateRoom(roomIndex, "amenities", updatedAmenities);
-    }
+  const setGalleryAlt = (url: string, value: string) => {
+    form.setValue("galleryAlt", { ...(form.getValues("galleryAlt") || {}), [url]: value });
   };
 
-  const addRoomImage = (roomIndex: number, url: string) => {
-    if (!url.trim()) return;
-    const currentRooms = form.getValues("rooms") || [];
-    const room = currentRooms[roomIndex];
-    if (room && (room.images || []).length < 2) {
-      const updatedImages = [...(room.images || []), url.trim()];
-      updateRoom(roomIndex, "images", updatedImages);
-    }
+  const addFacility = () => {
+    if (!facilityLabel.trim()) return;
+    const current = form.getValues("facilities") || [];
+    form.setValue("facilities", [...current, { icon: facilityIcon, label: facilityLabel.trim() }]);
+    setFacilityLabel("");
   };
 
-  const removeRoomImage = (roomIndex: number, imageIndex: number) => {
-    const currentRooms = form.getValues("rooms") || [];
-    const room = currentRooms[roomIndex];
-    if (room) {
-      const updatedImages = (room.images || []).filter((_: any, i: number) => i !== imageIndex);
-      updateRoom(roomIndex, "images", updatedImages);
-    }
+  const removeFacility = (index: number) => {
+    const current = form.getValues("facilities") || [];
+    form.setValue("facilities", current.filter((_: any, i: number) => i !== index));
+  };
+
+  const handleGalleryDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const gallery = form.getValues("gallery") || [];
+    const oldIndex = gallery.indexOf(String(active.id));
+    const newIndex = gallery.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    form.setValue("gallery", arrayMove(gallery, oldIndex, newIndex));
+  };
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+  });
+
+  const handleHeroUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadImageMutation.mutate(file, {
+      onSuccess: (url) => form.setValue("image", url),
+    });
+    e.target.value = "";
+  };
+
+  const handleGalleryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadImageMutation.mutate(file, {
+      onSuccess: (url) => addArrayItem("gallery", url),
+    });
+    e.target.value = "";
   };
 
   const handleSubmit = (data: HotelFormData) => {
+    const cleanGallery = (data.gallery || []).filter((g) => g.trim().length > 0);
+    const cleanGalleryAlt = Object.fromEntries(
+      Object.entries(data.galleryAlt || {}).filter(
+        ([url, alt]) => cleanGallery.includes(url) && typeof alt === "string" && alt.trim().length > 0,
+      ),
+    );
     const transformedData = {
       ...data,
       rating: Number(data.rating),
-      amenities: (data.amenities || []).filter(a => a.trim().length > 0),
-      highlights: (data.highlights || []).filter(h => h.trim().length > 0),
-      gallery: (data.gallery || []).filter(g => g.trim().length > 0),
-      rooms: (data.rooms || []).map(room => ({
-        ...room,
-        occupancy: Number(room.occupancy),
-        amenities: (room.amenities || []).filter((a: string) => a.trim().length > 0),
-        images: (room.images || []).filter((i: string) => i.trim().length > 0),
-      })),
+      highlights: (data.highlights || []).filter((h) => h.trim().length > 0),
+      gallery: cleanGallery,
+      galleryAlt: cleanGalleryAlt,
+      facilities: data.facilities || [],
     };
     onSubmit(transformedData);
   };
 
-  const rooms = form.watch("rooms") || [];
+  const onInvalid = (errors: FieldErrors<HotelFormData>) => {
+    const errorFields = Object.keys(errors);
+    if (errorFields.length === 0) return;
+
+    const firstTab = FIELD_TAB_MAP[errorFields[0]] || "overview";
+    setActiveTab(firstTab);
+
+    const description = errorFields
+      .map((field) => {
+        const label = FIELD_LABELS[field] || field;
+        const message = (errors as Record<string, { message?: string }>)[field]?.message || "This field is invalid.";
+        return `${label}: ${message}`;
+      })
+      .join("\n");
+
+    toast({
+      title: "Please fix the following before saving",
+      description,
+      variant: "destructive",
+    });
+  };
+
+  const facilities: FacilityData[] = form.watch("facilities") || [];
+  const gallery: string[] = form.watch("gallery") || [];
+  const galleryAlt: Record<string, string> = form.watch("galleryAlt") || {};
+  const galleryIds = gallery.map((url) => url);
+
+  const focusKeyword = form.watch("focusKeyword") || "";
+  const name = form.watch("name") || "";
+  const article = form.watch("article") || "";
+  const showKeywordHint =
+    focusKeyword.trim().length > 0 &&
+    !name.toLowerCase().includes(focusKeyword.toLowerCase()) &&
+    !stripHtml(article).toLowerCase().includes(focusKeyword.toLowerCase());
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-      <Tabs defaultValue="overview" className="w-full">
+    <form onSubmit={form.handleSubmit(handleSubmit, onInvalid)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-hotel-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="content" data-testid="tab-content">Content</TabsTrigger>
+          <TabsTrigger value="facilities" data-testid="tab-facilities">Facilities</TabsTrigger>
           <TabsTrigger value="media" data-testid="tab-media">Media</TabsTrigger>
-          <TabsTrigger value="rooms" data-testid="tab-rooms">Rooms & Suites</TabsTrigger>
-          <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
+          <TabsTrigger value="cruise-seo" data-testid="tab-cruise-seo">Cruise &amp; SEO</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -191,7 +383,7 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
           <Card>
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
-              <CardDescription>Main details about the hotel</CardDescription>
+              <CardDescription>Main details about the hotel or Nile cruise</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -211,12 +403,25 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
 
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug *</Label>
-                  <Input
-                    id="slug"
-                    data-testid="input-hotel-slug"
-                    {...form.register("slug")}
-                    placeholder="mena-house-hotel"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="slug"
+                      data-testid="input-hotel-slug"
+                      {...form.register("slug")}
+                      placeholder="mena-house-hotel"
+                    />
+                    {!initialData && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={suggestSlugWithKeyword}
+                        data-testid="button-suggest-slug"
+                      >
+                        Suggest
+                      </Button>
+                    )}
+                  </div>
                   {form.formState.errors.slug && (
                     <p className="text-sm text-destructive">{String(form.formState.errors.slug.message)}</p>
                   )}
@@ -225,25 +430,18 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Hotel Type *</Label>
-                  <Select
-                    value={form.watch("type")}
-                    onValueChange={(value) => form.setValue("type", value)}
-                  >
+                  <Label htmlFor="type">Type *</Label>
+                  <Select value={form.watch("type")} onValueChange={(value) => form.setValue("type", value)}>
                     <SelectTrigger data-testid="select-hotel-type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Palace">Palace</SelectItem>
-                      <SelectItem value="Resort">Resort</SelectItem>
-                      <SelectItem value="Boutique">Boutique</SelectItem>
-                      <SelectItem value="Luxury Hotel">Luxury Hotel</SelectItem>
-                      <SelectItem value="Historic">Historic</SelectItem>
-                      <SelectItem value="Eco Lodge">Eco Lodge</SelectItem>
-                      <SelectItem value="Beach Resort">Beach Resort</SelectItem>
-                      <SelectItem value="Desert Camp">Desert Camp</SelectItem>
+                      {HOTEL_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">Matches the type filter chips on /stay</p>
                   {form.formState.errors.type && (
                     <p className="text-sm text-destructive">{String(form.formState.errors.type.message)}</p>
                   )}
@@ -287,11 +485,8 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="region">Region *</Label>
-                  <Select
-                    value={form.watch("region")}
-                    onValueChange={(value) => form.setValue("region", value)}
-                  >
+                  <Label htmlFor="region">City / Region *</Label>
+                  <Select value={form.watch("region")} onValueChange={(value) => form.setValue("region", value)}>
                     <SelectTrigger data-testid="select-hotel-region">
                       <SelectValue placeholder="Select region" />
                     </SelectTrigger>
@@ -304,35 +499,48 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                       <SelectItem value="Sinai">Sinai</SelectItem>
                       <SelectItem value="Siwa Oasis">Siwa Oasis</SelectItem>
                       <SelectItem value="Western Desert">Western Desert</SelectItem>
-                      <SelectItem value="Nile Cruise">Nile Cruise</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">Matches the city filter chips on /stay</p>
                   {form.formState.errors.region && (
                     <p className="text-sm text-destructive">{String(form.formState.errors.region.message)}</p>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="priceTier">Price Tier *</Label>
-                <Select
-                  value={form.watch("priceTier")}
-                  onValueChange={(value) => form.setValue("priceTier", value)}
-                >
-                  <SelectTrigger data-testid="select-hotel-price-tier">
-                    <SelectValue placeholder="Select price tier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="$">$ - Budget</SelectItem>
-                    <SelectItem value="$$">$$ - Moderate</SelectItem>
-                    <SelectItem value="$$$">$$$ - Upscale</SelectItem>
-                    <SelectItem value="$$$$">$$$$ - Luxury</SelectItem>
-                    <SelectItem value="$$$$$">$$$$$ - Ultra Luxury</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.priceTier && (
-                  <p className="text-sm text-destructive">{String(form.formState.errors.priceTier.message)}</p>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="priceTier">Price Tier *</Label>
+                  <Select value={form.watch("priceTier")} onValueChange={(value) => form.setValue("priceTier", value)}>
+                    <SelectTrigger data-testid="select-hotel-price-tier">
+                      <SelectValue placeholder="Select price tier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="$">$ - Budget</SelectItem>
+                      <SelectItem value="$$">$$ - Moderate</SelectItem>
+                      <SelectItem value="$$$">$$$ - Upscale</SelectItem>
+                      <SelectItem value="$$$$">$$$$ - Luxury</SelectItem>
+                      <SelectItem value="$$$$$">$$$$$ - Ultra Luxury</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.priceTier && (
+                    <p className="text-sm text-destructive">{String(form.formState.errors.priceTier.message)}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status *</Label>
+                  <Select value={form.watch("status")} onValueChange={(value) => form.setValue("status", value as any)}>
+                    <SelectTrigger data-testid="select-hotel-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="published">Published</SelectItem>
+                      <SelectItem value="draft">Draft</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Draft hotels are hidden from /stay</p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -342,136 +550,161 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
         <TabsContent value="content" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Hotel Description</CardTitle>
+              <CardTitle>Short Description</CardTitle>
+              <CardDescription>One line shown on cards and previews</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="description">Short Description * (for cards)</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-hotel-description"
-                  {...form.register("description")}
-                  placeholder="Brief overview for hotel cards and previews..."
-                  rows={3}
-                />
-                {form.formState.errors.description && (
-                  <p className="text-sm text-destructive">{String(form.formState.errors.description.message)}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fullDescription">Full Description (for detail page)</Label>
-                <Textarea
-                  id="fullDescription"
-                  data-testid="input-hotel-full-description"
-                  {...form.register("fullDescription")}
-                  placeholder="Detailed hotel description with history, unique features, etc..."
-                  rows={6}
-                />
-              </div>
+            <CardContent>
+              <Textarea
+                id="description"
+                data-testid="input-hotel-description"
+                {...form.register("description")}
+                placeholder="Brief overview for hotel cards and previews..."
+                rows={2}
+              />
+              {form.formState.errors.description && (
+                <p className="text-sm text-destructive">{String(form.formState.errors.description.message)}</p>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Hotel Highlights</CardTitle>
-              <CardDescription>Key features to display on the hotel page</CardDescription>
+              <CardTitle>Article</CardTitle>
+              <CardDescription>Free-form long-form content for the hotel page</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WysiwygEditor
+                value={form.watch("article") || ""}
+                onChange={(value) => form.setValue("article", value)}
+                placeholder="Write the full story of this property..."
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Why We Chose This Hotel</CardTitle>
+              <CardDescription>The pull-quote shown in the brand-color focal section on the hotel page</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                data-testid="input-why-we-chose"
+                {...form.register("whyWeChoseQuote")}
+                placeholder="e.g., Because no other Nile-side terrace catches the sunset quite like this one."
+                rows={3}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tags</CardTitle>
+              <CardDescription>Shown as badges on the hotel card and the Featured Stay card on /stay</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Add Highlight</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={highlightsInput}
-                    onChange={(e) => setHighlightsInput(e.target.value)}
-                    placeholder="e.g., Pyramid views from every room"
-                    data-testid="input-highlights"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addArrayItem("highlights", highlightsInput);
-                        setHighlightsInput("");
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
+              <div className="flex gap-2">
+                <Input
+                  value={highlightsInput}
+                  onChange={(e) => setHighlightsInput(e.target.value)}
+                  placeholder="e.g., Pyramid views"
+                  data-testid="input-tags"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
                       addArrayItem("highlights", highlightsInput);
                       setHighlightsInput("");
-                    }}
-                    data-testid="button-add-highlights"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {form.watch("highlights")?.map((item: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="gap-1">
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem("highlights", index)}
-                        className="ml-1"
-                        data-testid={`button-remove-highlights-${index}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    addArrayItem("highlights", highlightsInput);
+                    setHighlightsInput("");
+                  }}
+                  data-testid="button-add-tag"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {form.watch("highlights")?.map((item: string, index: number) => (
+                  <Badge key={index} variant="secondary" className="gap-1">
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem("highlights", index)}
+                      className="ml-1"
+                      data-testid={`button-remove-tag-${index}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
+        {/* Facilities Tab */}
+        <TabsContent value="facilities" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Hotel Amenities</CardTitle>
-              <CardDescription>Facilities and services available</CardDescription>
+              <CardTitle>Facilities &amp; Amenities</CardTitle>
+              <CardDescription>Icon + label pairs shown on the hotel page (pool, spa, dining, wifi...)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Select value={facilityIcon} onValueChange={setFacilityIcon}>
+                  <SelectTrigger className="w-48" data-testid="select-facility-icon">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FACILITY_ICON_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  value={facilityLabel}
+                  onChange={(e) => setFacilityLabel(e.target.value)}
+                  placeholder="e.g., Infinity Pool"
+                  data-testid="input-facility-label"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addFacility();
+                    }
+                  }}
+                />
+                <Button type="button" onClick={addFacility} data-testid="button-add-facility">
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
               <div className="space-y-2">
-                <Label>Add Amenity</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={amenitiesInput}
-                    onChange={(e) => setAmenitiesInput(e.target.value)}
-                    placeholder="e.g., Spa, Pool, Fine Dining"
-                    data-testid="input-amenities"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addArrayItem("amenities", amenitiesInput);
-                        setAmenitiesInput("");
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      addArrayItem("amenities", amenitiesInput);
-                      setAmenitiesInput("");
-                    }}
-                    data-testid="button-add-amenities"
+                {facilities.map((facility, index) => (
+                  <div
+                    key={`${facility.label}-${index}`}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                    data-testid={`facility-row-${index}`}
                   >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {form.watch("amenities")?.map((item: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="gap-1">
-                      {item}
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem("amenities", index)}
-                        className="ml-1"
-                        data-testid={`button-remove-amenities-${index}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline">{FACILITY_ICON_OPTIONS.find((o) => o.value === facility.icon)?.label || facility.icon}</Badge>
+                      <span className="text-sm font-medium">{facility.label}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeFacility(index)}
+                      data-testid={`button-remove-facility-${index}`}
+                    >
+                      <X className="h-4 w-4 text-destructive" />
+                    </button>
+                  </div>
+                ))}
+                {facilities.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No facilities added yet.</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -482,306 +715,155 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
           <Card>
             <CardHeader>
               <CardTitle>Hero Image</CardTitle>
-              <CardDescription>Main image displayed at the top of the hotel page</CardDescription>
+              <CardDescription>Main full-width image at the top of the hotel page</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="image">Hero Image URL *</Label>
-                <Input
-                  id="image"
-                  data-testid="input-hotel-image"
-                  {...form.register("image")}
-                  placeholder="https://example.com/hotel-hero.jpg"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="image"
+                    data-testid="input-hotel-image"
+                    {...form.register("image")}
+                    placeholder="https://example.com/hotel-hero.jpg"
+                  />
+                  <Button type="button" variant="outline" className="relative" data-testid="button-upload-hero">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleHeroUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </Button>
+                </div>
                 {form.formState.errors.image && (
                   <p className="text-sm text-destructive">{String(form.formState.errors.image.message)}</p>
                 )}
                 {form.watch("image") && (
-                  <div className="mt-2">
-                    <img
-                      src={form.watch("image")}
-                      alt="Hero preview"
-                      className="w-full max-w-md h-48 object-cover rounded-lg"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
+                  <img
+                    src={form.watch("image")}
+                    alt="Hero preview"
+                    className="mt-2 w-full max-w-md h-48 object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
                 )}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Gallery Images</CardTitle>
-              <CardDescription>Additional images for the hotel gallery</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Add Gallery Image</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={galleryInput}
-                    onChange={(e) => setGalleryInput(e.target.value)}
-                    placeholder="https://example.com/gallery-image.jpg"
-                    data-testid="input-gallery-url"
-                  />
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      addArrayItem("gallery", galleryInput);
-                      setGalleryInput("");
-                    }}
-                    data-testid="button-add-gallery"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="grid grid-cols-4 gap-4 mt-4">
-                  {form.watch("gallery")?.map((url: string, index: number) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Gallery ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x100?text=Invalid+URL';
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeArrayItem("gallery", index)}
-                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        data-testid={`button-remove-gallery-${index}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Rooms Tab */}
-        <TabsContent value="rooms" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Rooms & Suites</CardTitle>
-              <CardDescription>Add different room types with descriptions, sizes, and amenities</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {rooms.map((room: RoomData, index: number) => (
-                <Card key={room.id} className="border-2">
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">Room {index + 1}</CardTitle>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeRoom(index)}
-                        className="text-destructive hover:text-destructive"
-                        data-testid={`button-remove-room-${index}`}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Remove
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Room Name *</Label>
-                        <Input
-                          value={room.name}
-                          onChange={(e) => updateRoom(index, "name", e.target.value)}
-                          placeholder="e.g., Deluxe Room"
-                          data-testid={`input-room-name-${index}`}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-2">
-                          <Label>Size *</Label>
-                          <Input
-                            value={room.size}
-                            onChange={(e) => updateRoom(index, "size", e.target.value)}
-                            placeholder="e.g., 42 sqm"
-                            data-testid={`input-room-size-${index}`}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Occupancy *</Label>
-                          <Input
-                            type="number"
-                            value={room.occupancy}
-                            onChange={(e) => updateRoom(index, "occupancy", parseInt(e.target.value) || 1)}
-                            min={1}
-                            data-testid={`input-room-occupancy-${index}`}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Room Description *</Label>
-                      <Textarea
-                        value={room.description}
-                        onChange={(e) => updateRoom(index, "description", e.target.value)}
-                        placeholder="Describe the room..."
-                        rows={3}
-                        data-testid={`input-room-description-${index}`}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Room Amenities</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          value={roomAmenitiesInput[index] || ""}
-                          onChange={(e) => setRoomAmenitiesInput({ ...roomAmenitiesInput, [index]: e.target.value })}
-                          placeholder="e.g., City View, Mini Bar"
-                          data-testid={`input-room-amenities-${index}`}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addRoomAmenity(index, roomAmenitiesInput[index] || "");
-                              setRoomAmenitiesInput({ ...roomAmenitiesInput, [index]: "" });
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            addRoomAmenity(index, roomAmenitiesInput[index] || "");
-                            setRoomAmenitiesInput({ ...roomAmenitiesInput, [index]: "" });
-                          }}
-                          data-testid={`button-add-room-amenity-${index}`}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {(room.amenities || []).map((amenity: string, amenityIndex: number) => (
-                          <Badge key={amenityIndex} variant="secondary" className="gap-1">
-                            {amenity}
-                            <button
-                              type="button"
-                              onClick={() => removeRoomAmenity(index, amenityIndex)}
-                              className="ml-1"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Room Images (max 2)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="https://example.com/room-image.jpg"
-                          data-testid={`input-room-image-${index}`}
-                          disabled={(room.images || []).length >= 2}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              addRoomImage(index, (e.target as HTMLInputElement).value);
-                              (e.target as HTMLInputElement).value = "";
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          disabled={(room.images || []).length >= 2}
-                          onClick={(e) => {
-                            const input = (e.target as HTMLElement).parentElement?.querySelector('input');
-                            if (input) {
-                              addRoomImage(index, input.value);
-                              input.value = "";
-                            }
-                          }}
-                          data-testid={`button-add-room-image-${index}`}
-                        >
-                          <ImagePlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 mt-2">
-                        {(room.images || []).map((url: string, imageIndex: number) => (
-                          <div key={imageIndex} className="relative group">
-                            <img
-                              src={url}
-                              alt={`${room.name} ${imageIndex + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x100?text=Invalid+URL';
-                              }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeRoomImage(index, imageIndex)}
-                              className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      {(room.images || []).length === 0 && (
-                        <p className="text-sm text-muted-foreground">Add up to 2 images for this room type</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addRoom}
-                className="w-full"
-                data-testid="button-add-room"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Room Type
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Hotel Settings</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="featured">Featured Hotel</Label>
-                  <p className="text-sm text-muted-foreground">Show this hotel prominently on the website</p>
-                </div>
-                <Switch
-                  id="featured"
-                  checked={form.watch("featured")}
-                  onCheckedChange={(checked) => form.setValue("featured", checked)}
-                  data-testid="switch-hotel-featured"
+                <Label htmlFor="imageAlt">Alt Text (optional)</Label>
+                <Textarea
+                  id="imageAlt"
+                  data-testid="input-hero-alt"
+                  {...form.register("imageAlt")}
+                  placeholder="e.g. Luxury exterior view of Four Seasons Hotel Cairo at Nile Plaza overlooking the Nile River at sunset."
+                  className="text-sm min-h-14 resize-none"
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Gallery</CardTitle>
+              <CardDescription>Atmosphere photos for the horizontal-scroll gallery. Drag to reorder.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  value={galleryUrlInput}
+                  onChange={(e) => setGalleryUrlInput(e.target.value)}
+                  placeholder="https://example.com/gallery-image.jpg"
+                  data-testid="input-gallery-url"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    addArrayItem("gallery", galleryUrlInput);
+                    setGalleryUrlInput("");
+                  }}
+                  data-testid="button-add-gallery-url"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="outline" className="relative" data-testid="button-upload-gallery">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleGalleryUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </Button>
+              </div>
+
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGalleryDragEnd}>
+                <SortableContext items={galleryIds} strategy={horizontalListSortingStrategy}>
+                  <div className="grid grid-cols-4 gap-4">
+                    {gallery.map((url, index) => (
+                      <SortableGalleryImage
+                        key={url}
+                        id={url}
+                        url={url}
+                        index={index}
+                        alt={galleryAlt[url] || ""}
+                        onRemove={() => removeGalleryImage(index)}
+                        onAltChange={(value) => setGalleryAlt(url, value)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Cruise & SEO Tab */}
+        <TabsContent value="cruise-seo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Nile Cruise Details</CardTitle>
+              <CardDescription>Optional — only fill these in for Nile cruise entries. Shown near the hero when present.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="route">Route</Label>
+                <Input id="route" data-testid="input-route" {...form.register("route")} placeholder="e.g., Luxor → Aswan" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration</Label>
+                <Input id="duration" data-testid="input-duration" {...form.register("duration")} placeholder="e.g., 4 nights / 5 days" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Focus Keyword</CardTitle>
+              <CardDescription>Optional SEO target phrase for this hotel's page title, description, and alt text</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                data-testid="input-focus-keyword"
+                {...form.register("focusKeyword")}
+                placeholder="e.g., luxury hotel Giza pyramid view"
+              />
+              {showKeywordHint && (
+                <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>This keyword doesn't appear in the hotel name or article yet — consider weaving it in naturally.</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
       <div className="flex justify-end gap-4 pt-4 border-t">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          data-testid="button-submit-hotel"
-        >
+        <Button type="submit" disabled={isLoading} data-testid="button-submit-hotel">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {initialData ? "Update Hotel" : "Create Hotel"}
         </Button>
