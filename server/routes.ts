@@ -29,6 +29,8 @@ import {
   insertWhyChooseCardSchema,
   insertStayListingSettingsSchema,
   insertLegalPageSchema,
+  getLegalPageHref,
+  LEGACY_LEGAL_SLUGS,
   loginSchema
 } from "@shared/schema";
 import multer from "multer";
@@ -1737,7 +1739,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Error changing username' });
     }
   });
-    // Change password
+
+  // Change password
   app.post("/api/cms/settings/change-password", requireAuth, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
@@ -1754,7 +1757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update password
       await storage.updateUser(authReq.user!.id, { password: hashedPassword });
-      
+            
       res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
       console.error('Error changing password:', error);
@@ -3371,6 +3374,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { url: "/about/iluxury-difference", priority: "0.6", changefreq: "monthly" },
         { url: "/about/your-experience", priority: "0.6", changefreq: "monthly" },
         { url: "/about/trusted-worldwide", priority: "0.6", changefreq: "monthly" },
+        // The 5 legacy legal pages keep a guaranteed static entry — an admin
+        // may never have saved a row for one in the legalPages table yet (it
+        // then renders from a hardcoded fallback), so it wouldn't show up in
+        // the dynamic legalPages loop below. New pages added after the legal
+        // pages CMS shipped (i.e. anything not in LEGACY_LEGAL_SLUGS) are only
+        // ever DB-backed, so those are covered by that loop instead.
         { url: "/privacy-policy", priority: "0.3", changefreq: "yearly" },
         { url: "/terms-conditions", priority: "0.3", changefreq: "yearly" },
         { url: "/cookie-policy", priority: "0.3", changefreq: "yearly" },
@@ -3378,12 +3387,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { url: "/disclaimer", priority: "0.3", changefreq: "yearly" },
       ];
 
+      // Maps categories.categoryType to the listing page it belongs under —
+      // mirrors the `group`/`basePath` pairs used by the three CategoryGroupPage
+      // wrappers (experiences.tsx, adventure-tours.tsx, nile-cruises.tsx).
+      const CATEGORY_TYPE_BASE_PATH: Record<string, string> = {
+        packages: "egypt-tour-packages",
+        "day-tours": "egypt-day-tours",
+        "nile-cruise": "egypt-nile-cruise-tours",
+      };
+
       // Dynamic content from database
-      const [tours, destinations, categories, posts] = await Promise.all([
+      const [tours, destinations, categories, posts, hotelsList, legalPages] = await Promise.all([
         storage.getTours().catch(() => []),
         storage.getDestinations().catch(() => []),
         storage.getCategories().catch(() => []),
         storage.getPosts().catch(() => []),
+        storage.getHotels().catch(() => []),
+        storage.getLegalPages().catch(() => []),
       ]);
 
       let xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -3401,9 +3421,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 `;
       }
 
-      // Tours
+      // Tours — only published ones
       for (const tour of tours) {
-        if (tour.slug) {
+        if (tour.slug && tour.published !== false) {
           xml += `  <url>
     <loc>${baseUrl}/${tour.slug}</loc>
     <lastmod>${tour.updatedAt ? new Date(tour.updatedAt).toISOString().split("T")[0] : now}</lastmod>
@@ -3414,12 +3434,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Destinations
+      // Destinations — only published ones
       for (const dest of destinations) {
-        if (dest.slug) {
+        if (dest.slug && dest.published !== false) {
           xml += `  <url>
     <loc>${baseUrl}/destinations/${dest.slug}</loc>
-    <lastmod>${now}</lastmod>
+    <lastmod>${dest.updatedAt ? new Date(dest.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -3427,13 +3447,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Categories
+      // Categories — grouped under their real listing page (packages / day-tours / nile-cruise)
       for (const cat of categories) {
         if (cat.slug) {
-          const parentPath = cat.parentSlug || "egypt-tour-packages";
+          const parentPath = CATEGORY_TYPE_BASE_PATH[cat.categoryType] || "egypt-tour-packages";
           xml += `  <url>
     <loc>${baseUrl}/${parentPath}/${cat.slug}</loc>
-    <lastmod>${now}</lastmod>
+    <lastmod>${cat.updatedAt ? new Date(cat.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -3441,14 +3461,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Blog posts
+      // Hotels — only published ones
+      for (const hotel of hotelsList) {
+        if (hotel.slug && hotel.status === "published") {
+          xml += `  <url>
+    <loc>${baseUrl}/hotel/${hotel.slug}</loc>
+    <lastmod>${hotel.updatedAt ? new Date(hotel.updatedAt).toISOString().split("T")[0] : now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+`;
+        }
+      }
+
+      // Blog posts — only published ones (posts use a status enum, not a boolean)
       for (const post of posts) {
-        if (post.slug && post.published) {
+        if (post.slug && post.status === "published") {
           xml += `  <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>
     <lastmod>${post.updatedAt ? new Date(post.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+`;
+        }
+      }
+
+      // Legal pages — only NEW ones (the 5 legacy slugs already have a static
+      // entry above, since they can render from a fallback with no DB row).
+      for (const page of legalPages) {
+        if (page.slug && page.status === "published" && !(LEGACY_LEGAL_SLUGS as readonly string[]).includes(page.slug)) {
+          xml += `  <url>
+    <loc>${baseUrl}${getLegalPageHref(page.slug)}</loc>
+    <lastmod>${page.updatedAt ? new Date(page.updatedAt).toISOString().split("T")[0] : now}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 `;
         }
