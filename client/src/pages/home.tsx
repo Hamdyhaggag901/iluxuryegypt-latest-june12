@@ -2,7 +2,6 @@ import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
 import WhoIsILuxurySection from "../components/who-is-iluxury-section";
-import SiwaVideoSection from "../components/siwa-video-section";
 import BrandBanner from "../components/brand-banner";
 import GuestExperienceIntro from "../components/guest-experience-intro";
 import WhyUseSection from "../components/why-use-section";
@@ -30,7 +29,6 @@ export default function Home() {
         <HeroSlider />
         <WhoIsILuxurySection />
         <BrandBanner />
-        <SiwaVideoSection />
         <GuestExperienceIntro />
         <WhyUseSection />
         <HighlightsSection />
