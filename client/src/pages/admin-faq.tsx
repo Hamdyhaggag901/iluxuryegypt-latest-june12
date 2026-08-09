@@ -345,6 +345,7 @@ export default function AdminFAQ() {
                               size="sm"
                               onClick={() => handleToggleVisibility(faq)}
                               title={faq.isVisible ? "Hide FAQ" : "Show FAQ"}
+                              aria-label={faq.isVisible ? "Hide FAQ" : "Show FAQ"}
                             >
                               {faq.isVisible ? (
                                 <Eye className="h-4 w-4 text-green-600" />
@@ -356,6 +357,7 @@ export default function AdminFAQ() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditFaq(faq)}
+                              aria-label="Edit FAQ"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -364,6 +366,7 @@ export default function AdminFAQ() {
                               size="sm"
                               onClick={() => handleDeleteFaq(faq.id)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              aria-label="Delete FAQ"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

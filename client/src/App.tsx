@@ -126,8 +126,8 @@ function Router() {
             <Route path="/about/trusted-worldwide" component={TrustedWorldwide} />
 
             {/* Destinations */}
-            <Route path="/destinations" component={Destinations} />
-            <Route path="/destinations/:slug" component={DestinationDetail} />
+            <Route path="/egypt-luxury-destinations" component={Destinations} />
+            <Route path="/egypt-luxury-destinations/:slug" component={DestinationDetail} />
 
             {/* Experiences */}
             <Route path="/egypt-tour-packages" component={Experiences} />

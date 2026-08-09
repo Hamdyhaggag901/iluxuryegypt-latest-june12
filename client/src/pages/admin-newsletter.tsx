@@ -269,6 +269,7 @@ export default function AdminNewsletter() {
                             size="sm"
                             onClick={() => handleToggleStatus(subscriber)}
                             title={subscriber.isActive ? "Deactivate" : "Activate"}
+                            aria-label={subscriber.isActive ? "Deactivate subscriber" : "Activate subscriber"}
                           >
                             {subscriber.isActive ? (
                               <ToggleRight className="h-4 w-4 text-green-600" />
@@ -281,6 +282,7 @@ export default function AdminNewsletter() {
                             size="sm"
                             onClick={() => handleDeleteClick(subscriber)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            aria-label="Delete subscriber"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

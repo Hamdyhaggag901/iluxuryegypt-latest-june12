@@ -212,7 +212,7 @@ ${formData.additionalNotes || "None"}
                     onClick={() => handleDestinationToggle(dest)}
                     className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.destinations.includes(dest)
-                        ? "border-accent bg-accent/10 text-accent"
+                        ? "border-accent bg-accent/10 text-accent-text"
                         : "border-gray-200 hover:border-accent/50"
                     }`}
                   >
@@ -307,7 +307,7 @@ ${formData.additionalNotes || "None"}
                     onClick={() => handleInterestToggle(interest)}
                     className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-all ${
                       formData.interests.includes(interest)
-                        ? "border-accent bg-accent/10 text-accent"
+                        ? "border-accent bg-accent/10 text-accent-text"
                         : "border-gray-200 hover:border-accent/50"
                     }`}
                   >
@@ -327,7 +327,7 @@ ${formData.additionalNotes || "None"}
                     onClick={() => setFormData({ ...formData, pace })}
                     className={`flex-1 p-4 rounded-lg border-2 capitalize transition-all ${
                       formData.pace === pace
-                        ? "border-accent bg-accent/10 text-accent"
+                        ? "border-accent bg-accent/10 text-accent-text"
                         : "border-gray-200 hover:border-accent/50"
                     }`}
                   >
@@ -451,7 +451,7 @@ ${formData.additionalNotes || "None"}
                       onClick={() => setFormData({ ...formData, preferredContact: method })}
                       className={`flex-1 p-3 rounded-lg border-2 capitalize text-sm transition-all ${
                         formData.preferredContact === method
-                          ? "border-accent bg-accent/10 text-accent"
+                          ? "border-accent bg-accent/10 text-accent-text"
                           : "border-gray-200 hover:border-accent/50"
                       }`}
                     >
@@ -519,7 +519,7 @@ ${formData.additionalNotes || "None"}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center gap-4 mb-8">
             <div className="w-12 h-px bg-accent/40" />
-            <span className="text-accent/60 text-xs tracking-[0.4em] uppercase font-light">
+            <span className="text-accent-text/60 text-xs tracking-[0.4em] uppercase font-light">
               Your Perfect Journey
             </span>
             <div className="w-12 h-px bg-accent/40" />
@@ -551,12 +551,12 @@ ${formData.additionalNotes || "None"}
                   <div className="flex flex-col items-center">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                       isCompleted ? "bg-accent text-white" :
-                      isActive ? "bg-accent/20 text-accent border-2 border-accent" :
+                      isActive ? "bg-accent/20 text-accent-text border-2 border-accent" :
                       "bg-gray-100 text-gray-400"
                     }`}>
                       {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                     </div>
-                    <span className={`mt-2 text-xs font-medium ${isActive ? "text-accent" : "text-gray-500"}`}>
+                    <span className={`mt-2 text-xs font-medium ${isActive ? "text-accent-text" : "text-gray-500"}`}>
                       {step.name}
                     </span>
                   </div>

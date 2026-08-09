@@ -5,6 +5,10 @@ interface SEOProps {
   description?: string;
   image?: string;
   type?: string;
+  /** When true, use `title` verbatim as document.title (no site name appended). */
+  titleOverride?: boolean;
+  /** Raw JSON-LD string or object to inject as <script type="application/ld+json">. */
+  jsonLd?: string | object | Array<string | object>;
 }
 
 const SITE_NAME = "I.LuxuryEgypt";
@@ -33,10 +37,12 @@ function setLink(rel: string, href: string) {
   el.href = href;
 }
 
-export function useSEO({ title, description, image, type = "website" }: SEOProps = {}) {
+export function useSEO({ title, description, image, type = "website", titleOverride = false, jsonLd }: SEOProps = {}) {
   useEffect(() => {
     const path = window.location.pathname;
-    const pageTitle = title ? `${title} | ${SITE_NAME}` : document.title || SITE_NAME;
+    const pageTitle = title
+      ? (titleOverride ? title : `${title} | ${SITE_NAME}`)
+      : document.title || SITE_NAME;
     const pageDescription = description || DEFAULT_DESCRIPTION;
     const pageImage = image || DEFAULT_IMAGE;
     const canonicalUrl = `${SITE_URL}${path}`;
@@ -66,5 +72,48 @@ export function useSEO({ title, description, image, type = "website" }: SEOProps
     setMeta("twitter:title", pageTitle);
     setMeta("twitter:description", pageDescription);
     setMeta("twitter:image", pageImage);
-  }, [title, description, image, type]);
+
+    // JSON-LD structured data — managed via [data-seo-jsonld] tags so we
+    // can clean up between page navigations.
+    document
+      .querySelectorAll('script[type="application/ld+json"][data-seo-jsonld="true"]')
+      .forEach((el) => el.parentNode?.removeChild(el));
+
+    if (jsonLd) {
+      const items = Array.isArray(jsonLd) ? jsonLd : [jsonLd];
+      for (const item of items) {
+        if (!item) continue;
+        let content: string | null = null;
+        if (typeof item === "string") {
+          const trimmed = item.trim();
+          if (!trimmed) continue;
+          try {
+            // Validate it's parseable JSON before injecting.
+            JSON.parse(trimmed);
+            content = trimmed;
+          } catch {
+            content = null;
+          }
+        } else {
+          try {
+            content = JSON.stringify(item);
+          } catch {
+            content = null;
+          }
+        }
+        if (!content) continue;
+        const script = document.createElement("script");
+        script.type = "application/ld+json";
+        script.setAttribute("data-seo-jsonld", "true");
+        script.text = content;
+        document.head.appendChild(script);
+      }
+    }
+
+    return () => {
+      document
+        .querySelectorAll('script[type="application/ld+json"][data-seo-jsonld="true"]')
+        .forEach((el) => el.parentNode?.removeChild(el));
+    };
+  }, [title, description, image, type, titleOverride, JSON.stringify(jsonLd ?? null)]);
 }

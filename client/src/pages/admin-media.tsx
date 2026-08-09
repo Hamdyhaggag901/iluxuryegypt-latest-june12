@@ -318,6 +318,7 @@ export default function AdminMedia() {
                             className="h-7 w-7 p-0"
                             onClick={() => copyUrl(item.url)}
                             data-testid={`button-copy-${item.id}`}
+                            aria-label="Copy URL"
                           >
                             <Copy className="h-3 w-3" />
                           </Button>
@@ -342,6 +343,7 @@ export default function AdminMedia() {
                             onClick={() => deleteMutation.mutate(item.id)}
                             disabled={deleteMutation.isPending}
                             data-testid={`button-delete-${item.id}`}
+                            aria-label="Delete media file"
                           >
                             <Trash2 className="h-3 w-3 text-red-600" />
                           </Button>

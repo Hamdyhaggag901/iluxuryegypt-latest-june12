@@ -547,12 +547,12 @@ export default function NileCruise() {
           <div className="text-center">
             <div className="inline-flex items-center gap-3 bg-accent/10 rounded-full px-6 py-3 mb-8">
               <Ship className="h-6 w-6 text-accent" />
-              <span className="text-accent font-semibold">Nile Cruise Collection</span>
+              <span className="text-accent-text font-semibold">Nile Cruise Collection</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl font-serif font-bold text-primary mb-8 leading-tight">
               Nile Cruise
-              <span className="block text-accent">Experience</span>
+              <span className="block text-accent-text">Experience</span>
             </h1>
 
             <div className="w-32 h-px bg-accent mx-auto mb-8"></div>
@@ -630,6 +630,7 @@ export default function NileCruise() {
                       src={tour.image}
                       alt={tour.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
@@ -646,7 +647,7 @@ export default function NileCruise() {
                     </div>
 
                     <div className="absolute bottom-4 left-4 right-4">
-                      <div className="flex items-center gap-2 text-accent font-medium text-sm mb-2">
+                      <div className="flex items-center gap-2 text-accent-text font-medium text-sm mb-2">
                         <MapPin className="h-4 w-4" />
                         <span>{tour.location}</span>
                       </div>
@@ -677,7 +678,7 @@ export default function NileCruise() {
                       {tour.highlights.slice(0, 3).map((highlight: string, index: number) => (
                         <span
                           key={index}
-                          className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full font-medium"
+                          className="text-xs bg-accent/10 text-accent-text px-2 py-1 rounded-full font-medium"
                         >
                           {highlight}
                         </span>
@@ -736,7 +737,7 @@ export default function NileCruise() {
                               {tour.highlights.map((highlight: string, index: number) => (
                                 <span
                                   key={index}
-                                  className="text-xs bg-accent/10 text-accent px-2 py-1 rounded-full font-medium"
+                                  className="text-xs bg-accent/10 text-accent-text px-2 py-1 rounded-full font-medium"
                                 >
                                   {highlight}
                                 </span>

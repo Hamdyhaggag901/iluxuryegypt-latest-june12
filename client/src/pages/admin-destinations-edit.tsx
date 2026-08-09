@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DestinationForm } from "@/components/DestinationForm";
+import { DestinationForm as DestinationForm } from "@/components/DestinationForm";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";

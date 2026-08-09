@@ -409,6 +409,7 @@ export default function AdminTourBookings() {
                             size="sm"
                             onClick={() => handleViewDetails(booking)}
                             title="View Details"
+                            aria-label="View booking details"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -417,6 +418,7 @@ export default function AdminTourBookings() {
                             size="sm"
                             onClick={() => handleDeleteClick(booking)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            aria-label="Delete booking"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
