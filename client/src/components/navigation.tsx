@@ -154,6 +154,7 @@ export default function Navigation() {
                   src={logoUrl}
                   alt="I.LUXURYEGYPT"
                   className="h-12 w-auto cursor-pointer"
+                  loading="eager"
                   data-testid="logo-home"
                 />
               ) : (
@@ -177,7 +178,7 @@ export default function Navigation() {
                   >
                     <button
                       className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group flex items-center gap-1 ${
-                        location.startsWith(`/${item.id}`) ? 'text-accent bg-accent/10' : ''
+                        location.startsWith(`/${item.id}`) ? 'text-accent-text bg-accent/10' : ''
                       }`}
                       data-testid={`nav-${item.id}`}
                     >
@@ -196,8 +197,8 @@ export default function Navigation() {
                               href={subItem.href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`block w-full text-left px-4 py-3 text-sm font-medium text-accent hover:bg-accent/5 hover:text-accent/70 transition-colors ${
-                                location === subItem.href ? 'bg-accent/10 text-accent/70' : ''
+                              className={`block w-full text-left px-4 py-3 text-sm font-medium text-accent-text hover:bg-accent/5 hover:text-accent/70 transition-colors ${
+                                location === subItem.href ? 'bg-accent/10 text-accent-text/70' : ''
                               }`}
                             >
                               {subItem.label}
@@ -205,8 +206,8 @@ export default function Navigation() {
                           ) : (
                             <Link key={subItem.href} href={subItem.href}>
                               <button
-                                className={`w-full text-left px-4 py-3 text-sm font-medium text-accent hover:bg-accent/5 hover:text-accent/70 transition-colors ${
-                                  location === subItem.href ? 'bg-accent/10 text-accent/70' : ''
+                                className={`w-full text-left px-4 py-3 text-sm font-medium text-accent-text hover:bg-accent/5 hover:text-accent/70 transition-colors ${
+                                  location === subItem.href ? 'bg-accent/10 text-accent-text/70' : ''
                                 }`}
                               >
                                 {subItem.label}
@@ -225,7 +226,7 @@ export default function Navigation() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group ${
-                        location === item.href ? 'text-accent bg-accent/10' : ''
+                        location === item.href ? 'text-accent-text bg-accent/10' : ''
                       }`}
                       data-testid={`nav-${item.id}`}
                     >
@@ -236,7 +237,7 @@ export default function Navigation() {
                     <Link key={item.id} href={item.href!}>
                       <button
                         className={`relative text-primary hover:text-accent transition-all duration-300 hover-elevate px-4 py-3 rounded-lg text-sm font-medium group ${
-                          location === item.href ? 'text-accent bg-accent/10' : ''
+                          location === item.href ? 'text-accent-text bg-accent/10' : ''
                         }`}
                         data-testid={`nav-${item.id}`}
                       >
@@ -266,16 +267,18 @@ export default function Navigation() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-medium px-3 sm:px-5 h-9 sm:h-10 rounded-lg whitespace-nowrap"
               data-testid="button-nav-start-planning"
             >
-              Design My Egypt Story
+              <span className="sm:hidden">Plan My Trip</span>
+              <span className="hidden sm:inline">Design My Egypt Story</span>
             </Button>
 
-            <div className="lg:hidden">
+            <div className="lg:hidden shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="h-12 w-12 text-primary hover:text-accent"
                 data-testid="button-mobile-menu"
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </Button>
@@ -292,7 +295,7 @@ export default function Navigation() {
                     <button
                       onClick={() => toggleMobileDropdown(item.id)}
                       className={`text-primary hover:text-accent hover:bg-accent/10 flex items-center justify-between px-4 py-3 rounded-lg text-base font-medium w-full transition-all duration-300 ${
-                        location.startsWith(`/${item.id}`) ? 'text-accent bg-accent/10' : ''
+                        location.startsWith(`/${item.id}`) ? 'text-accent-text bg-accent/10' : ''
                       }`}
                       data-testid={`nav-mobile-${item.id}`}
                     >
@@ -310,7 +313,7 @@ export default function Navigation() {
                               rel="noopener noreferrer"
                               onClick={() => setIsMobileMenuOpen(false)}
                               className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-2 rounded-lg text-sm font-medium w-full text-left transition-all duration-300 ${
-                                location === subItem.href ? 'text-accent bg-accent/10' : ''
+                                location === subItem.href ? 'text-accent-text bg-accent/10' : ''
                               }`}
                             >
                               {subItem.label}
@@ -320,7 +323,7 @@ export default function Navigation() {
                               <button
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-2 rounded-lg text-sm font-medium w-full text-left transition-all duration-300 ${
-                                  location === subItem.href ? 'text-accent bg-accent/10' : ''
+                                  location === subItem.href ? 'text-accent-text bg-accent/10' : ''
                                 }`}
                               >
                                 {subItem.label}
@@ -340,7 +343,7 @@ export default function Navigation() {
                       rel="noopener noreferrer"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-3 rounded-lg text-base font-medium w-full text-left transition-all duration-300 ${
-                        location === item.href ? 'text-accent bg-accent/10' : ''
+                        location === item.href ? 'text-accent-text bg-accent/10' : ''
                       }`}
                       data-testid={`nav-mobile-${item.id}`}
                     >
@@ -351,7 +354,7 @@ export default function Navigation() {
                       <button
                         onClick={() => setIsMobileMenuOpen(false)}
                         className={`text-primary hover:text-accent hover:bg-accent/10 block px-4 py-3 rounded-lg text-base font-medium w-full text-left transition-all duration-300 ${
-                          location === item.href ? 'text-accent bg-accent/10' : ''
+                          location === item.href ? 'text-accent-text bg-accent/10' : ''
                         }`}
                         data-testid={`nav-mobile-${item.id}`}
                       >
