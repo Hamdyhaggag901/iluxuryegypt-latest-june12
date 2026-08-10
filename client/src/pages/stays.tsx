@@ -20,6 +20,7 @@ import { Link } from "wouter";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Hotel } from "@shared/schema";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 const INITIAL_VISIBLE_COUNT = 12;
 
@@ -76,10 +77,11 @@ function FeaturedStayCard({ hotel }: { hotel: Hotel }) {
       <div className="grid grid-cols-1 lg:grid-cols-2">
         <div className="relative h-72 lg:h-full min-h-[360px]">
           <img
-            src={hotel.image}
+            {...getResponsiveImageProps(hotel.image)}
             alt={`${hotel.name} — ${hotel.location}, Egypt`}
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
+            fetchPriority="high"
           />
           <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">Featured Stay</Badge>
         </div>
@@ -103,7 +105,7 @@ function FeaturedStayCard({ hotel }: { hotel: Hotel }) {
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               {tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="bg-accent/10 text-accent border-0">
+                <Badge key={tag} variant="secondary" className="bg-accent/10 text-accent-text border-0">
                   {tag}
                 </Badge>
               ))}
@@ -149,7 +151,7 @@ function StayGridCard({ hotel }: { hotel: Hotel }) {
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs bg-accent/10 text-accent border-0">
+              <Badge key={tag} variant="secondary" className="text-xs bg-accent/10 text-accent-text border-0">
                 {tag}
               </Badge>
             ))}
@@ -247,7 +249,7 @@ export default function Stay() {
         {/* Header / Intro */}
         <section className="py-10 md:py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p className="tracking-[0.2em] uppercase text-accent text-sm font-medium mb-3">{eyebrow}</p>
+            <p className="tracking-[0.2em] uppercase text-accent-text text-sm font-medium mb-3">{eyebrow}</p>
             <h1 className="text-3xl md:text-5xl font-serif font-bold text-primary mb-4">{title}</h1>
             <p className="text-lg text-muted-foreground leading-relaxed">{description}</p>
           </div>
