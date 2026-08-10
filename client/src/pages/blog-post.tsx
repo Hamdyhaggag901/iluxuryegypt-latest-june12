@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { getPostImageAlt } from "@/lib/seo-alt-text";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 // Sample blog posts data (fallback)
 const sampleBlogPosts = [
@@ -434,7 +435,7 @@ function RelatedPostCard({ post }: { post: any }) {
         </div>
         <CardContent className="p-4">
           {post.category && (
-            <p className="text-xs text-accent font-medium mb-1">{post.category}</p>
+            <p className="text-xs text-accent-text font-medium mb-1">{post.category}</p>
           )}
           <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{post.titleEn}</h3>
         </CardContent>
@@ -543,10 +544,11 @@ export default function BlogPost() {
       {/* Hero Section */}
       <section className="relative h-[600px] overflow-hidden">
         <img
-          src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
+          {...getResponsiveImageProps(post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&auto=format&fit=crop')}
           alt={getPostImageAlt(post)}
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
@@ -611,7 +613,7 @@ export default function BlogPost() {
                     {post.tags.map((tag: string, index: number) => (
                       <span
                         key={index}
-                        className="text-base bg-accent/10 text-accent px-4 py-2 rounded-full flex items-center gap-2 hover:bg-accent/20 transition-colors"
+                        className="text-base bg-accent/10 text-accent-text px-4 py-2 rounded-full flex items-center gap-2 hover:bg-accent/20 transition-colors"
                       >
                         <Tag className="h-4 w-4" />
                         {tag}
