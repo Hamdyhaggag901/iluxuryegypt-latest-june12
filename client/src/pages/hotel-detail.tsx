@@ -25,6 +25,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { Facility } from "@shared/schema";
 import { getHotelImageAlt } from "@/lib/seo-alt-text";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 import { Card, CardContent } from "@/components/ui/card";
 
 function getFacilityIcon(iconName: string) {
@@ -148,10 +149,11 @@ export default function HotelDetail() {
         {/* Hero — full-width image, hotel name overlaid, no buttons */}
         <section className="relative h-[60vh] md:h-[75vh] flex items-end overflow-hidden">
           <img
-            src={hotel.image}
+            {...getResponsiveImageProps(hotel.image)}
             alt={getHotelImageAlt(hotel)}
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
