@@ -27,6 +27,7 @@ import {
 import { Link } from "wouter";
 import type { Tour } from "@shared/schema";
 import { getTourImageAlt } from "@/lib/seo-alt-text";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -228,10 +229,11 @@ export default function TourDetail() {
       <section className="relative h-[70vh] md:h-screen w-full">
         <div className="absolute inset-0">
           <img
-            src={tour.heroImage}
+            {...getResponsiveImageProps(tour.heroImage)}
             alt={getTourImageAlt(tour)}
             className="w-full h-full object-cover"
             loading="eager"
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/20" />
         </div>
@@ -281,7 +283,7 @@ export default function TourDetail() {
                 <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-4 text-center">
                   <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-accent text-base">{currency}</span>
+                    <span className="text-accent-text text-base">{currency}</span>
                     <span className="text-3xl font-serif text-white">{priceLabel}</span>
                   </div>
                   <p className="text-white/60 text-xs mt-1">per person</p>
@@ -327,7 +329,7 @@ export default function TourDetail() {
               <div>
                 <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8">
                   <div className="w-8 md:w-12 h-px bg-accent"></div>
-                  <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent">The Experience</h2>
+                  <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">The Experience</h2>
                 </div>
                 <p className="text-base md:text-xl lg:text-2xl font-serif font-light text-primary leading-relaxed">
                   {tour.description}
@@ -339,7 +341,7 @@ export default function TourDetail() {
                 <div>
                   <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8">
                     <div className="w-8 md:w-12 h-px bg-accent"></div>
-                    <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent">Gallery</h2>
+                    <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Gallery</h2>
                   </div>
 
                   {/* Main Image */}
@@ -358,12 +360,14 @@ export default function TourDetail() {
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelectedImage(prev => prev === 0 ? allImages.length - 1 : prev - 1); }}
                           className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                          aria-label="Previous image"
                         >
                           <ChevronLeft className="h-6 w-6 text-primary" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setSelectedImage(prev => prev === allImages.length - 1 ? 0 : prev + 1); }}
                           className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100"
+                          aria-label="Next image"
                         >
                           <ChevronRight className="h-6 w-6 text-primary" />
                         </button>
@@ -395,7 +399,7 @@ export default function TourDetail() {
                 <div>
                   <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-12">
                     <div className="w-8 md:w-12 h-px bg-accent"></div>
-                    <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent">Your Journey</h2>
+                    <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Your Journey</h2>
                   </div>
 
                   <div className="relative">
@@ -438,7 +442,7 @@ export default function TourDetail() {
                 <div>
                   <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
                     <div className="w-6 md:w-8 h-px bg-accent"></div>
-                    <h3 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent">Included</h3>
+                    <h3 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Included</h3>
                   </div>
                   {tour.includes.length === 0 ? (
                     <p className="text-sm md:text-base text-muted-foreground">Details available upon request.</p>
@@ -483,7 +487,7 @@ export default function TourDetail() {
                   <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-6 text-center">
                     <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
                     <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-accent text-lg">{currency}</span>
+                      <span className="text-accent-text text-lg">{currency}</span>
                       <span className="text-4xl font-serif text-white">{priceLabel}</span>
                     </div>
                     <p className="text-white/60 text-sm mt-1">per person</p>
@@ -602,7 +606,7 @@ export default function TourDetail() {
                 <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-4 text-center">
                   <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-accent text-base">{currency}</span>
+                    <span className="text-accent-text text-base">{currency}</span>
                     <span className="text-3xl font-serif text-white">{priceLabel}</span>
                   </div>
                   <p className="text-white/60 text-xs mt-1">per person</p>
@@ -727,7 +731,7 @@ export default function TourDetail() {
 
                     <div className="p-5 md:p-6 flex flex-col flex-grow">
                       <div className="flex flex-col gap-2 md:gap-3 flex-grow">
-                        <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
+                        <span className="text-xs font-semibold text-accent-text tracking-[0.15em] uppercase">
                           {t.category}
                         </span>
 
@@ -735,7 +739,7 @@ export default function TourDetail() {
                           {t.title}
                         </h3>
 
-                        <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
+                        <p className="text-xs font-semibold text-accent-text tracking-[0.1em] uppercase">
                           {t.duration}
                           {t.groupSize ? ` · ${t.groupSize}` : ""}
                         </p>
@@ -792,12 +796,14 @@ export default function TourDetail() {
           <button
             onClick={() => setIsLightboxOpen(false)}
             className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            aria-label="Close lightbox"
           >
             <X className="h-6 w-6 text-white" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedImage(prev => prev === 0 ? allImages.length - 1 : prev - 1); }}
             className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            aria-label="Previous image"
           >
             <ChevronLeft className="h-7 w-7 text-white" />
           </button>
@@ -811,6 +817,7 @@ export default function TourDetail() {
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedImage(prev => prev === allImages.length - 1 ? 0 : prev + 1); }}
             className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            aria-label="Next image"
           >
             <ChevronRight className="h-7 w-7 text-white" />
           </button>
@@ -822,6 +829,7 @@ export default function TourDetail() {
                 className={`w-2 h-2 rounded-full transition-all ${
                   selectedImage === idx ? 'bg-accent w-6' : 'bg-white/40 hover:bg-white/60'
                 }`}
+                aria-label={`Go to image ${idx + 1}`}
               />
             ))}
           </div>
