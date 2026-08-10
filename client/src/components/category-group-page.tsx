@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Loader2, ArrowRight, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
+import TripBuilderModal from "@/components/trip-builder-modal";
 import type { Category, Tour } from "@shared/schema";
 
 type CategoryGroup = "packages" | "day-tours" | "nile-cruise";
@@ -40,6 +42,8 @@ export default function CategoryGroupPage({
   description,
   basePath,
 }: CategoryGroupPageProps) {
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+
   const { data, isLoading, isError } = useQuery<{ success: boolean; categories: Category[] }>({
     queryKey: ["/api/public/categories", group],
     queryFn: async () => {
@@ -84,7 +88,7 @@ export default function CategoryGroupPage({
           {/* Animated top line */}
           <div className="flex items-center justify-center gap-4 mb-12 animate-fade-in">
             <div className="w-12 h-px bg-accent/40" />
-            <span className="text-accent/60 text-xs tracking-[0.4em] uppercase font-light">
+            <span className="text-accent-text/60 text-xs tracking-[0.4em] uppercase font-light">
               Luxury Travel
             </span>
             <div className="w-12 h-px bg-accent/40" />
@@ -105,7 +109,7 @@ export default function CategoryGroupPage({
 
           {/* Scroll indicator */}
           <div className="mt-16 animate-fade-in-delayed">
-            <div className="flex flex-col items-center gap-2 text-accent/50">
+            <div className="flex flex-col items-center gap-2 text-accent-text/50">
               <span className="text-xs tracking-[0.3em] uppercase">Explore</span>
               <div className="w-px h-8 bg-gradient-to-b from-accent/50 to-transparent animate-bounce-slow" />
             </div>
@@ -152,43 +156,47 @@ export default function CategoryGroupPage({
       {/* Tailor Made CTA - Always visible */}
       <section className="py-12 bg-background border-b border-accent/10">
         <div className="max-w-[90rem] mx-auto px-6 sm:px-10 lg:px-16">
-          <Link href="/tailor-made" className="group block">
-            <div className="relative bg-gradient-to-r from-primary via-primary/95 to-primary rounded-2xl p-8 md:p-12 overflow-hidden transition-all duration-500 hover:shadow-2xl">
+          <button
+            onClick={() => setIsTripBuilderOpen(true)}
+            className="group block w-full text-left"
+            data-testid="button-category-tailor-made-cta"
+          >
+            <div className="relative bg-gradient-to-r from-primary via-primary/95 to-primary rounded-2xl border-t-4 border-accent p-8 md:p-12 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-accent/10 hover:scale-[1.005]">
               {/* Decorative elements */}
               <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2" />
               <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-accent/40 rounded-full" />
               <div className="absolute bottom-1/3 right-1/3 w-1.5 h-1.5 bg-accent/30 rounded-full" />
 
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="flex items-center gap-6">
-                  {/* Icon */}
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                  {/* Icon with gold ring */}
+                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-accent/20 ring-2 ring-accent/50 flex items-center justify-center group-hover:scale-110 group-hover:ring-accent transition-all duration-500 shrink-0">
                     <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-accent" />
                   </div>
 
                   {/* Text content */}
                   <div>
-                    <span className="text-accent text-xs tracking-[0.3em] uppercase font-medium">
+                    <span className="text-accent text-xs tracking-[0.3em] uppercase font-semibold">
                       Custom Experience
                     </span>
-                    <h3 className="text-2xl md:text-3xl font-serif font-bold text-white mt-1">
-                      Tailor Made Tour
+                    <h3 className="text-3xl md:text-5xl font-serif font-bold text-white mt-2 leading-tight">
+                      Design My Egypt Story
                     </h3>
-                    <p className="text-white/70 mt-2 max-w-lg text-sm md:text-base">
-                      Can't find what you're looking for? Let us craft a personalized Egyptian adventure just for you.
+                    <p className="text-white/70 mt-3 max-w-lg text-sm md:text-base">
+                      Can't find what you're looking for? Let our specialists craft a bespoke Egyptian journey built entirely around you.
                     </p>
                   </div>
                 </div>
 
                 {/* CTA Button */}
-                <div className="flex items-center gap-3 bg-accent hover:bg-accent/90 text-white px-6 py-3 rounded-full transition-all duration-300 group-hover:scale-105">
-                  <span className="font-medium">Create Your Trip</span>
+                <div className="flex items-center gap-3 bg-accent hover:bg-accent/90 text-primary px-8 py-4 rounded-full transition-all duration-300 group-hover:scale-105 font-semibold shrink-0 shadow-lg shadow-accent/20">
+                  <span>Start Planning</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
             </div>
-          </Link>
+          </button>
         </div>
       </section>
 
@@ -260,7 +268,7 @@ export default function CategoryGroupPage({
                       <div className="absolute top-8 right-8 w-10 h-10 border border-accent/15 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
 
                       {/* Category type */}
-                      <span className="text-accent text-xs tracking-[0.25em] uppercase font-medium">
+                      <span className="text-accent-text text-xs tracking-[0.25em] uppercase font-medium">
                         {group.replace("-", " ")}
                       </span>
 
@@ -314,6 +322,7 @@ export default function CategoryGroupPage({
       </section>
 
       <Footer />
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
     </div>
   );
 }
