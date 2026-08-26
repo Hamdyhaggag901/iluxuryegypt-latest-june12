@@ -159,6 +159,7 @@ export const tours = pgTable("tours", {
   heroImage: text("hero_image").notNull(),
   gallery: text("gallery").array().notNull().default([]),
   duration: text("duration").notNull(),
+  durationDays: integer("duration_days"), // Nullable; net number of days, used for auto date-block generation. Existing rows created before this field existed have NULL until an admin fills it in.
   groupSize: text("group_size"),
   difficulty: text("difficulty").default("Easy"),
   price: integer("price").notNull(),
@@ -168,9 +169,27 @@ export const tours = pgTable("tours", {
   itinerary: jsonb("itinerary").notNull(),
   destinations: text("destinations").array().notNull().default([]),
   category: text("category").notNull(),
+  hotelIds: text("hotel_ids").array().notNull().default([]), // Manually curated by admin; IDs into the hotels table for the "Where You Will Stay" section
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
   brochureUrl: text("brochure_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Seasonal pricing rules — applied globally across all tours (smart pricing for "Dates & Prices")
+export const seasons = pgTable("seasons", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(), // e.g. "Peak Season – Winter Holidays"
+  startMonth: integer("start_month").notNull(), // 1-12
+  startDay: integer("start_day").notNull(), // 1-31
+  endMonth: integer("end_month").notNull(), // 1-12
+  endDay: integer("end_day").notNull(), // 1-31
+  priceMultiplier: integer("price_multiplier"), // Percentage, e.g. 120 = base price +20%. Provide this OR flatMarkup, not both.
+  flatMarkup: integer("flat_markup"), // Flat amount added to base price (same currency as the tour)
+  isActive: boolean("is_active").notNull().default(true),
+  sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -634,6 +653,18 @@ export const insertDestinationSchema = createInsertSchema(destinations).omit({
   faqs: z.array(faqSchema).default([]),
 });
 
+// Shape of a single itinerary day, stored inside tours.itinerary (jsonb, not DB-enforced).
+// lat/lng are optional and admin-entered, used by the itinerary map ("Itinerary 50/50").
+export const itineraryDaySchema = z.object({
+  day: z.number().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  activities: z.array(z.string()).default([]),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
+});
+export type ItineraryDay = z.infer<typeof itineraryDaySchema>;
+
 export const insertTourSchema = createInsertSchema(tours).omit({
   id: true,
   createdAt: true,
@@ -645,6 +676,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   shortDescription: z.string().optional(),
   heroImage: z.string().url("Please provide a valid hero image URL"),
   duration: z.string().min(1, "Duration is required"),
+  durationDays: z.number().int().positive().nullable().optional(),
   groupSize: z.string().optional(),
   difficulty: z.string().optional().default("Easy"),
   price: z.number().min(0, "Price must be 0 or greater"),
@@ -655,6 +687,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   destinations: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
   itinerary: z.any(),
+  hotelIds: z.array(z.string()).default([]),
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
 });
@@ -694,6 +727,22 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   sortOrder: z.number().default(0),
   featured: z.boolean().default(false),
   categoryType: z.enum(["packages", "day-tours", "nile-cruise"]).default("packages"),
+});
+
+export const insertSeasonSchema = createInsertSchema(seasons).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Season name is required"),
+  startMonth: z.number().int().min(1).max(12),
+  startDay: z.number().int().min(1).max(31),
+  endMonth: z.number().int().min(1).max(12),
+  endDay: z.number().int().min(1).max(31),
+  priceMultiplier: z.number().int().positive().nullable().optional(),
+  flatMarkup: z.number().int().nullable().optional(),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().default(0),
 });
 
 export const insertSettingSchema = createInsertSchema(settings).omit({
@@ -1043,6 +1092,9 @@ export type InsertDestination = z.infer<typeof insertDestinationSchema>;
 export type Destination = typeof destinations.$inferSelect;
 export type InsertTour = z.infer<typeof insertTourSchema>;
 export type Tour = typeof tours.$inferSelect;
+
+export type InsertSeason = z.infer<typeof insertSeasonSchema>;
+export type Season = typeof seasons.$inferSelect;
 export type InsertPackage = z.infer<typeof insertPackageSchema>;
 export type Package = typeof packages.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;

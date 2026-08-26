@@ -15,6 +15,7 @@ import {
   insertPackageSchema,
   insertDestinationSchema,
   insertCategorySchema,
+  insertSeasonSchema,
   insertMediaSchema,
   insertNavItemSchema,
   insertFooterLinkSchema,
@@ -128,15 +129,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { slug } = req.params;
       const tour = await storage.getTourBySlug(slug);
-      
+
       if (!tour) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Tour not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Tour not found'
         });
       }
-      
-      res.json({ success: true, tour });
+
+      // Resolve hotelIds into full hotel records for the "Where You Will Stay" section
+      const hotels = tour.hotelIds?.length
+        ? (await Promise.all(tour.hotelIds.map(id => storage.getHotel(id))))
+            .filter((h): h is NonNullable<typeof h> => Boolean(h))
+        : [];
+
+      res.json({ success: true, tour, hotels });
     } catch (error) {
       console.error('Error fetching tour:', error);
       res.status(500).json({ 
@@ -510,6 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: "Family Luxury",
           featured: true,
           published: true,
+          hotelIds: [],
           createdBy: adminUser.id
         },
         {
@@ -533,6 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: "Family Luxury",
           featured: true,
           published: true,
+          hotelIds: [],
           createdBy: adminUser.id
         },
         {
@@ -558,6 +567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           category: "Family Luxury",
           featured: true,
           published: true,
+          hotelIds: [],
           createdBy: adminUser.id
         }
       ];
@@ -1237,6 +1247,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting category:', error);
       res.status(500).json({ message: 'Error deleting category' });
+    }
+  });
+
+  // Season CMS Routes (smart pricing)
+
+  // Get seasons for CMS management (admin/editor access)
+  app.get("/api/cms/seasons", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const seasons = await storage.getSeasons();
+      res.json({ success: true, seasons });
+    } catch (error) {
+      console.error('Error fetching seasons for CMS:', error);
+      res.status(500).json({ message: 'Error fetching seasons' });
+    }
+  });
+
+  // Create season (admin/editor access)
+  app.post("/api/cms/seasons", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const seasonData = insertSeasonSchema.parse(req.body);
+
+      if (seasonData.priceMultiplier == null && seasonData.flatMarkup == null) {
+        return res.status(400).json({ message: 'Provide either priceMultiplier or flatMarkup' });
+      }
+
+      const season = await storage.createSeason({
+        ...seasonData,
+        createdBy: authReq.user!.id
+      });
+
+      res.status(201).json({ success: true, season });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: 'Invalid input data',
+          errors: error.errors
+        });
+      }
+      console.error('Error creating season:', error);
+      res.status(500).json({ message: 'Error creating season' });
+    }
+  });
+
+  // Update season (admin/editor access)
+  app.put("/api/cms/seasons/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const seasonData = insertSeasonSchema.partial().parse(req.body);
+
+      const season = await storage.updateSeason(req.params.id, seasonData);
+      if (!season) {
+        return res.status(404).json({ message: 'Season not found' });
+      }
+
+      res.json({ success: true, season });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: 'Invalid input data',
+          errors: error.errors
+        });
+      }
+      console.error('Error updating season:', error);
+      res.status(500).json({ message: 'Error updating season' });
+    }
+  });
+
+  // Delete season (admin/editor access)
+  app.delete("/api/cms/seasons/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const deleted = await storage.deleteSeason(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Season not found' });
+      }
+
+      res.json({ success: true, message: 'Season deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting season:', error);
+      res.status(500).json({ message: 'Error deleting season' });
+    }
+  });
+
+  // Public Seasons Route (no authentication required) — used by "Dates & Prices" smart pricing
+  app.get("/api/public/seasons", async (req, res) => {
+    try {
+      const seasons = await storage.getSeasons();
+      res.json({ success: true, seasons: seasons.filter(s => s.isActive) });
+    } catch (error) {
+      console.error('Error fetching public seasons:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching seasons'
+      });
     }
   });
 

@@ -5,6 +5,7 @@ import {
   type Hotel, type InsertHotel, type Tour, type InsertTour,
   type Package, type InsertPackage, type Destination, type InsertDestination,
   type Category, type InsertCategory, type Setting, type InsertSetting,
+  type Season, type InsertSeason,
   type NavItem, type InsertNavItem, type SiteConfig, type InsertSiteConfig,
   type FooterLink, type InsertFooterLink, type SocialLink, type InsertSocialLink,
   type Faq, type InsertFaq,
@@ -24,7 +25,7 @@ import {
   type StayCta, type InsertStayCta,
   type StayListingSettings, type InsertStayListingSettings,
   type LegalPage, type InsertLegalPage,
-  users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings,
+  users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings, seasons,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
   guestExperienceSection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
@@ -131,6 +132,13 @@ export interface IStorage {
   getCategoryBySlug(slug: string): Promise<Category | undefined>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
+
+  // Season methods (smart pricing)
+  createSeason(season: InsertSeason): Promise<Season>;
+  getSeasons(): Promise<Season[]>;
+  getSeason(id: string): Promise<Season | undefined>;
+  updateSeason(id: string, season: Partial<InsertSeason>): Promise<Season | undefined>;
+  deleteSeason(id: string): Promise<boolean>;
 
   // Setting methods
   getSetting(key: string): Promise<Setting | undefined>;
@@ -621,6 +629,60 @@ export class DatabaseStorage implements IStorage {
       return (result.rowCount ?? 0) > 0;
     } catch (error) {
       console.error("Error deleting category:", error);
+      return false;
+    }
+  }
+
+  // Season methods (smart pricing)
+  async createSeason(data: InsertSeason): Promise<Season> {
+    try {
+      const [season] = await db.insert(seasons).values(data).returning();
+      return season;
+    } catch (error) {
+      console.error("Error creating season:", error);
+      throw error;
+    }
+  }
+
+  async getSeasons(): Promise<Season[]> {
+    try {
+      return await db.select().from(seasons).orderBy(seasons.sortOrder, desc(seasons.createdAt));
+    } catch (error) {
+      console.error("Error fetching seasons:", error);
+      return [];
+    }
+  }
+
+  async getSeason(id: string): Promise<Season | undefined> {
+    try {
+      const [season] = await db.select().from(seasons).where(eq(seasons.id, id));
+      return season || undefined;
+    } catch (error) {
+      console.error("Error fetching season:", error);
+      return undefined;
+    }
+  }
+
+  async updateSeason(id: string, data: Partial<InsertSeason>): Promise<Season | undefined> {
+    try {
+      const [season] = await db
+        .update(seasons)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(seasons.id, id))
+        .returning();
+      return season || undefined;
+    } catch (error) {
+      console.error("Error updating season:", error);
+      throw error;
+    }
+  }
+
+  async deleteSeason(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(seasons).where(eq(seasons.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Error deleting season:", error);
       return false;
     }
   }
@@ -1872,6 +1934,60 @@ export class MemoryStorage implements IStorage {
       return (result.rowCount ?? 0) > 0;
     } catch (error) {
       console.error("Error deleting category:", error);
+      return false;
+    }
+  }
+
+  // Season methods (smart pricing)
+  async createSeason(data: InsertSeason): Promise<Season> {
+    try {
+      const [season] = await db.insert(seasons).values(data).returning();
+      return season;
+    } catch (error) {
+      console.error("Error creating season:", error);
+      throw error;
+    }
+  }
+
+  async getSeasons(): Promise<Season[]> {
+    try {
+      return await db.select().from(seasons).orderBy(seasons.sortOrder, desc(seasons.createdAt));
+    } catch (error) {
+      console.error("Error fetching seasons:", error);
+      return [];
+    }
+  }
+
+  async getSeason(id: string): Promise<Season | undefined> {
+    try {
+      const [season] = await db.select().from(seasons).where(eq(seasons.id, id));
+      return season || undefined;
+    } catch (error) {
+      console.error("Error fetching season:", error);
+      return undefined;
+    }
+  }
+
+  async updateSeason(id: string, data: Partial<InsertSeason>): Promise<Season | undefined> {
+    try {
+      const [season] = await db
+        .update(seasons)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(seasons.id, id))
+        .returning();
+      return season || undefined;
+    } catch (error) {
+      console.error("Error updating season:", error);
+      throw error;
+    }
+  }
+
+  async deleteSeason(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(seasons).where(eq(seasons.id, id));
+      return (result.rowCount ?? 0) > 0;
+    } catch (error) {
+      console.error("Error deleting season:", error);
       return false;
     }
   }
