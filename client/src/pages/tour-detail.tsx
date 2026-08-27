@@ -12,7 +12,6 @@ import {
   MapPin,
   Users,
   Clock,
-  Check,
   X,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +23,9 @@ import { getTourImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 import ItineraryMap from "@/components/tour-detail/ItineraryMap";
 import WhereYouWillStay from "@/components/tour-detail/WhereYouWillStay";
+import CtaBanner from "@/components/tour-detail/CtaBanner";
+import InclusionsList from "@/components/tour-detail/InclusionsList";
+import ReserveJourneyModal from "@/components/tour-detail/ReserveJourneyModal";
 import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
 import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
 
@@ -35,6 +37,7 @@ export default function TourDetail() {
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
   const [showBrochureModal, setShowBrochureModal] = useState(false);
   const [brochureEmail, setBrochureEmail] = useState("");
   const [isSubmittingBrochure, setIsSubmittingBrochure] = useState(false);
@@ -323,47 +326,6 @@ export default function TourDetail() {
                   </div>
                 </div>
               )}
-
-              {/* Inclusions & Exclusions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                    <div className="w-6 md:w-8 h-px bg-accent"></div>
-                    <h3 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Included</h3>
-                  </div>
-                  {tour.includes.length === 0 ? (
-                    <p className="text-sm md:text-base text-muted-foreground">Details available upon request.</p>
-                  ) : (
-                    <ul className="space-y-2 md:space-y-3">
-                      {tour.includes.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-primary">
-                          <Check className="h-4 w-4 md:h-5 md:w-5 text-accent mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-                    <div className="w-6 md:w-8 h-px bg-muted-foreground/30"></div>
-                    <h3 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-muted-foreground">Not Included</h3>
-                  </div>
-                  {tour.excludes.length === 0 ? (
-                    <p className="text-sm md:text-base text-muted-foreground">Details available upon request.</p>
-                  ) : (
-                    <ul className="space-y-2 md:space-y-3">
-                      {tour.excludes.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-muted-foreground">
-                          <X className="h-4 w-4 md:h-5 md:w-5 mt-0.5 flex-shrink-0" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
           </div>
         </div>
       </section>
@@ -372,9 +334,15 @@ export default function TourDetail() {
 
       <WhereYouWillStay hotels={stayHotels} />
 
+      <CtaBanner tour={tour} onReserve={() => setIsReserveModalOpen(true)} />
+
+      <InclusionsList includes={tour.includes} excludes={tour.excludes} />
+
       <DatesAndPrices basePrice={tour.price} currency={currency} seasons={seasonsData?.seasons || []} />
 
       <ContinueTheJourney currentTour={tour} allTours={allToursData?.tours || []} />
+
+      <ReserveJourneyModal tour={tour} open={isReserveModalOpen} onOpenChange={setIsReserveModalOpen} />
 
       {/* Lightbox */}
       {isLightboxOpen && (

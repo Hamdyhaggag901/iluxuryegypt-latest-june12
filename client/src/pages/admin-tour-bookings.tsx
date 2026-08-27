@@ -64,11 +64,18 @@ interface TourBooking {
   tourSlug: string | null;
   tourPrice: number | null;
   tourDuration: string | null;
+  title: string | null;
   fullName: string;
   email: string;
   phone: string | null;
   preferredDates: string | null;
+  preferredMonth: number | null;
+  preferredYear: number | null;
   numberOfGuests: number | null;
+  adults: number | null;
+  teens: number | null;
+  children: number | null;
+  bestTimeToReach: string | null;
   specialRequests: string | null;
   status: string;
   notes: string | null;
@@ -473,7 +480,7 @@ export default function AdminTourBookings() {
                   <div className="bg-muted p-4 rounded-lg space-y-2">
                     <p className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
-                      {selectedBooking.fullName}
+                      {selectedBooking.title ? `${selectedBooking.title} ` : ""}{selectedBooking.fullName}
                     </p>
                     <p className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
@@ -501,6 +508,14 @@ export default function AdminTourBookings() {
                   <div className="bg-muted p-4 rounded-lg space-y-2">
                     <p><strong>Preferred Dates:</strong> {selectedBooking.preferredDates || "Not specified"}</p>
                     <p><strong>Number of Guests:</strong> {selectedBooking.numberOfGuests || "Not specified"}</p>
+                    {(selectedBooking.adults != null || selectedBooking.teens != null || selectedBooking.children != null) && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedBooking.adults ?? 0} Adults · {selectedBooking.teens ?? 0} Teens · {selectedBooking.children ?? 0} Children
+                      </p>
+                    )}
+                    {selectedBooking.bestTimeToReach && (
+                      <p><strong>Best Time to Reach:</strong> {selectedBooking.bestTimeToReach}</p>
+                    )}
                     <p><strong>Status:</strong>
                       <Badge className={`ml-2 ${statusColors[selectedBooking.status] || ""}`}>
                         {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}

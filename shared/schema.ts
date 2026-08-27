@@ -508,11 +508,18 @@ export const tourBookings = pgTable("tour_bookings", {
   tourPrice: integer("tour_price"),
   tourDuration: text("tour_duration"),
   // Customer Information
+  title: text("title"), // Mr, Mrs, Ms, Dr, Prof, Lord, Lady, Sir
   fullName: text("full_name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
   preferredDates: text("preferred_dates"),
+  preferredMonth: integer("preferred_month"), // 1-12, null = "Any month"
+  preferredYear: integer("preferred_year"), // null = "Any year"
   numberOfGuests: integer("number_of_guests"),
+  adults: integer("adults"),
+  teens: integer("teens"),
+  children: integer("children"),
+  bestTimeToReach: text("best_time_to_reach"), // Any time, Morning, Afternoon, Evening
   specialRequests: text("special_requests"),
   // Status
   status: text("status").notNull().default("pending"), // pending, confirmed, cancelled, completed
@@ -919,11 +926,18 @@ export const insertTourBookingSchema = createInsertSchema(tourBookings).omit({
   tourSlug: z.string().optional(),
   tourPrice: z.number().optional(),
   tourDuration: z.string().optional(),
+  title: z.string().optional(),
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().optional(),
   preferredDates: z.string().optional(),
+  preferredMonth: z.number().int().min(1).max(12).nullable().optional(),
+  preferredYear: z.number().int().nullable().optional(),
   numberOfGuests: z.number().optional(),
+  adults: z.number().int().min(0).nullable().optional(),
+  teens: z.number().int().min(0).nullable().optional(),
+  children: z.number().int().min(0).nullable().optional(),
+  bestTimeToReach: z.string().optional(),
   specialRequests: z.string().optional(),
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]).default("pending"),
   notes: z.string().optional(),
