@@ -100,6 +100,7 @@ export const hotels = pgTable("hotels", {
   priceTier: text("price_tier").notNull(),
   amenities: text("amenities").array().notNull(),
   image: text("image").notNull(),
+  imageAlt: text("image_alt"), // Admin-written alt text for the hero image. Falls back to auto-generated text when empty.
   description: text("description").notNull(),
   fullDescription: text("full_description"), // Extended description for about section
   highlights: text("highlights").array().notNull().default([]), // Hotel highlights
@@ -615,6 +616,7 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   priceTier: z.string().min(1, "Price tier is required"),
   amenities: z.array(z.string()).default([]), // Deprecated: superseded by `facilities`, no longer collected in the admin form
   image: z.string().min(1, "Hero image is required"),
+  imageAlt: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   description: z.string().min(1, "Description is required"),
   fullDescription: z.string().nullable().optional(), // Deprecated: superseded by `article`; column is nullable, existing rows have NULL
   highlights: z.array(z.string()).default([]),
