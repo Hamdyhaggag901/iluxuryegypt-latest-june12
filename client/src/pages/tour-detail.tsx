@@ -25,18 +25,15 @@ import {
   Star,
 } from "lucide-react";
 import { Link } from "wouter";
-import type { Tour } from "@shared/schema";
+import type { Tour, Hotel, Season, ItineraryDay } from "@shared/schema";
 import { getTourImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+import WhereYouWillStay from "@/components/tour-detail/WhereYouWillStay";
+import ItineraryMap from "@/components/tour-detail/ItineraryMap";
+import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
+import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
-
-type ItineraryDay = {
-  day?: number;
-  title?: string;
-  description?: string;
-  activities?: string[];
-};
 
 export default function TourDetail() {
   const params = useParams();
@@ -57,7 +54,7 @@ export default function TourDetail() {
     specialRequests: "",
   });
 
-  const { data, isLoading, isError } = useQuery<{ success: boolean; tour: Tour }>({
+  const { data, isLoading, isError } = useQuery<{ success: boolean; tour: Tour; hotels: Hotel[] }>({
     queryKey: ["/api/public/tours", slug],
     queryFn: async () => {
       const res = await fetch(`/api/public/tours/${slug}`);
@@ -68,24 +65,32 @@ export default function TourDetail() {
   });
 
   const tour = data?.tour;
+  const stayHotels = data?.hotels || [];
 
-  // Fetch related tours from the same category
-  const { data: relatedData } = useQuery<{ success: boolean; tours: Tour[] }>({
-    queryKey: ["/api/public/tours", "related", tour?.category],
+  // All published tours, used for the "Continue the Journey" similarity matching
+  const { data: allToursData } = useQuery<{ success: boolean; tours: Tour[] }>({
+    queryKey: ["/api/public/tours"],
     queryFn: async () => {
-      const res = await fetch(`/api/public/tours?category=${encodeURIComponent(tour!.category)}`);
-      if (!res.ok) throw new Error("Failed to fetch related tours");
+      const res = await fetch(`/api/public/tours`);
+      if (!res.ok) throw new Error("Failed to fetch tours");
       return res.json();
     },
-    enabled: Boolean(tour?.category),
+    enabled: Boolean(tour),
+  });
+
+  // Active seasons, used to compute the "Dates & Prices" peak-season price
+  const { data: seasonsData } = useQuery<{ success: boolean; seasons: Season[] }>({
+    queryKey: ["/api/public/seasons"],
+    queryFn: async () => {
+      const res = await fetch(`/api/public/seasons`);
+      if (!res.ok) throw new Error("Failed to fetch seasons");
+      return res.json();
+    },
+    enabled: Boolean(tour),
   });
 
   // Use tour's brochure URL if available
   const brochureUrl = tour?.brochureUrl;
-
-  const relatedTours = (relatedData?.tours || [])
-    .filter(t => t.id !== tour?.id)
-    .slice(0, 3);
 
   useSEO({
     title: tour?.title,
@@ -141,6 +146,11 @@ export default function TourDetail() {
       title: day.title || `Day ${index + 1}`,
       description: day.description || "",
       activities: Array.isArray(day.activities) ? day.activities : [],
+      meals: Array.isArray(day.meals) ? day.meals : [],
+      lat: day.lat,
+      lng: day.lng,
+      image: day.image,
+      accommodation: day.accommodation,
     })
   );
 
@@ -390,49 +400,6 @@ export default function TourDetail() {
                         <img src={img} alt={getTourImageAlt(tour, idx)} className="w-full h-full object-cover" loading="lazy" />
                       </button>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Visual Timeline Itinerary */}
-              {itinerary.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-12">
-                    <div className="w-8 md:w-12 h-px bg-accent"></div>
-                    <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Your Journey</h2>
-                  </div>
-
-                  <div className="relative">
-                    {/* Vertical gold line */}
-                    <div className="absolute left-4 md:left-6 top-0 bottom-0 w-px bg-gradient-to-b from-accent via-accent/50 to-transparent"></div>
-
-                    <div className="space-y-8 md:space-y-12">
-                      {itinerary.map((day, index) => (
-                        <div key={day.day} className="relative pl-12 md:pl-16">
-                          {/* Day number circle */}
-                          <div className="absolute left-0 top-0 w-8 h-8 md:w-12 md:h-12 rounded-full bg-primary text-white flex items-center justify-center font-serif text-sm md:text-lg border-2 md:border-4 border-background">
-                            {day.day}
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg md:text-2xl font-serif text-primary mb-2">{day.title}</h3>
-                            {day.description && (
-                              <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-3 md:mb-4">{day.description}</p>
-                            )}
-                            {day.activities.length > 0 && (
-                              <ul className="space-y-1.5 md:space-y-2">
-                                {day.activities.map((activity, idx) => (
-                                  <li key={idx} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-muted-foreground">
-                                    <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-accent rounded-full mt-2 flex-shrink-0"></div>
-                                    <span>{activity}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               )}
@@ -704,88 +671,13 @@ export default function TourDetail() {
         </div>
       </section>
 
-      {/* Related Tours Section */}
-      {relatedTours.length > 0 && (
-        <section className="py-12 md:py-24 bg-[#f8f6f3]">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-8 md:mb-16">
-              <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-light text-primary mb-2 md:mb-4">
-                Continue Your Journey
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground">More experiences you might love</p>
-            </div>
+      <WhereYouWillStay hotels={stayHotels} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-              {relatedTours.map((t) => (
-                <Link key={t.id} href={`/${t.slug}`}>
-                  <article className="bg-card border border-card-border rounded-lg overflow-hidden flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow duration-300">
-                    <div className="relative h-56 md:h-64 overflow-hidden">
-                      <img
-                        src={t.heroImage}
-                        alt={getTourImageAlt(t)}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
+      <ItineraryMap itinerary={itinerary} />
 
-                    <div className="p-5 md:p-6 flex flex-col flex-grow">
-                      <div className="flex flex-col gap-2 md:gap-3 flex-grow">
-                        <span className="text-xs font-semibold text-accent-text tracking-[0.15em] uppercase">
-                          {t.category}
-                        </span>
+      <DatesAndPrices basePrice={tour.price} currency={currency} seasons={seasonsData?.seasons || []} />
 
-                        <h3 className="font-serif text-base md:text-xl text-primary leading-tight group-hover:text-accent transition-colors">
-                          {t.title}
-                        </h3>
-
-                        <p className="text-xs font-semibold text-accent-text tracking-[0.1em] uppercase">
-                          {t.duration}
-                          {t.groupSize ? ` · ${t.groupSize}` : ""}
-                        </p>
-
-                        {t.destinations.length > 0 && (
-                          <div className="mt-1 md:mt-2">
-                            <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
-                              The Route
-                            </span>
-                            <p className="text-xs md:text-sm text-muted-foreground/70 leading-relaxed">
-                              {t.destinations.join(" → ")}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <hr className="border-t border-border my-4 md:my-6" />
-
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <span className="text-xs text-muted-foreground block mb-1">From</span>
-                          <span className="font-serif text-base md:text-lg text-primary">
-                            {t.currency === "USD" ? "$" : `${t.currency} `}
-                            {t.price.toLocaleString()}
-                          </span>
-                        </div>
-                        <span className="text-xs md:text-sm font-semibold text-primary group-hover:text-accent transition-colors">
-                          View Journey
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
-              ))}
-            </div>
-
-            <div className="text-center mt-8 md:mt-12">
-              <Link href="/egypt-tour-packages">
-                <Button className="bg-primary hover:bg-primary/90 text-white px-6 md:px-8 py-4 md:py-6 text-sm md:text-base">
-                  View All Experiences
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
+      <ContinueTheJourney currentTour={tour} allTours={allToursData?.tours || []} />
 
       {/* Lightbox */}
       {isLightboxOpen && (

@@ -16,14 +16,26 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, X, Loader2 } from "lucide-react";
 
 const tourFormSchema = insertTourSchema.extend({
-  price: z.union([z.number(), z.string().min(1)]).transform((val) => 
+  price: z.union([z.number(), z.string().min(1)]).transform((val) =>
     typeof val === "string" ? Number(val) : val
+  ),
+  durationDays: z.union([z.number(), z.string(), z.null()]).optional().transform((val) =>
+    val === "" || val == null ? null : Number(val)
   ),
   itinerary: z.array(z.object({
     day: z.number().positive(),
     title: z.string().min(1, "Day title is required"),
     description: z.string().min(1, "Day description is required"),
     activities: z.array(z.string().min(1)).default([]),
+    lat: z.union([z.number(), z.string(), z.null()]).optional().transform((val) =>
+      val === "" || val == null ? undefined : Number(val)
+    ),
+    lng: z.union([z.number(), z.string(), z.null()]).optional().transform((val) =>
+      val === "" || val == null ? undefined : Number(val)
+    ),
+    image: z.string().optional(),
+    accommodation: z.string().optional(),
+    meals: z.array(z.string()).default([]),
   })).min(1, "At least one itinerary day is required"),
 });
 
@@ -53,6 +65,18 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     },
   });
 
+  const { data: hotelsData } = useQuery({
+    queryKey: ["/api/cms/hotels"],
+    queryFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/hotels", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch hotels");
+      return response.json();
+    },
+  });
+
   const form = useForm<TourFormData>({
     resolver: zodResolver(tourFormSchema),
     defaultValues: {
@@ -63,15 +87,17 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       heroImage: "",
       gallery: [],
       duration: "",
+      durationDays: null,
       groupSize: "",
       difficulty: "Easy",
       price: "0" as any,
       currency: "USD",
       includes: [],
       excludes: [],
-      itinerary: [{ day: 1, title: "", description: "", activities: [] }],
+      itinerary: [{ day: 1, title: "", description: "", activities: [], meals: [] }],
       destinations: [],
       category: "",
+      hotelIds: [],
       featured: false,
       published: true,
       brochureUrl: "",
@@ -117,8 +143,24 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     const currentItinerary = form.getValues("itinerary") || [];
     form.setValue("itinerary", [
       ...currentItinerary,
-      { day: currentItinerary.length + 1, title: "", description: "", activities: [] }
+      { day: currentItinerary.length + 1, title: "", description: "", activities: [], meals: [] }
     ]);
+  };
+
+  const toggleHotelId = (hotelId: string) => {
+    const current = form.getValues("hotelIds") || [];
+    form.setValue(
+      "hotelIds",
+      current.includes(hotelId) ? current.filter((id) => id !== hotelId) : [...current, hotelId]
+    );
+  };
+
+  const toggleMeal = (dayIndex: number, meal: string) => {
+    const current = form.getValues(`itinerary.${dayIndex}.meals`) || [];
+    form.setValue(
+      `itinerary.${dayIndex}.meals`,
+      current.includes(meal) ? current.filter((m) => m !== meal) : [...current, meal]
+    );
   };
 
   const removeItineraryDay = (index: number) => {
@@ -137,6 +179,11 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
         title: day.title.trim(),
         description: day.description.trim(),
         activities: (day.activities || []).filter(a => a.trim().length > 0).map(a => a.trim()),
+        lat: day.lat,
+        lng: day.lng,
+        image: day.image?.trim() || undefined,
+        accommodation: day.accommodation?.trim() || undefined,
+        meals: day.meals || [],
       })),
       includes: (data.includes || []).filter(i => i.trim().length > 0),
       excludes: (data.excludes || []).filter(e => e.trim().length > 0),
@@ -292,6 +339,63 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                         data-testid={`input-itinerary-description-${index}`}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Day Photo URL</Label>
+                      <Input
+                        {...form.register(`itinerary.${index}.image`)}
+                        placeholder="https://example.com/day-photo.jpg"
+                        data-testid={`input-itinerary-image-${index}`}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Latitude</Label>
+                        <Input
+                          type="number"
+                          step="any"
+                          {...form.register(`itinerary.${index}.lat`)}
+                          placeholder="25.6872"
+                          data-testid={`input-itinerary-lat-${index}`}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Longitude</Label>
+                        <Input
+                          type="number"
+                          step="any"
+                          {...form.register(`itinerary.${index}.lng`)}
+                          placeholder="32.6396"
+                          data-testid={`input-itinerary-lng-${index}`}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Used by the itinerary map. Leave blank if unknown — the day just won't get a pin.
+                    </p>
+                    <div className="space-y-2">
+                      <Label>Accommodation</Label>
+                      <Input
+                        {...form.register(`itinerary.${index}.accommodation`)}
+                        placeholder="e.g., Old Cataract Hotel, or Nile Cruise"
+                        data-testid={`input-itinerary-accommodation-${index}`}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Meals Included</Label>
+                      <div className="flex gap-4">
+                        {["Breakfast", "Lunch", "Dinner"].map((meal) => (
+                          <label key={meal} className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={(form.watch(`itinerary.${index}.meals`) || []).includes(meal)}
+                              onChange={() => toggleMeal(index, meal)}
+                              data-testid={`checkbox-itinerary-meal-${meal.toLowerCase()}-${index}`}
+                            />
+                            {meal}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -418,6 +522,21 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="durationDays">Duration (Net Days)</Label>
+                <Input
+                  id="durationDays"
+                  type="number"
+                  min="1"
+                  data-testid="input-tour-duration-days"
+                  {...form.register("durationDays")}
+                  placeholder="10"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Net number of days for this trip (not shown to visitors directly). Leave blank if unsure.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="difficulty">Difficulty</Label>
                 <Select
                   value={form.watch("difficulty")}
@@ -467,6 +586,32 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                   </Select>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Where You Will Stay</CardTitle>
+              <CardDescription>Hotels shown in the "Where You Will Stay" section on this tour's page</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {hotelsData?.hotels?.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {hotelsData.hotels.map((hotel: any) => (
+                    <label key={hotel.id} className="flex items-center gap-2 text-sm border rounded-md p-2">
+                      <input
+                        type="checkbox"
+                        checked={(form.watch("hotelIds") || []).includes(hotel.id)}
+                        onChange={() => toggleHotelId(hotel.id)}
+                        data-testid={`checkbox-hotel-${hotel.id}`}
+                      />
+                      <span>{hotel.name} <span className="text-muted-foreground">— {hotel.location}</span></span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No hotels found. Add hotels first from the Hotels section.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

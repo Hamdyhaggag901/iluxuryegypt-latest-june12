@@ -105,7 +105,7 @@ export const hotels = pgTable("hotels", {
   fullDescription: text("full_description"), // Extended description for about section
   highlights: text("highlights").array().notNull().default([]), // Hotel highlights
   gallery: text("gallery").array().notNull().default([]), // Gallery images
-  galleryAlt: jsonb("gallery_alt").notNull().default({}), // Admin-written alt text, keyed by gallery image URL. Falls back to auto-generated text when a URL has no entry.
+  galleryAlt: jsonb("gallery_alt").$type<Record<string, string>>().notNull().default({}), // Admin-written alt text, keyed by gallery image URL. Falls back to auto-generated text when a URL has no entry.
   rooms: jsonb("rooms").notNull().default([]), // Deprecated: no longer rendered (kept to avoid destructive migration)
   facilities: jsonb("facilities").notNull().default([]), // Array of {icon, label} facility items
   article: text("article"), // Free-form rich-text long-form content
@@ -664,6 +664,9 @@ export const itineraryDaySchema = z.object({
   activities: z.array(z.string()).default([]),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
+  image: z.string().optional(), // Optional day photo
+  accommodation: z.string().optional(), // e.g. "Old Cataract Hotel" or "Nile Cruise"
+  meals: z.array(z.string()).default([]), // e.g. ["Breakfast", "Lunch", "Dinner"]
 });
 export type ItineraryDay = z.infer<typeof itineraryDaySchema>;
 
