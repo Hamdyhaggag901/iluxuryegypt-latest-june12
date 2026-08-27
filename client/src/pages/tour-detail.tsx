@@ -28,8 +28,8 @@ import { Link } from "wouter";
 import type { Tour, Hotel, Season, ItineraryDay } from "@shared/schema";
 import { getTourImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
-import WhereYouWillStay from "@/components/tour-detail/WhereYouWillStay";
 import ItineraryMap from "@/components/tour-detail/ItineraryMap";
+import WhereYouWillStay from "@/components/tour-detail/WhereYouWillStay";
 import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
 import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
 
@@ -671,9 +671,9 @@ export default function TourDetail() {
         </div>
       </section>
 
-      <WhereYouWillStay hotels={stayHotels} />
-
       <ItineraryMap itinerary={itinerary} />
+
+      <WhereYouWillStay hotels={stayHotels} />
 
       <DatesAndPrices basePrice={tour.price} currency={currency} seasons={seasonsData?.seasons || []} />
 
