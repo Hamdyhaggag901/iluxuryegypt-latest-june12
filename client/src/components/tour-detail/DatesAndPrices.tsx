@@ -1,5 +1,12 @@
-import { computeSeasonalPricing } from "@/lib/seasonal-pricing";
+import { useMemo, useState } from "react";
+import { getMonthlyPricing, getDefaultMonth } from "@/lib/seasonal-pricing";
 import type { Season } from "@shared/schema";
+
+const MONTH_LABELS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 export default function DatesAndPrices({
   basePrice,
@@ -10,9 +17,29 @@ export default function DatesAndPrices({
   currency: string;
   seasons: Season[];
 }) {
-  const { standardPrice, peakPrice, hasPeakSeason } = computeSeasonalPricing(basePrice, seasons);
+  const monthly = useMemo(() => getMonthlyPricing(basePrice, seasons), [basePrice, seasons]);
+  const [selectedMonth, setSelectedMonth] = useState(() => getDefaultMonth(seasons));
+
   const symbol = currency === "USD" ? "$" : `${currency} `;
   const format = (n: number) => new Intl.NumberFormat("en-US").format(n);
+
+  const selected = monthly[selectedMonth - 1];
+  const prices = monthly.map((m) => m.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+
+  const activeSeasonNames = Array.from(
+    new Map(
+      monthly.filter((m) => m.season).map((m) => [m.season!.id, m.season!.name])
+    ).values()
+  );
+
+  // Opacity scales with how much a month's price sits above the year's floor price.
+  const opacityFor = (price: number) => {
+    if (maxPrice === minPrice) return 0.15;
+    const ratio = (price - minPrice) / (maxPrice - minPrice);
+    return 0.2 + ratio * 0.8;
+  };
 
   return (
     <section className="py-12 md:py-24 bg-[#f8f6f3]">
@@ -27,30 +54,66 @@ export default function DatesAndPrices({
           </h2>
         </div>
 
-        <div className={`grid grid-cols-1 ${hasPeakSeason ? "sm:grid-cols-2" : ""} gap-4 md:gap-8 max-w-3xl mx-auto`}>
-          <div className="bg-card border border-card-border rounded-xl p-6 md:p-10 text-center">
-            <span className="text-xs md:text-sm tracking-[0.2em] uppercase text-muted-foreground">
-              Standard Season
+        <div className="max-w-2xl mx-auto">
+          {/* Big price card */}
+          <div className="bg-primary rounded-2xl p-8 md:p-12 text-center transition-all duration-300">
+            <span className="text-xs md:text-sm tracking-[0.2em] uppercase text-accent">
+              {selected.season ? selected.season.name : "Standard Season"}
             </span>
+            <p className="text-primary-foreground/70 text-sm mt-2">{MONTH_NAMES[selectedMonth - 1]}</p>
             <div className="flex items-baseline justify-center gap-1 mt-3 md:mt-4">
-              <span className="text-accent text-lg">{symbol}</span>
-              <span className="text-3xl md:text-4xl font-serif text-primary">{format(standardPrice)}</span>
+              <span className="text-accent text-lg md:text-xl">{symbol}</span>
+              <span className="text-4xl md:text-6xl font-serif text-primary-foreground transition-all duration-300">
+                {format(selected.price)}
+              </span>
             </div>
-            <p className="text-xs md:text-sm text-muted-foreground mt-2">From, per person</p>
+            <p className="text-xs md:text-sm text-primary-foreground/70 mt-2">From, per person</p>
           </div>
 
-          {hasPeakSeason && (
-            <div className="bg-primary rounded-xl p-6 md:p-10 text-center">
-              <span className="text-xs md:text-sm tracking-[0.2em] uppercase text-accent">
-                Peak Season
-              </span>
-              <div className="flex items-baseline justify-center gap-1 mt-3 md:mt-4">
-                <span className="text-accent text-lg">{symbol}</span>
-                <span className="text-3xl md:text-4xl font-serif text-primary-foreground">{format(peakPrice)}</span>
-              </div>
-              <p className="text-xs md:text-sm text-primary-foreground/70 mt-2">From, per person</p>
+          {/* 12-month strip */}
+          <div className="flex mt-6 md:mt-8 gap-[2px]" role="group" aria-label="Select a travel month">
+            {monthly.map((m, idx) => {
+              const isSelected = m.month === selectedMonth;
+              const isFirst = idx === 0;
+              const isLast = idx === monthly.length - 1;
+              return (
+                <button
+                  key={m.month}
+                  type="button"
+                  onClick={() => setSelectedMonth(m.month)}
+                  aria-pressed={isSelected}
+                  aria-label={`${MONTH_NAMES[idx]}, ${symbol}${format(m.price)}`}
+                  className={`flex-1 h-12 md:h-14 flex items-center justify-center text-[10px] md:text-xs font-semibold uppercase tracking-wide transition-all duration-300 ${
+                    isFirst ? "rounded-l-full" : ""
+                  } ${isLast ? "rounded-r-full" : ""} ${
+                    isSelected ? "ring-2 ring-white ring-offset-1 z-10 relative text-primary" : "text-primary/70 hover:opacity-80"
+                  }`}
+                  style={{
+                    backgroundColor: m.season
+                      ? `hsl(var(--accent) / ${opacityFor(m.price)})`
+                      : `hsl(var(--primary) / 0.06)`,
+                  }}
+                  data-testid={`button-month-${m.month}`}
+                >
+                  {MONTH_LABELS[idx]}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mt-4 md:mt-6">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full" style={{ backgroundColor: `hsl(var(--primary) / 0.06)` }} />
+              <span className="text-xs text-muted-foreground">Standard</span>
             </div>
-          )}
+            {activeSeasonNames.map((name) => (
+              <div key={name} className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: `hsl(var(--accent) / 0.8)` }} />
+                <span className="text-xs text-muted-foreground">{name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </section>
