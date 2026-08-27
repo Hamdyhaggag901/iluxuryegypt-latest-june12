@@ -664,6 +664,7 @@ export const itineraryDaySchema = z.object({
   activities: z.array(z.string()).default([]),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
+  placeName: z.string().optional(), // Free-text place name, used as the "Find on Map" geocoding query
   image: z.string().optional(), // Optional day photo
   accommodation: z.string().optional(), // e.g. "Old Cataract Hotel" or "Nile Cruise"
   meals: z.array(z.string()).default([]), // e.g. ["Breakfast", "Lunch", "Dinner"]

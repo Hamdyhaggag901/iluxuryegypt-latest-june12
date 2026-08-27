@@ -6,7 +6,6 @@ import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Calendar,
@@ -17,12 +16,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Send,
-  Phone,
-  Mail,
   Download,
-  Shield,
-  Star,
 } from "lucide-react";
 import { Link } from "wouter";
 import type { Tour, Hotel, Season, ItineraryDay } from "@shared/schema";
@@ -39,20 +33,11 @@ export default function TourDetail() {
   const params = useParams();
   const slug = params.slug || params.id || "";
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [showBrochureModal, setShowBrochureModal] = useState(false);
   const [brochureEmail, setBrochureEmail] = useState("");
   const [isSubmittingBrochure, setIsSubmittingBrochure] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    preferredDates: "",
-    guests: "",
-    specialRequests: "",
-  });
 
   const { data, isLoading, isError } = useQuery<{ success: boolean; tour: Tour; hotels: Hotel[] }>({
     queryKey: ["/api/public/tours", slug],
@@ -156,47 +141,7 @@ export default function TourDetail() {
 
   const location = tour.destinations?.length ? tour.destinations.join(" • ") : "Egypt";
   const currency = tour.currency || "USD";
-  const priceLabel = new Intl.NumberFormat("en-US").format(tour.price);
   const allImages = [tour.heroImage, ...(tour.gallery || [])];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!tour) return;
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch("/api/tour-bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tourId: tour.id,
-          tourTitle: tour.title,
-          tourSlug: tour.slug,
-          tourPrice: tour.price,
-          tourDuration: tour.duration,
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone || undefined,
-          preferredDates: formData.preferredDates || undefined,
-          numberOfGuests: formData.guests ? parseInt(formData.guests) : undefined,
-          specialRequests: formData.specialRequests || undefined,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({ title: "Request Received", description: "Our travel experts will contact you within 24 hours." });
-        setFormData({ fullName: "", email: "", phone: "", preferredDates: "", guests: "", specialRequests: "" });
-      } else {
-        throw new Error(result.message || "Failed to send");
-      }
-    } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Please try again or contact us directly.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleBrochureDownload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -281,35 +226,10 @@ export default function TourDetail() {
         </div>
       </section>
 
-      {/* Main Content with Floating Booking Card */}
+      {/* Main Content */}
       <section className="relative bg-background">
         <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
-          <div className="flex flex-col lg:grid lg:grid-cols-3 gap-8 lg:gap-16">
-
-            {/* Mobile Booking Card - Shows first on mobile */}
-            <div className="lg:hidden order-first">
-              <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
-                {/* Price Header */}
-                <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-4 text-center">
-                  <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-accent-text text-base">{currency}</span>
-                    <span className="text-3xl font-serif text-white">{priceLabel}</span>
-                  </div>
-                  <p className="text-white/60 text-xs mt-1">per person</p>
-                </div>
-                <div className="p-4">
-                  <Link href="#booking-form">
-                    <Button className="w-full bg-accent hover:bg-accent/90 text-primary font-semibold py-4">
-                      Book This Experience
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Left Content */}
-            <div className="lg:col-span-2 space-y-10 md:space-y-20 order-2 lg:order-1">
+          <div className="max-w-4xl mx-auto space-y-10 md:space-y-20">
 
               {/* Quick Stats */}
               <div className="grid grid-cols-2 md:flex md:flex-wrap justify-center lg:justify-start gap-4 md:gap-8 lg:gap-12 py-6 md:py-8 border-y border-border">
@@ -444,229 +364,6 @@ export default function TourDetail() {
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Right Sidebar - Elegant Booking Card (Desktop only) */}
-            <div className="hidden lg:block lg:col-span-1 order-3">
-              <div className="lg:sticky lg:top-28" id="booking-form">
-                <div className="bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100">
-                  {/* Price Header */}
-                  <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-6 text-center">
-                    <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-accent-text text-lg">{currency}</span>
-                      <span className="text-4xl font-serif text-white">{priceLabel}</span>
-                    </div>
-                    <p className="text-white/60 text-sm mt-1">per person</p>
-                  </div>
-
-                  {/* Form */}
-                  <div className="p-6">
-                    <h3 className="text-lg font-serif text-primary mb-4 text-center">Book Your Experience</h3>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Full Name *</label>
-                        <Input
-                          placeholder="John Smith"
-                          value={formData.fullName}
-                          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                          required
-                          className="border-gray-200 focus:border-accent focus:ring-accent/20"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Email Address *</label>
-                        <Input
-                          type="email"
-                          placeholder="john@example.com"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                          className="border-gray-200 focus:border-accent focus:ring-accent/20"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Phone Number</label>
-                        <Input
-                          type="tel"
-                          placeholder="+1 (555) 000-0000"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="border-gray-200 focus:border-accent focus:ring-accent/20"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Travel Date</label>
-                          <Input
-                            type="date"
-                            value={formData.preferredDates}
-                            onChange={(e) => setFormData({ ...formData, preferredDates: e.target.value })}
-                            className="border-gray-200 focus:border-accent focus:ring-accent/20"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Guests</label>
-                          <Input
-                            type="number"
-                            placeholder="2"
-                            min="1"
-                            value={formData.guests}
-                            onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
-                            className="border-gray-200 focus:border-accent focus:ring-accent/20"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">Special Requests</label>
-                        <Textarea
-                          placeholder="Any special requirements or preferences..."
-                          value={formData.specialRequests}
-                          onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                          rows={3}
-                          className="border-gray-200 focus:border-accent focus:ring-accent/20 resize-none"
-                        />
-                      </div>
-                      <Button
-                        type="submit"
-                        className="w-full bg-accent hover:bg-accent/90 text-primary font-semibold py-6 text-base shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? "Sending..." : "Request This Experience"}
-                      </Button>
-                    </form>
-
-                    {/* Trust Badges */}
-                    <div className="mt-6 pt-5 border-t border-gray-100 space-y-3">
-                      <div className="flex items-center gap-3 text-sm text-gray-600">
-                        <Shield className="h-4 w-4 text-accent flex-shrink-0" />
-                        <span>Free cancellation up to 48 hours</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-gray-600">
-                        <Star className="h-4 w-4 text-accent flex-shrink-0" />
-                        <span>Instant confirmation</span>
-                      </div>
-                    </div>
-
-                    {/* Contact Options */}
-                    <div className="mt-5 pt-5 border-t border-gray-100">
-                      <p className="text-gray-400 text-xs text-center mb-3 uppercase tracking-wide">Or Contact Directly</p>
-                      <div className="flex justify-center gap-6">
-                        <a href="tel:+201234567890" className="flex items-center gap-2 text-gray-600 hover:text-accent transition-colors">
-                          <Phone className="h-4 w-4" />
-                          <span className="text-sm font-medium">Call</span>
-                        </a>
-                        <a href="mailto:concierge@iluxuryegypt.com" className="flex items-center gap-2 text-gray-600 hover:text-accent transition-colors">
-                          <Mail className="h-4 w-4" />
-                          <span className="text-sm font-medium">Email</span>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Mobile Booking Form - Shows at bottom on mobile */}
-            <div className="lg:hidden order-last mt-8" id="booking-form">
-              <div className="bg-white rounded-xl overflow-hidden shadow-lg border border-gray-100">
-                <div className="bg-gradient-to-r from-[#1a1a2e] to-[#16213e] p-4 text-center">
-                  <p className="text-white/70 text-xs tracking-[0.2em] uppercase mb-1">Starting From</p>
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-accent-text text-base">{currency}</span>
-                    <span className="text-3xl font-serif text-white">{priceLabel}</span>
-                  </div>
-                  <p className="text-white/60 text-xs mt-1">per person</p>
-                </div>
-
-                <div className="p-4">
-                  <h3 className="text-base font-serif text-primary mb-4 text-center">Book Your Experience</h3>
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Full Name *</label>
-                      <Input
-                        placeholder="John Smith"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                        required
-                        className="border-gray-200 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Email Address *</label>
-                      <Input
-                        type="email"
-                        placeholder="john@example.com"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                        className="border-gray-200 text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Phone Number</label>
-                      <Input
-                        type="tel"
-                        placeholder="+1 (555) 000-0000"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="border-gray-200 text-sm"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Date</label>
-                        <Input
-                          type="date"
-                          value={formData.preferredDates}
-                          onChange={(e) => setFormData({ ...formData, preferredDates: e.target.value })}
-                          className="border-gray-200 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Guests</label>
-                        <Input
-                          type="number"
-                          placeholder="2"
-                          min="1"
-                          value={formData.guests}
-                          onChange={(e) => setFormData({ ...formData, guests: e.target.value })}
-                          className="border-gray-200 text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Special Requests</label>
-                      <Textarea
-                        placeholder="Any special requirements..."
-                        value={formData.specialRequests}
-                        onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                        rows={2}
-                        className="border-gray-200 text-sm resize-none"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full bg-accent hover:bg-accent/90 text-primary font-semibold py-5 text-sm"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Sending..." : "Request This Experience"}
-                    </Button>
-                  </form>
-
-                  <div className="mt-4 pt-4 border-t border-gray-100 flex justify-center gap-6">
-                    <a href="tel:+201234567890" className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Phone className="h-4 w-4" />
-                      <span>Call</span>
-                    </a>
-                    <a href="mailto:concierge@iluxuryegypt.com" className="flex items-center gap-2 text-gray-600 text-sm">
-                      <Mail className="h-4 w-4" />
-                      <span>Email</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>

@@ -23,6 +23,7 @@ import {
   PanelBottom,
   HelpCircle,
   CalendarCheck,
+  CalendarRange,
   Mail,
   Files,
   PenSquare,
@@ -128,6 +129,12 @@ export default function AdminLayout({ children, title, description }: AdminLayou
       label: "Tours",
       icon: Plane,
       href: "/admin/tours",
+    },
+    {
+      id: "seasons",
+      label: "Seasons",
+      icon: CalendarRange,
+      href: "/admin/seasons",
     },
     {
       id: "categories",

@@ -65,6 +65,7 @@ const AdminDestinationsEdit = lazy(() => import("@/pages/admin-destinations-edit
 const AdminPackages = lazy(() => import("@/pages/admin-packages"));
 const AdminPackageForm = lazy(() => import("@/pages/admin-package-form"));
 const AdminCategories = lazy(() => import("@/pages/admin-categories"));
+const AdminSeasons = lazy(() => import("@/pages/admin-seasons"));
 const AdminPosts = lazy(() => import("@/pages/admin-posts"));
 const AdminPages = lazy(() => import("@/pages/admin-pages"));
 const AdminMedia = lazy(() => import("@/pages/admin-media"));
@@ -194,6 +195,7 @@ function Router() {
             <Route path="/admin/packages/new" component={AdminPackageForm} />
             <Route path="/admin/packages/edit/:id" component={AdminPackageForm} />
             <Route path="/admin/categories" component={AdminCategories} />
+            <Route path="/admin/seasons" component={AdminSeasons} />
             <Route path="/admin/posts" component={AdminPosts} />
             <Route path="/admin/pages" component={AdminPages} />
             <Route path="/admin/media" component={AdminMedia} />

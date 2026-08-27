@@ -1343,6 +1343,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Geocoding proxy (admin/editor access) — used by the "Find on Map" button in the
+  // itinerary editor. Proxied server-side because Nominatim's usage policy requires a
+  // real identifying User-Agent, which browsers do not let client-side JS set.
+  app.get("/api/cms/geocode", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      if (!q) {
+        return res.status(400).json({ message: "Query parameter 'q' is required" });
+      }
+
+      const url = new URL("https://nominatim.openstreetmap.org/search");
+      url.searchParams.set("q", q);
+      url.searchParams.set("format", "json");
+      url.searchParams.set("countrycodes", "eg");
+      url.searchParams.set("limit", "1");
+
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "ILuxuryEgyptAdmin/1.0 (concierge@iluxuryegypt.com)",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Nominatim responded with ${response.status}`);
+      }
+
+      const results = await response.json() as Array<{ lat: string; lon: string; display_name: string }>;
+      if (results.length === 0) {
+        return res.status(404).json({ success: false, message: "No location found for that place name" });
+      }
+
+      res.json({
+        success: true,
+        lat: parseFloat(results[0].lat),
+        lng: parseFloat(results[0].lon),
+        displayName: results[0].display_name,
+      });
+    } catch (error) {
+      console.error('Error geocoding place name:', error);
+      res.status(500).json({ success: false, message: 'Error looking up that place' });
+    }
+  });
+
   // Public Categories Route (no authentication required)
   app.get("/api/public/categories", async (req, res) => {
     try {

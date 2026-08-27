@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2 } from "lucide-react";
+import { Plus, X, Loader2, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const tourFormSchema = insertTourSchema.extend({
   price: z.union([z.number(), z.string().min(1)]).transform((val) =>
@@ -33,6 +34,7 @@ const tourFormSchema = insertTourSchema.extend({
     lng: z.union([z.number(), z.string(), z.null()]).optional().transform((val) =>
       val === "" || val == null ? undefined : Number(val)
     ),
+    placeName: z.string().optional(),
     image: z.string().optional(),
     accommodation: z.string().optional(),
     meals: z.array(z.string()).default([]),
@@ -52,6 +54,8 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
   const [excludesInput, setExcludesInput] = useState("");
   const [destinationsInput, setDestinationsInput] = useState("");
   const [galleryInput, setGalleryInput] = useState("");
+  const [geocodingDayIndex, setGeocodingDayIndex] = useState<number | null>(null);
+  const { toast } = useToast();
 
   const { data: categoriesData } = useQuery({
     queryKey: ["/api/cms/categories"],
@@ -163,6 +167,36 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     );
   };
 
+  const findOnMap = async (dayIndex: number) => {
+    const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim();
+    if (!placeName) {
+      toast({ title: "Enter a place name first", variant: "destructive" });
+      return;
+    }
+
+    setGeocodingDayIndex(dayIndex);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(`/api/cms/geocode?q=${encodeURIComponent(placeName)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        toast({ title: "Location not found", description: result.message || "Try a different place name.", variant: "destructive" });
+        return;
+      }
+
+      form.setValue(`itinerary.${dayIndex}.lat`, result.lat);
+      form.setValue(`itinerary.${dayIndex}.lng`, result.lng);
+      toast({ title: "Location found", description: result.displayName });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to look up that place. Please try again.", variant: "destructive" });
+    } finally {
+      setGeocodingDayIndex(null);
+    }
+  };
+
   const removeItineraryDay = (index: number) => {
     const currentItinerary = form.getValues("itinerary") || [];
     const updated = currentItinerary.filter((_: any, i: number) => i !== index);
@@ -181,6 +215,7 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
         activities: (day.activities || []).filter(a => a.trim().length > 0).map(a => a.trim()),
         lat: day.lat,
         lng: day.lng,
+        placeName: day.placeName?.trim() || undefined,
         image: day.image?.trim() || undefined,
         accommodation: day.accommodation?.trim() || undefined,
         meals: day.meals || [],
@@ -347,6 +382,33 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                         data-testid={`input-itinerary-image-${index}`}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Place Name</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          {...form.register(`itinerary.${index}.placeName`)}
+                          placeholder="e.g., Karnak Temple, Luxor"
+                          data-testid={`input-itinerary-place-name-${index}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => findOnMap(index)}
+                          disabled={geocodingDayIndex === index}
+                          data-testid={`button-find-on-map-${index}`}
+                        >
+                          {geocodingDayIndex === index ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MapPin className="h-4 w-4" />
+                          )}
+                          <span className="ml-2 hidden sm:inline">Find on Map</span>
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        A clear place name (not the day title) gives the most accurate result, e.g. "Karnak Temple" rather than "Pyramids of Giza".
+                      </p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Latitude</Label>
@@ -370,7 +432,7 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Used by the itinerary map. Leave blank if unknown — the day just won't get a pin.
+                      Used by the itinerary map. You can also type coordinates directly instead of using "Find on Map".
                     </p>
                     <div className="space-y-2">
                       <Label>Accommodation</Label>
