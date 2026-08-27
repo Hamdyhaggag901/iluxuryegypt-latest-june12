@@ -12,10 +12,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Check, CalendarIcon, Minus, Plus } from "lucide-react";
+import { Loader2, CalendarIcon, Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TripTypeChips from "@/components/trip-type-chips";
 import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
+import StepProgressBar from "@/components/step-progress-bar";
 
 const DESTINATIONS = ["Cairo", "Luxor", "Aswan", "Hurghada", "Sharm El Sheikh", "Alexandria", "Siwa"];
 const NIGHT_OPTIONS = ["1-3 nights", "4-6 nights", "7-9 nights", "10-13 nights", "14+ nights"];
@@ -53,44 +54,6 @@ const initialFormState = {
 
 type FormState = typeof initialFormState;
 
-function ProgressBar({ currentStep }: { currentStep: number }) {
-  return (
-    <div className="flex items-center" data-testid="trip-builder-progress">
-      {STEP_LABELS.map((label, index) => {
-        const stepNum = index + 1;
-        const isCompleted = stepNum < currentStep;
-        const isCurrent = stepNum === currentStep;
-        return (
-          <div key={label} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center gap-1.5">
-              <div
-                className={cn(
-                  "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold border-2 transition-colors shrink-0",
-                  isCompleted || isCurrent
-                    ? "bg-primary border-primary text-primary-foreground"
-                    : "bg-background border-border text-muted-foreground"
-                )}
-              >
-                {isCompleted ? <Check className="h-4 w-4" /> : stepNum}
-              </div>
-              <span
-                className={cn(
-                  "text-xs font-medium text-center whitespace-nowrap hidden sm:block",
-                  isCurrent ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                {label}
-              </span>
-            </div>
-            {stepNum < STEP_LABELS.length && (
-              <div className={cn("flex-1 h-0.5 mx-2 mb-0 sm:-mb-5 transition-colors", isCompleted ? "bg-accent" : "bg-border")} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModalProps) {
   const { toast } = useToast();
@@ -241,7 +204,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
           <DialogTitle className="text-2xl md:text-3xl font-serif font-bold text-primary mb-6">
             Plan Your Bespoke Egypt Journey
           </DialogTitle>
-          <ProgressBar currentStep={step} />
+          <StepProgressBar currentStep={step} stepLabels={STEP_LABELS} />
         </div>
 
         {/* Step content */}

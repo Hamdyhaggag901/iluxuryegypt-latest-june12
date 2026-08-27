@@ -1,10 +1,13 @@
-import { Link } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { Tour } from "@shared/schema";
 import { getTourImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+import TripBuilderModal from "@/components/trip-builder-modal";
 
 export default function CtaBanner({ tour, onReserve }: { tour: Tour; onReserve: () => void }) {
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+
   return (
     <section className="relative py-20 md:py-32 overflow-hidden">
       <div className="absolute inset-0">
@@ -34,17 +37,18 @@ export default function CtaBanner({ tour, onReserve }: { tour: Tour; onReserve: 
           >
             Reserve This Journey
           </Button>
-          <Link href="/tailor-made" className="w-full sm:w-auto">
-            <Button
-              variant="outline"
-              className="border-white/40 text-white hover:bg-white/10 hover:text-white px-8 py-6 text-base w-full"
-              data-testid="button-design-egypt-story"
-            >
-              Design My Egypt Story
-            </Button>
-          </Link>
+          <Button
+            onClick={() => setIsTripBuilderOpen(true)}
+            variant="outline"
+            className="border-white/40 text-white hover:bg-white/10 hover:text-white px-8 py-6 text-base w-full sm:w-auto"
+            data-testid="button-design-egypt-story"
+          >
+            Design My Egypt Story
+          </Button>
         </div>
       </div>
+
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
     </section>
   );
 }
