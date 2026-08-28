@@ -128,6 +128,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tour comparison data (public, read-only) — registered BEFORE the /:slug
+  // route below, otherwise Express would match "comparison" as a slug and
+  // this route would never be reached.
+  app.get("/api/public/tours/comparison", async (_req, res) => {
+    try {
+      const allTours = await storage.getTours();
+      const tours = allTours
+        .filter((tour) => tour.published !== false)
+        .map((tour) => ({
+          id: tour.id,
+          slug: tour.slug,
+          name: tour.title,
+          duration: tour.duration,
+          durationDays: tour.durationDays ?? null,
+          price: tour.price,
+          currency: tour.currency,
+          category: tour.category,
+          destinations: tour.destinations,
+          hotelCount: tour.hotelIds?.length ?? 0,
+          availabilityStatus: tour.availabilityStatus,
+          updatedAt: tour.updatedAt,
+        }));
+
+      res.json({ success: true, tours });
+    } catch (error) {
+      console.error('Error fetching tour comparison data:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching tour comparison data'
+      });
+    }
+  });
+
   // Get single tour by slug (public route)
   app.get("/api/public/tours/:slug", async (req, res) => {
     try {
@@ -522,6 +555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          availabilityStatus: "available" as const,
           createdBy: adminUser.id
         },
         {
@@ -546,6 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          availabilityStatus: "available" as const,
           createdBy: adminUser.id
         },
         {
@@ -572,6 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          availabilityStatus: "available" as const,
           createdBy: adminUser.id
         }
       ];
@@ -1822,6 +1858,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       {
         name: "destinations.robots",
         sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS robots text`,
+      },
+      {
+        name: "tours.availability_status",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS availability_status text NOT NULL DEFAULT 'available'`,
       },
     ];
 

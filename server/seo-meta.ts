@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import type { Facility } from "@shared/schema";
+import type { Facility, Tour } from "@shared/schema";
 import { getLegalPageHref } from "@shared/schema";
 
 const SITE_NAME = "iLuxury Egypt";
@@ -279,6 +279,79 @@ const CATEGORY_META_OVERRIDES: Record<string, StaticMeta> = {
   },
 };
 
+// Maps the admin-set tours.availability_status column to the schema.org
+// Offer.availability enumeration used in the tour's structured data.
+const AVAILABILITY_SCHEMA_MAP: Record<string, string> = {
+  available: "https://schema.org/InStock",
+  limited: "https://schema.org/LimitedAvailability",
+  sold_out: "https://schema.org/SoldOut",
+};
+
+interface UniquenessProperty {
+  "@type": "PropertyValue";
+  name: string;
+  value: string | boolean;
+  description?: string;
+}
+
+// Computes structured-data "uniqueness" signals purely from data that
+// already exists elsewhere (linked hotels' featured/rating/route/duration,
+// and the active seasons table) — no per-tour field an admin has to fill in.
+async function buildTourUniquenessSignals(tour: Tour): Promise<UniquenessProperty[]> {
+  const properties: UniquenessProperty[] = [];
+
+  if (tour.hotelIds?.length) {
+    const hotels = (await Promise.all(tour.hotelIds.map((id) => storage.getHotel(id)))).filter(
+      (h): h is NonNullable<typeof h> => Boolean(h),
+    );
+
+    const signatureHotel = hotels.find((h) => h.featured || h.rating === 5);
+    if (signatureHotel) {
+      properties.push({
+        "@type": "PropertyValue",
+        name: "signatureExperience",
+        value: true,
+        description: `Includes a stay at ${signatureHotel.name}, one of our featured 5-star properties.`,
+      });
+    }
+
+    const cruiseHotel = hotels.find((h) => h.route && h.duration);
+    if (cruiseHotel) {
+      properties.push({
+        "@type": "PropertyValue",
+        name: "uniqueSellingPoint",
+        value: `Includes a private Nile cruise (${cruiseHotel.route}, ${cruiseHotel.duration}) aboard ${cruiseHotel.name}.`,
+      });
+    }
+  }
+
+  try {
+    const seasons = await storage.getSeasons();
+    const now = new Date();
+    const currentMonthDay = (now.getMonth() + 1) * 100 + now.getDate();
+    const activeSeason = seasons.find((s) => {
+      if (!s.isActive) return false;
+      const start = s.startMonth * 100 + s.startDay;
+      const end = s.endMonth * 100 + s.endDay;
+      // A range that wraps the year boundary (e.g. Nov 15 – Jan 10) has start > end.
+      return start <= end
+        ? currentMonthDay >= start && currentMonthDay <= end
+        : currentMonthDay >= start || currentMonthDay <= end;
+    });
+    if (activeSeason) {
+      properties.push({
+        "@type": "PropertyValue",
+        name: "seasonalHighlight",
+        value: `Currently bookable during our ${activeSeason.name} period.`,
+      });
+    }
+  } catch (err) {
+    console.error("[seo-meta] Failed to compute seasonal uniqueness signal:", err);
+  }
+
+  return properties;
+}
+
 function normalizePath(pathname: string): string {
   return pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
 }
@@ -359,6 +432,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         url: SITE_URL,
         logo,
         image: logo,
+        foundingDate: "2023",
         description: config.footer_description || DEFAULT_DESCRIPTION,
         ...(config.contact_email ? { email: config.contact_email } : {}),
         ...(config.contact_phone ? { telephone: config.contact_phone } : {}),
@@ -627,6 +701,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const image = tour.heroImage || DEFAULT_IMAGE;
       const gallery = Array.isArray(tour.gallery) ? tour.gallery : [];
       const itineraryDays: TourItineraryDay[] = Array.isArray(tour.itinerary) ? tour.itinerary : [];
+      const uniquenessProperties = await buildTourUniquenessSignals(tour);
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "TouristTrip",
@@ -635,11 +710,12 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         image: [tour.heroImage, ...gallery].filter(Boolean),
         url: `${SITE_URL}/${tour.slug}`,
         touristType: tour.category,
+        dateModified: tour.updatedAt.toISOString(),
         offers: {
           "@type": "Offer",
           price: tour.price,
           priceCurrency: tour.currency,
-          availability: "https://schema.org/InStock",
+          availability: AVAILABILITY_SCHEMA_MAP[tour.availabilityStatus] || AVAILABILITY_SCHEMA_MAP.available,
           url: `${SITE_URL}/${tour.slug}`,
         },
         provider: {
@@ -647,6 +723,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           name: SITE_NAME,
           url: SITE_URL,
         },
+        ...(uniquenessProperties.length > 0 ? { additionalProperty: uniquenessProperties } : {}),
         ...(itineraryDays.length > 0
           ? {
               itinerary: {

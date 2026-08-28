@@ -102,6 +102,7 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       destinations: [],
       category: "",
       hotelIds: [],
+      availabilityStatus: "available",
       featured: false,
       published: true,
       brochureUrl: "",
@@ -842,6 +843,26 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                   onCheckedChange={(checked) => form.setValue("published", checked)}
                   data-testid="switch-tour-published"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="availabilityStatus">Availability</Label>
+                <p className="text-sm text-muted-foreground">
+                  Drives the availability shown to search engines and AI agents in this tour's structured data
+                </p>
+                <Select
+                  value={form.watch("availabilityStatus")}
+                  onValueChange={(value) => form.setValue("availabilityStatus", value as "available" | "limited" | "sold_out")}
+                >
+                  <SelectTrigger id="availabilityStatus" data-testid="select-tour-availability-status">
+                    <SelectValue placeholder="Select availability" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="limited">Limited Availability</SelectItem>
+                    <SelectItem value="sold_out">Sold Out</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>

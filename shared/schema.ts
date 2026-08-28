@@ -171,6 +171,7 @@ export const tours = pgTable("tours", {
   destinations: text("destinations").array().notNull().default([]),
   category: text("category").notNull(),
   hotelIds: text("hotel_ids").array().notNull().default([]), // Manually curated by admin; IDs into the hotels table for the "Where You Will Stay" section
+  availabilityStatus: text("availability_status").notNull().default("available"), // available | limited | sold_out — drives Offer.availability in structured data
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
   brochureUrl: text("brochure_url"),
@@ -701,6 +702,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   gallery: z.array(z.string()).default([]),
   itinerary: z.any(),
   hotelIds: z.array(z.string()).default([]),
+  availabilityStatus: z.enum(["available", "limited", "sold_out"]).default("available"),
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
 });

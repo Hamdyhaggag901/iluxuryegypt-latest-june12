@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Mail, Globe, User, Key, FileText, MessageCircle } from "lucide-react";
+import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle } from "lucide-react";
 import { z } from "zod";
 import {
   Form,
@@ -354,6 +354,47 @@ export default function AdminSettings() {
     },
   });
 
+  const [migrationResult, setMigrationResult] = useState<{
+    success: boolean;
+    message: string;
+    applied: string[];
+    errors?: Array<{ name: string; error: string }>;
+  } | null>(null);
+
+  const runMigrationsMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/settings/run-migrations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        // The endpoint returns a structured 500 with per-migration errors on
+        // partial failure — surface that instead of a generic message.
+        setMigrationResult(data);
+        throw new Error(data.message || "Failed to run migrations");
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      setMigrationResult(data);
+      toast({
+        title: "Migrations complete",
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <AdminLayout
       title="Settings"
@@ -413,6 +454,14 @@ export default function AdminSettings() {
             >
               <MessageCircle className="h-4 w-4 mr-2" />
               WhatsApp
+            </Button>
+            <Button
+              variant={activeSection === "database" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveSection("database")}
+            >
+              <Database className="h-4 w-4 mr-2" />
+              Database
             </Button>
           </CardContent>
         </Card>
@@ -780,6 +829,55 @@ export default function AdminSettings() {
                     </Button>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Database Migrations */}
+          {activeSection === "database" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Database className="h-5 w-5 mr-2" />
+                  Database Migrations
+                </CardTitle>
+                <CardDescription>
+                  Applies schema changes shipped in the code (like new columns) to the live database.
+                  Safe to run any time — already-applied migrations are skipped automatically.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={() => runMigrationsMutation.mutate()}
+                  disabled={runMigrationsMutation.isPending}
+                  data-testid="button-run-migrations"
+                >
+                  {runMigrationsMutation.isPending ? "Running..." : "Run Migrations"}
+                </Button>
+
+                {migrationResult && (
+                  <div className="space-y-2 text-sm">
+                    <p className={migrationResult.success ? "text-green-600" : "text-destructive"}>
+                      {migrationResult.message}
+                    </p>
+                    {migrationResult.applied.length > 0 && (
+                      <ul className="space-y-1">
+                        {migrationResult.applied.map((name) => (
+                          <li key={name} className="flex items-center gap-2 text-muted-foreground">
+                            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {migrationResult.errors?.map((e) => (
+                      <div key={e.name} className="flex items-start gap-2 text-destructive">
+                        <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>{e.name}: {e.error}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
