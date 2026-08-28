@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import {
   MapPin,
   Compass,
@@ -58,10 +59,26 @@ const interests = [
 ];
 
 
+const tailorMadeFaqs = [
+  {
+    question: "How does the tailor-made process work?",
+    answer: "Four steps: choose your destinations and dates, pick a travel style, set your budget per person, and share your contact details.",
+  },
+  {
+    question: "How fast is the response?",
+    answer: "Our travel specialists respond with a personalized itinerary within 24 hours.",
+  },
+  {
+    question: "How many travel styles can I choose from?",
+    answer: "Six, from Ultra Luxury to Nile Cruise.",
+  },
+];
+
 export default function TailorMade() {
   useSEO({
     title: "Tailor-Made Luxury Egypt Tours",
     description: "Create your perfect Egypt journey. Our travel experts craft personalized luxury itineraries tailored to your preferences.",
+    jsonLd: buildFaqJsonLd(tailorMadeFaqs),
   });
 
   const [, setLocation] = useLocation();
@@ -629,6 +646,8 @@ ${formData.additionalNotes || "None"}
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={tailorMadeFaqs} testId="tailor-made-faq-section" />
 
       <Footer />
     </div>

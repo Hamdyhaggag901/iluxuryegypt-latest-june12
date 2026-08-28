@@ -5,8 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import { Clock, Users, MapPin, Star, Calendar, ArrowLeft, Building2, Crown } from "lucide-react";
 import { Link } from "wouter";
+
+const classicEgyptFaqs = [
+  {
+    question: "How much does a classic Egypt tour cost?",
+    answer: "The Essential Egypt Grand Tour starts from $1,850 per person for 8 days, covering Cairo, Luxor, and Aswan.",
+  },
+  {
+    question: "What's included in the itinerary?",
+    answer: "The Great Pyramids, Egyptian Museum, Valley of the Kings, Karnak and Luxor temples, and Abu Simbel, with an expert Egyptologist guide throughout.",
+  },
+  {
+    question: "What group sizes do you accommodate?",
+    answer: "Groups of 2 to 12 people.",
+  },
+];
 
 const classicTours = [
   {
@@ -30,20 +46,23 @@ export default function ClassicEgypt() {
   useSEO({
     title: "Classic Egypt Tours - Luxury Packages",
     description: "Experience the timeless wonders of Egypt with our classic luxury tour packages. Pyramids, temples, and Nile cruises.",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: classicTours[0].name,
-      description: classicTours[0].description,
-      image: classicTours[0].image,
-      offers: {
-        "@type": "Offer",
-        price: "1850",
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        url: "https://iluxuryegypt.com/egypt-tour-packages/classic-egypt",
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: classicTours[0].name,
+        description: classicTours[0].description,
+        image: classicTours[0].image,
+        offers: {
+          "@type": "Offer",
+          price: "1850",
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: "https://iluxuryegypt.com/egypt-tour-packages/classic-egypt",
+        },
       },
-    },
+      buildFaqJsonLd(classicEgyptFaqs),
+    ],
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -279,6 +298,8 @@ export default function ClassicEgypt() {
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={classicEgyptFaqs} testId="classic-egypt-faq-section" />
 
       {/* Call to Action */}
       <section className="py-20 bg-primary text-primary-foreground">

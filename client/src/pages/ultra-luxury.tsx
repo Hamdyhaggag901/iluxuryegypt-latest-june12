@@ -5,8 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import { Clock, Users, MapPin, Star, Calendar, ArrowLeft, Crown, Gem } from "lucide-react";
 import { Link } from "wouter";
+
+const ultraLuxuryFaqs = [
+  {
+    question: "How much does the Pharaohs Platinum Experience cost?",
+    answer: "From $8,500 per person for the 10-day itinerary.",
+  },
+  {
+    question: "What makes it \"ultra luxury\"?",
+    answer: "Private jet transfers, presidential suite accommodations, after-hours access to the pyramids and temples, and a personal Egyptologist.",
+  },
+  {
+    question: "What's the group size?",
+    answer: "Small groups of 2 to 6 people.",
+  },
+];
 
 const ultraLuxuryTours = [
   {
@@ -30,20 +46,23 @@ export default function UltraLuxury() {
   useSEO({
     title: "Ultra Luxury Egypt Tours - Premium Experiences",
     description: "The pinnacle of luxury travel in Egypt. Exclusive access, private jets, and the finest accommodations.",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: ultraLuxuryTours[0].name,
-      description: ultraLuxuryTours[0].description,
-      image: ultraLuxuryTours[0].image,
-      offers: {
-        "@type": "Offer",
-        price: "8500",
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        url: "https://iluxuryegypt.com/egypt-tour-packages/ultra-luxury",
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: ultraLuxuryTours[0].name,
+        description: ultraLuxuryTours[0].description,
+        image: ultraLuxuryTours[0].image,
+        offers: {
+          "@type": "Offer",
+          price: "8500",
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: "https://iluxuryegypt.com/egypt-tour-packages/ultra-luxury",
+        },
       },
-    },
+      buildFaqJsonLd(ultraLuxuryFaqs),
+    ],
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -280,6 +299,8 @@ export default function UltraLuxury() {
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={ultraLuxuryFaqs} testId="ultra-luxury-faq-section" />
 
       {/* Call to Action */}
       <section className="py-20 bg-primary text-primary-foreground">

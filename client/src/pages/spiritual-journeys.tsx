@@ -5,8 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import { Clock, Users, MapPin, Star, Calendar, ArrowLeft, Heart, Zap } from "lucide-react";
 import { Link } from "wouter";
+
+const spiritualJourneysFaqs = [
+  {
+    question: "How much does the Temple Healing Journey cost?",
+    answer: "From $1,450 per person for 5 days.",
+  },
+  {
+    question: "Which sites are included?",
+    answer: "Abydos, Dendera, and Philae, with sacred ceremonies, temple meditation, and energy healing sessions.",
+  },
+  {
+    question: "What's the group size?",
+    answer: "Small groups of 2 to 8 people.",
+  },
+];
 
 const spiritualTours = [
   {
@@ -30,20 +46,23 @@ export default function SpiritualJourneys() {
   useSEO({
     title: "Spiritual Tours in Egypt - Sacred Journeys",
     description: "Discover Egypt's spiritual heritage. Visit ancient temples, sacred sites, and experience transformative journeys.",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: spiritualTours[0].name,
-      description: spiritualTours[0].description,
-      image: spiritualTours[0].image,
-      offers: {
-        "@type": "Offer",
-        price: "1450",
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        url: "https://iluxuryegypt.com/egypt-tour-packages/spiritual-journeys",
+    jsonLd: [
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: spiritualTours[0].name,
+        description: spiritualTours[0].description,
+        image: spiritualTours[0].image,
+        offers: {
+          "@type": "Offer",
+          price: "1450",
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: "https://iluxuryegypt.com/egypt-tour-packages/spiritual-journeys",
+        },
       },
-    },
+      buildFaqJsonLd(spiritualJourneysFaqs),
+    ],
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -279,6 +298,8 @@ export default function SpiritualJourneys() {
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={spiritualJourneysFaqs} testId="spiritual-journeys-faq-section" />
 
       {/* Call to Action */}
       <section className="py-20 bg-primary text-primary-foreground">

@@ -28,6 +28,7 @@ import type { Facility } from "@shared/schema";
 import { getHotelImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 import { Card, CardContent } from "@/components/ui/card";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 
 function getFacilityIcon(iconName: string) {
   const className = "h-6 w-6 text-accent";
@@ -103,18 +104,42 @@ export default function HotelDetail() {
 
   const seoHotel = hotelResponse?.hotel;
 
-  // Title/description/image only — no jsonLd here. server/seo-meta.ts already
-  // injects a complete Hotel schema (name, description, images, address,
-  // starRating, priceRange, amenityFeature) into the initial server-rendered
-  // HTML for this route; a second client-side Hotel block would just
-  // duplicate/conflict with it once JS runs (including in the Puppeteer
-  // prerender bots receive). This useSEO call exists so client-side SPA
-  // navigation between hotel pages still updates the title/meta tags, which
-  // this page never did before since it had no useSEO call at all.
+  // Generic questions that apply to any hotel — grounded only in data that
+  // actually exists (facilities list); booking-policy questions with no
+  // per-hotel data (breakfast, cancellation) point to our specialists
+  // instead of inventing an answer.
+  const hotelFaqs = seoHotel
+    ? [
+        {
+          question: "Is breakfast included?",
+          answer: "Contact our travel specialists for details on what's included at this property.",
+        },
+        {
+          question: "What's the cancellation policy?",
+          answer: "Contact our travel specialists for cancellation details for your dates.",
+        },
+        {
+          question: "What facilities are available?",
+          answer:
+            ((seoHotel.facilities || []) as Facility[]).length > 0
+              ? `This property offers: ${((seoHotel.facilities || []) as Facility[]).map((f) => f.label).join(", ")}.`
+              : "Contact our travel specialists for a full list of facilities at this property.",
+        },
+      ]
+    : [];
+
+  // Title/description/image + FAQPage only — no Hotel/LodgingBusiness jsonLd
+  // here. server/seo-meta.ts already injects a complete Hotel schema (name,
+  // description, images, address, starRating, priceRange, amenityFeature)
+  // into the initial server-rendered HTML for this route; a second
+  // client-side Hotel block would just duplicate/conflict with it once JS
+  // runs (including in the Puppeteer prerender bots receive). FAQPage is a
+  // different @type the server doesn't add, so it's safe to add here.
   useSEO({
     title: seoHotel?.name,
     description: seoHotel?.description?.slice(0, 160),
     image: seoHotel?.image,
+    jsonLd: buildFaqJsonLd(hotelFaqs),
   });
 
   if (isLoading) {
@@ -248,6 +273,8 @@ export default function HotelDetail() {
             </div>
           </section>
         )}
+
+        <FaqSection faqs={hotelFaqs} testId="hotel-faq-section" />
 
         {/* Gallery — horizontal scroll strip */}
         {gallery.length > 0 && (

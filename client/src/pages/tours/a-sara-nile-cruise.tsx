@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import {
   Ship,
   Calendar,
@@ -18,6 +19,25 @@ import {
   Anchor,
   Send,
 } from "lucide-react";
+
+const aSaraNileCruiseFaqs = [
+  {
+    question: "How long is the A Sara Nile Cruise?",
+    answer: "4, 5, or 8 days between Luxor and Aswan.",
+  },
+  {
+    question: "What's included?",
+    answer: "Full-board accommodation, private air-conditioned transfers, an English-speaking guide, and entrance fees — for groups of up to 8 travelers.",
+  },
+  {
+    question: "When do cruises depart?",
+    answer: "Every Saturday from Luxor and every Wednesday from Aswan.",
+  },
+  {
+    question: "What's the cancellation policy?",
+    answer: "Contact our travel specialists for cancellation details for your dates.",
+  },
+];
 
 export default function ASaraNileCruise() {
   const { toast } = useToast();
@@ -34,6 +54,20 @@ export default function ASaraNileCruise() {
 
   useEffect(() => {
     document.title = "Luxury Nile Cruise: Luxor to Aswan | A Sara Egypt";
+  }, []);
+
+  // This page manages its own title via document.title (not useSEO) — matching
+  // that existing pattern rather than switching to useSEO, so the FAQPage
+  // schema is injected the same lightweight way instead of risking a change
+  // to this page's title/meta-description behavior.
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify(buildFaqJsonLd(aSaraNileCruiseFaqs));
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -400,6 +434,8 @@ export default function ASaraNileCruise() {
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={aSaraNileCruiseFaqs} testId="a-sara-nile-cruise-faq-section" />
 
       <Footer />
     </>

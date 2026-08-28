@@ -3,13 +3,30 @@ import { useSEO } from "@/hooks/use-seo";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import LuxuryPackagesSection from "@/components/destination-blocks";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import { ArrowLeft, Heart, Baby, Users } from "lucide-react";
 import { Link } from "wouter";
+
+const familyLuxuryFaqs = [
+  {
+    question: "What age is this suitable for?",
+    answer: "Children aged 4 and up.",
+  },
+  {
+    question: "What group sizes work for families?",
+    answer: "4 to 16 people.",
+  },
+  {
+    question: "What kind of guides lead family tours?",
+    answer: "Private Egyptologist guides trained to make ancient history engaging for kids and adults alike.",
+  },
+];
 
 export default function FamilyLuxury() {
   useSEO({
     title: "Luxury Family Vacations in Egypt",
     description: "Create unforgettable family memories in Egypt. Kid-friendly luxury tours with private guides and five-star comfort.",
+    jsonLd: buildFaqJsonLd(familyLuxuryFaqs),
   });
 
   return (
@@ -118,6 +135,8 @@ export default function FamilyLuxury() {
           </div>
         </div>
       </section>
+
+      <FaqSection faqs={familyLuxuryFaqs} testId="family-luxury-faq-section" />
 
       {/* Call to Action */}
       <section className="py-20 bg-primary text-primary-foreground">
