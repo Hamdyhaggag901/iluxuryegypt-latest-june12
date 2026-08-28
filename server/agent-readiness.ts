@@ -118,6 +118,7 @@ function mcpServerCard() {
 }
 
 const ROBOTS_TXT_PATH = path.resolve(import.meta.dirname, "..", "robots.txt");
+const AUTH_MD_PATH = path.resolve(import.meta.dirname, "..", "auth.md");
 
 export function registerAgentReadinessRoutes(app: Express) {
   // #3 — Content Signals: robots.txt was never actually served (no route existed
@@ -126,6 +127,21 @@ export function registerAgentReadinessRoutes(app: Express) {
     try {
       const content = await fs.readFile(ROBOTS_TXT_PATH, "utf-8");
       res.type("text/plain").send(content);
+    } catch {
+      res.status(404).send("Not found");
+    }
+  });
+
+  // Agent registration/access policy (WorkOS "auth.md" convention) — lives at
+  // the domain root, not /.well-known/, mirroring llms.txt. Declares public,
+  // no-auth access; deliberately does NOT publish oauth-authorization-server
+  // or oauth-protected-resource, since per RFC 9728 and MCP's own auth spec,
+  // publishing those is itself a signal that authorization is required —
+  // their absence is the spec-correct way to say "no auth at all."
+  app.get("/auth.md", async (_req, res) => {
+    try {
+      const content = await fs.readFile(AUTH_MD_PATH, "utf-8");
+      res.type("text/markdown").send(content);
     } catch {
       res.status(404).send("Not found");
     }
