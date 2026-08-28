@@ -1,7 +1,7 @@
-import { Link } from "wouter";
-import { Package, ArrowRight } from "lucide-react";
+import { Package } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Tour } from "@shared/schema";
+import TourCard from "@/components/tour-card";
 
 interface LuxuryPackagesSectionProps {
   category?: string;
@@ -110,67 +110,18 @@ export default function LuxuryPackagesSection({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {tours.map((tour) => (
-            <Link key={tour.id} href={`/${tour.slug}`}>
-              <article
-                className="bg-card border border-card-border rounded-lg overflow-hidden flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow duration-300"
-                data-testid={`card-package-${tour.slug}`}
-              >
-                <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={tour.heroImage}
-                    alt={tour.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-
-                <div className="p-6 flex flex-col flex-grow">
-                  <div className="flex flex-col gap-3 flex-grow">
-                    <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
-                      {tour.category}
-                    </span>
-
-                    <h3
-                      className="font-serif text-xl text-primary leading-tight group-hover:text-accent transition-colors"
-                      data-testid={`text-title-${tour.slug}`}
-                    >
-                      {tour.title}
-                    </h3>
-
-                    <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
-                      {tour.duration}
-                      {tour.groupSize ? ` · ${tour.groupSize}` : ""}
-                    </p>
-
-                    {tour.destinations.length > 0 && (
-                      <div className="mt-2">
-                        <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
-                          The Route
-                        </span>
-                        <p className="text-sm text-muted-foreground/70 leading-relaxed">
-                          {tour.destinations.join(" → ")}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <hr className="border-t border-border my-6" />
-
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <span className="text-xs text-muted-foreground block mb-1">From</span>
-                      <span className="font-serif text-lg text-primary">
-                        {tour.currency === "USD" ? "$" : `${tour.currency} `}
-                        {tour.price.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="text-sm font-semibold text-primary group-hover:text-accent transition-colors">
-                      View Journey
-                    </span>
-                  </div>
-                </div>
-              </article>
-            </Link>
+            <TourCard
+              key={tour.id}
+              image={tour.heroImage}
+              category={tour.category}
+              title={tour.title}
+              days={tour.duration}
+              guests={tour.groupSize || undefined}
+              itinerary={tour.destinations}
+              price={tour.price}
+              currency={tour.currency}
+              link={`/${tour.slug}`}
+            />
           ))}
         </div>
       </div>

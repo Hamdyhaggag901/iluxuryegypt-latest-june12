@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import type { Tour } from "@shared/schema";
-import { getTourImageAlt } from "@/lib/seo-alt-text";
+import TourCard from "@/components/tour-card";
 
 function similarityScore(current: Tour, candidate: Tour): number {
   let score = 0;
@@ -52,47 +52,17 @@ export default function ContinueTheJourney({
           <CarouselContent>
             {relatedTours.map((t) => (
               <CarouselItem key={t.id} className="basis-[85%] sm:basis-[60%] md:basis-1/3">
-                <Link href={`/${t.slug}`}>
-                  <article className="bg-card border border-card-border rounded-lg overflow-hidden flex flex-col h-full group cursor-pointer hover:shadow-lg transition-shadow duration-300">
-                    <div className="relative h-56 md:h-64 overflow-hidden">
-                      <img
-                        src={t.heroImage}
-                        alt={getTourImageAlt(t)}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    </div>
-
-                    <div className="p-5 md:p-6 flex flex-col flex-grow">
-                      <div className="flex flex-col gap-2 md:gap-3 flex-grow">
-                        <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
-                          {t.category}
-                        </span>
-                        <h3 className="font-serif text-base md:text-xl text-primary leading-tight group-hover:text-accent transition-colors">
-                          {t.title}
-                        </h3>
-                        <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
-                          {t.duration}
-                        </p>
-                      </div>
-
-                      <hr className="border-t border-border my-4 md:my-6" />
-
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <span className="text-xs text-muted-foreground block mb-1">From</span>
-                          <span className="font-serif text-base md:text-lg text-primary">
-                            {t.currency === "USD" ? "$" : `${t.currency} `}
-                            {t.price.toLocaleString()}
-                          </span>
-                        </div>
-                        <span className="text-xs md:text-sm font-semibold text-primary group-hover:text-accent transition-colors">
-                          View Journey
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                </Link>
+                <TourCard
+                  image={t.heroImage}
+                  category={t.category}
+                  title={t.title}
+                  days={t.duration}
+                  guests={t.groupSize || undefined}
+                  itinerary={t.destinations}
+                  price={t.price}
+                  currency={t.currency}
+                  link={`/${t.slug}`}
+                />
               </CarouselItem>
             ))}
           </CarouselContent>
