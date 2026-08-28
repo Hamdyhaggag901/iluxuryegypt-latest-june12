@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
@@ -100,6 +101,22 @@ export default function HotelDetail() {
     },
   });
 
+  const seoHotel = hotelResponse?.hotel;
+
+  // Title/description/image only — no jsonLd here. server/seo-meta.ts already
+  // injects a complete Hotel schema (name, description, images, address,
+  // starRating, priceRange, amenityFeature) into the initial server-rendered
+  // HTML for this route; a second client-side Hotel block would just
+  // duplicate/conflict with it once JS runs (including in the Puppeteer
+  // prerender bots receive). This useSEO call exists so client-side SPA
+  // navigation between hotel pages still updates the title/meta tags, which
+  // this page never did before since it had no useSEO call at all.
+  useSEO({
+    title: seoHotel?.name,
+    description: seoHotel?.description?.slice(0, 160),
+    image: seoHotel?.image,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -140,6 +157,13 @@ export default function HotelDetail() {
   const relatedHotels = ((allHotelsResponse?.hotels || []) as any[])
     .filter((h) => h.status === "published" && h.region === hotel.region && h.slug !== hotel.slug)
     .slice(0, 4);
+
+  // Intro paragraph fallback — hotel.description/fullDescription are real
+  // admin-written content already used on hotel cards elsewhere on the site,
+  // but were never rendered on the hotel's own page. When there's no
+  // free-form article, this guarantees the page still opens with a direct,
+  // real description instead of jumping straight from hero to facilities.
+  const introText = !hotel.article ? (hotel.fullDescription || hotel.description) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -182,6 +206,15 @@ export default function HotelDetail() {
             )}
           </div>
         </section>
+
+        {/* Intro — direct-answer fallback when there's no free-form article */}
+        {introText && (
+          <section className="py-14 md:py-20">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">{introText}</p>
+            </div>
+          </section>
+        )}
 
         {/* Article — free-form rich text */}
         {hotel.article && (

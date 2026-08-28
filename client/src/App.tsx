@@ -8,6 +8,7 @@ import { useEffect, lazy, Suspense } from "react";
 import WhatsAppButton from "@/components/whatsapp-button";
 import FloatingSpeakExpertButton from "@/components/floating-speak-expert-button";
 import SiteMetadata from "@/components/site-metadata";
+import WebMcpTools from "@/components/webmcp-tools";
 
 // Eagerly loaded (critical path)
 import Home from "@/pages/home";
@@ -226,6 +227,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SiteMetadata />
+        <WebMcpTools />
         <Toaster />
         <Router />
         <WhatsAppButton />

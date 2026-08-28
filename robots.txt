@@ -3,3 +3,7 @@ User-agent: *
 Allow: /
 Disallow: /admin/
 Sitemap: https://iluxuryegypt.com/sitemap.xml
+
+# Content Signals (Cloudflare proposal, extends the Robots Exclusion Protocol)
+# https://blog.cloudflare.com/content-signals-policy/
+Content-Signal: ai-train=no, search=yes, ai-input=yes

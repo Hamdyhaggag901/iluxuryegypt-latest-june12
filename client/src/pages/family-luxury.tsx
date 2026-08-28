@@ -41,8 +41,10 @@ export default function FamilyLuxury() {
             <div className="w-32 h-px bg-accent mx-auto mb-8"></div>
 
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-12">
-              Perfect adventures designed for families to explore Egypt together with engaging activities for all ages.
-              Create lasting memories while discovering ancient wonders through interactive experiences that captivate both children and adults.
+              iLuxury Egypt's family tours are designed for children aged 4 and up, in family groups of 4 to
+              16 people, with private Egyptologist guides trained to make ancient history engaging for kids
+              and adults alike. Every itinerary blends hands-on, interactive activities with the comfort and
+              safety of five-star family travel.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">

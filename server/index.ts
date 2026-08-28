@@ -3,6 +3,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { prerenderMiddleware } from "./prerender";
+import { markdownNegotiationMiddleware } from "./markdown-negotiation";
 
 const app = express();
 app.use(express.json());
@@ -55,6 +56,9 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
+    // Markdown negotiation runs before prerendering: `Accept: text/markdown`
+    // gets a Markdown rendition of the page instead of HTML.
+    app.use(markdownNegotiationMiddleware());
     // Prerender middleware runs BEFORE static serving
     // It intercepts bot requests and serves fully rendered HTML
     app.use(prerenderMiddleware());

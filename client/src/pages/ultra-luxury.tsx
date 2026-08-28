@@ -30,6 +30,20 @@ export default function UltraLuxury() {
   useSEO({
     title: "Ultra Luxury Egypt Tours - Premium Experiences",
     description: "The pinnacle of luxury travel in Egypt. Exclusive access, private jets, and the finest accommodations.",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: ultraLuxuryTours[0].name,
+      description: ultraLuxuryTours[0].description,
+      image: ultraLuxuryTours[0].image,
+      offers: {
+        "@type": "Offer",
+        price: "8500",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url: "https://iluxuryegypt.com/egypt-tour-packages/ultra-luxury",
+      },
+    },
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -63,8 +77,10 @@ export default function UltraLuxury() {
             <div className="w-32 h-px bg-accent mx-auto mb-8"></div>
 
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-12">
-              The pinnacle of Egyptian luxury travel with exclusive access, private vessels, and unparalleled service. 
-              Experience Egypt like royalty with our most exclusive and prestigious offerings.
+              Ultra Luxury Egypt tours start from $8,500 per person for the 10-day Pharaohs Platinum
+              Experience, limited to small groups of 2 to 6 travelers across Cairo, Luxor, and Abu Simbel.
+              The package includes private jet transfers, presidential suite accommodations, after-hours
+              access to the pyramids and temples, and a personal Egyptologist throughout.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">

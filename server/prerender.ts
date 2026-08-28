@@ -96,6 +96,24 @@ function isBot(userAgent: string): boolean {
   return BOT_USER_AGENTS.some((bot) => ua.includes(bot));
 }
 
+// Shared with markdown-negotiation.ts so a markdown request and a bot
+// prerender of the same path reuse one Puppeteer render and one cache entry.
+export async function getRenderedHtml(reqPath: string): Promise<string> {
+  const cached = cache.get(reqPath);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.html;
+  }
+
+  const fullUrl = `http://localhost:${process.env.PORT || 5000}${reqPath}`;
+  const html = await queuedRender(fullUrl);
+
+  if (html.length > 10000) {
+    cache.set(reqPath, { html, timestamp: Date.now() });
+  }
+
+  return html;
+}
+
 export function prerenderMiddleware() {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET") return next();

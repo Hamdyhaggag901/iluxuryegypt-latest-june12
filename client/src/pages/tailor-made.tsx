@@ -532,7 +532,10 @@ ${formData.additionalNotes || "None"}
           <div className="w-20 h-px bg-accent mx-auto mb-8" />
 
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Let us craft a personalized Egyptian adventure just for you. Tell us your dreams, and we'll make them reality.
+            Building a tailor-made Egypt tour takes four steps: choose your destinations and dates, pick a
+            travel style from six options (from Ultra Luxury to Nile Cruise), set your budget per person, and
+            share your contact details. Our travel specialists respond with a personalized itinerary within
+            24 hours.
           </p>
         </div>
       </section>

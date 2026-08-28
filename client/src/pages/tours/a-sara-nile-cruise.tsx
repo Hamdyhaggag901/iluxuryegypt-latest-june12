@@ -186,7 +186,10 @@ export default function ASaraNileCruise() {
             A Sara Nile Cruise
           </h1>
           <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Discover ancient Egypt in refined comfort. Exclusive journeys through Luxor, Aswan & timeless temples.
+            The A Sara Nile Cruise sails between Luxor and Aswan in 4, 5, or 8-day itineraries, with
+            full-board accommodation, private air-conditioned transfers, and an English-speaking guide for
+            groups of up to 8 travelers. Departures run every Saturday from Luxor and every Wednesday from
+            Aswan, taking in Kom Ombo, Edfu, and the temples of Abu Simbel and Philae along the way.
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm">

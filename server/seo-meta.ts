@@ -3,7 +3,7 @@ import type { Facility } from "@shared/schema";
 import { getLegalPageHref } from "@shared/schema";
 
 const SITE_NAME = "iLuxury Egypt";
-const SITE_URL = "https://iluxuryegypt.com";
+export const SITE_URL = "https://iluxuryegypt.com";
 const DEFAULT_DESCRIPTION =
   "Experience Egypt in pure luxury with iLuxury Egypt. Curated bespoke stays across Egypt's most iconic destinations from Nile-side sanctuaries to Red Sea havens.";
 const DEFAULT_IMAGE = `${SITE_URL}/api/assets/uploads/e1643e72-36f2-409f-9d0a-c8e894a66d3d.png`;

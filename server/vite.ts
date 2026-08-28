@@ -81,7 +81,11 @@ export async function setupVite(app: Express, server: Server) {
         page = injectMetaTags(page, url, meta);
       }
 
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      const headers: Record<string, string> = { "Content-Type": "text/html" };
+      if (url.split("?")[0] === "/") {
+        headers["Link"] = '</.well-known/api-catalog>; rel="api-catalog"';
+      }
+      res.status(200).set(headers).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
@@ -130,6 +134,11 @@ export function serveStatic(app: Express) {
 
     const meta = await resolvePageMeta(url);
     const page = meta ? injectMetaTags(indexTemplate, url, meta) : indexTemplate;
-    res.status(200).set({ "Content-Type": "text/html" }).send(page);
+
+    const headers: Record<string, string> = { "Content-Type": "text/html" };
+    if (url === "/") {
+      headers["Link"] = '</.well-known/api-catalog>; rel="api-catalog"';
+    }
+    res.status(200).set(headers).send(page);
   });
 }

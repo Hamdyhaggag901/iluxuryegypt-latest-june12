@@ -30,6 +30,20 @@ export default function SpiritualJourneys() {
   useSEO({
     title: "Spiritual Tours in Egypt - Sacred Journeys",
     description: "Discover Egypt's spiritual heritage. Visit ancient temples, sacred sites, and experience transformative journeys.",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: spiritualTours[0].name,
+      description: spiritualTours[0].description,
+      image: spiritualTours[0].image,
+      offers: {
+        "@type": "Offer",
+        price: "1450",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url: "https://iluxuryegypt.com/egypt-tour-packages/spiritual-journeys",
+      },
+    },
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -63,8 +77,10 @@ export default function SpiritualJourneys() {
             <div className="w-32 h-px bg-accent mx-auto mb-8"></div>
 
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-12">
-              Connect with ancient Egyptian spirituality through sacred sites, meditation, and transformative experiences. 
-              Journey into the mystical heart of Egypt where ancient wisdom meets modern spiritual practice.
+              Spiritual journeys through Egypt start from $1,450 per person for the 5-day Temple Healing
+              Journey, guiding small groups of 2 to 8 travelers through Abydos, Dendera, and Philae. The
+              itinerary blends sacred temple ceremonies, guided meditation, and energy healing sessions led
+              by experienced spiritual guides.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">

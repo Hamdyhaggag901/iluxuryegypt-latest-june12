@@ -179,7 +179,7 @@ export default function Stay() {
   // Hero section data
   const heroData = stayPageData?.hero || {
     title: "Luxury Accommodations",
-    subtitle: "From historic palaces to modern resorts, discover Egypt's finest luxury accommodations curated for the discerning traveler.",
+    subtitle: "Every hotel in this collection is handpicked by our Egypt specialists, from Nile-view suites to Red Sea resorts and historic palaces. Filter by region, property type, and star rating below to find the stay that matches your trip.",
     backgroundImage: luxuryHallImage,
     primaryButtonText: "Book Your Stay",
     primaryButtonLink: "/contact",

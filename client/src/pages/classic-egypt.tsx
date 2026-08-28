@@ -30,6 +30,20 @@ export default function ClassicEgypt() {
   useSEO({
     title: "Classic Egypt Tours - Luxury Packages",
     description: "Experience the timeless wonders of Egypt with our classic luxury tour packages. Pyramids, temples, and Nile cruises.",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: classicTours[0].name,
+      description: classicTours[0].description,
+      image: classicTours[0].image,
+      offers: {
+        "@type": "Offer",
+        price: "1850",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+        url: "https://iluxuryegypt.com/egypt-tour-packages/classic-egypt",
+      },
+    },
   });
 
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
@@ -63,8 +77,10 @@ export default function ClassicEgypt() {
             <div className="w-32 h-px bg-accent mx-auto mb-8"></div>
 
             <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-12">
-              Discover Egypt's most iconic sites and timeless wonders in comprehensive classic tours. 
-              Experience the greatest hits of ancient civilization with expert guides and exclusive access.
+              Our Classic Egypt tours start from $1,850 per person for the 8-day Essential Egypt Grand Tour,
+              covering Cairo, Luxor, and Aswan for groups of 2 to 12 travelers. Every itinerary includes the
+              Great Pyramids, the Valley of the Kings, Karnak Temple, and Abu Simbel, guided by an expert
+              Egyptologist from arrival to departure.
             </p>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">

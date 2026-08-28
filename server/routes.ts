@@ -5,6 +5,7 @@ import path from "path";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { sendBookingConfirmation } from "./email";
+import { registerAgentReadinessRoutes } from "./agent-readiness";
 import {
   insertInquirySchema,
   insertUserSchema,
@@ -48,6 +49,9 @@ import {
 } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Agent-readiness discovery routes (api-catalog, ai-catalog.json, agent-skills, MCP)
+  registerAgentReadinessRoutes(app);
+
   // API Routes for I.LuxuryEgypt inquiry form
   
   // Submit inquiry form
