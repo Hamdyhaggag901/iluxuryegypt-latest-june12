@@ -74,11 +74,12 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-0 lg:items-start">
-          {/* Map — sticky on desktop, fixed height on mobile */}
-          <div className="w-full lg:w-1/2 lg:sticky lg:top-24">
+          {/* Map — a small sticky bar on mobile so it stays visible while scrolling the day
+              list; a full-height sticky column on desktop (lg:) as before. */}
+          <div className="w-full lg:w-1/2 sticky top-20 lg:top-24 z-30 lg:z-auto">
             {bounds ? (
-              <div className="h-[45vh] lg:h-[calc(100vh-8rem)] rounded-xl overflow-hidden border border-border shadow-lg">
-                <MapContainer bounds={bounds} boundsOptions={{ padding: [40, 40] }} className="h-full w-full" scrollWheelZoom={false}>
+              <div className="h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
+                <MapContainer bounds={bounds} boundsOptions={{ padding: [24, 24] }} className="h-full w-full" scrollWheelZoom={false}>
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -93,7 +94,7 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
                 </MapContainer>
               </div>
             ) : (
-              <div className="h-[45vh] lg:h-[calc(100vh-8rem)] rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground text-sm">
+              <div className="h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground text-sm">
                 Map coordinates not available for this itinerary
               </div>
             )}
