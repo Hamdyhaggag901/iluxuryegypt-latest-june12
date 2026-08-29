@@ -10,6 +10,17 @@ const BOT_USER_AGENTS = [
   "pinterest", "semrushbot", "siteauditbot", "ahrefsbot", "mj12bot",
   "rogerbot", "dotbot", "petalbot", "bytespider", "gptbot",
   "screaming frog", "sitebulb", "deepcrawl", "oncrawl",
+  // AI assistants' live/on-demand fetch identities — used when a user asks
+  // the assistant to open a specific URL right now, distinct from that same
+  // company's offline training crawler (already covered by the generic
+  // "bot"/"crawler"/"spider" catch-all below: gptbot, claudebot,
+  // perplexitybot, oai-searchbot, claude-searchbot). None of these contain
+  // "bot"/"crawler"/"spider" so they need an explicit entry. Verified via
+  // multiple corroborating secondary sources (OpenAI/Anthropic/Perplexity/
+  // Meta's own docs pages were not reachable from this environment to
+  // cross-check directly) — "claude-user" is the least certain of the five.
+  "chatgpt-user", "claude-user", "perplexity-user",
+  "meta-externalagent", "meta-externalfetcher",
   "bot", "crawler", "spider",
 ];
 
