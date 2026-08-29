@@ -15,6 +15,9 @@ interface HotelForAlt {
 interface TourForAlt {
   title: string;
   category?: string | null;
+  heroImageAlt?: string | null;
+  gallery?: string[] | null;
+  galleryAlt?: Record<string, string> | null;
 }
 
 interface PostForAlt {
@@ -43,8 +46,13 @@ export function getHotelImageAlt(hotel: HotelForAlt, index?: number): string {
 export function getTourImageAlt(tour: TourForAlt, index?: number): string {
   const category = tour.category ? ` — ${tour.category}` : "";
   if (index === undefined) {
+    const customAlt = tour.heroImageAlt?.trim();
+    if (customAlt) return customAlt;
     return `${tour.title}${category}`;
   }
+  const url = tour.gallery?.[index];
+  const customAlt = url ? tour.galleryAlt?.[url]?.trim() : undefined;
+  if (customAlt) return customAlt;
   return `${tour.title} — photo ${index + 1}`;
 }
 

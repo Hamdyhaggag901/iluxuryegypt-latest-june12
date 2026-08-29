@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { insertTourSchema } from "@shared/schema";
+import { insertTourSchema, type Media } from "@shared/schema";
+import { detectPlaceName, detectAccommodation, detectMeals, suggestDayPhotoAlt, normalizeForMatch } from "@shared/itinerary-detection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2, MapPin } from "lucide-react";
+import { Plus, X, Loader2, MapPin, Sparkles, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const tourFormSchema = insertTourSchema.extend({
@@ -36,6 +37,7 @@ const tourFormSchema = insertTourSchema.extend({
     ),
     placeName: z.string().optional(),
     image: z.string().optional(),
+    imageAlt: z.string().optional(),
     accommodation: z.string().optional(),
     meals: z.array(z.string()).default([]),
   })).min(1, "At least one itinerary day is required"),
@@ -81,6 +83,22 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     },
   });
 
+  // Used for "Suggest Photo" (matching a landmark name against media
+  // filenames/alt text) and for uploading new day photos in place.
+  const { data: mediaData } = useQuery<{ success: boolean; media: Media[] }>({
+    queryKey: ["/api/cms/media"],
+    queryFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch media");
+      return response.json();
+    },
+  });
+  const mediaImages = (mediaData?.media || []).filter((m) => m.mimeType.startsWith("image/"));
+  const hotelNames: string[] = (hotelsData?.hotels || []).map((h: any) => h.name);
+
   const form = useForm<TourFormData>({
     resolver: zodResolver(tourFormSchema),
     defaultValues: {
@@ -89,7 +107,9 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       description: "",
       shortDescription: "",
       heroImage: "",
+      heroImageAlt: "",
       gallery: [],
+      galleryAlt: {},
       duration: "",
       durationDays: null,
       groupSize: "",
@@ -198,6 +218,117 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     }
   };
 
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+  });
+
+  const handleDayPhotoUpload = (dayIndex: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadImageMutation.mutate(file, {
+      onSuccess: (url) => form.setValue(`itinerary.${dayIndex}.image`, url),
+      onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
+    });
+  };
+
+  // Suggestion-only automation: fills placeName/accommodation/meals/coordinates
+  // from the day's own description text, but only into fields that are still
+  // empty — an admin's manual edits are never overwritten. Runs on blur so it
+  // doesn't fight the admin while they're mid-sentence.
+  const autoDetectFromDescription = async (dayIndex: number) => {
+    const description = form.getValues(`itinerary.${dayIndex}.description`) || "";
+    if (!description.trim()) return;
+
+    let filledSomething = false;
+
+    if (!form.getValues(`itinerary.${dayIndex}.placeName`)?.trim()) {
+      const place = detectPlaceName(description);
+      if (place) {
+        form.setValue(`itinerary.${dayIndex}.placeName`, place);
+        filledSomething = true;
+      }
+    }
+
+    if (!form.getValues(`itinerary.${dayIndex}.accommodation`)?.trim()) {
+      const hotel = detectAccommodation(description, hotelNames);
+      if (hotel) {
+        form.setValue(`itinerary.${dayIndex}.accommodation`, hotel);
+        filledSomething = true;
+      }
+    }
+
+    if ((form.getValues(`itinerary.${dayIndex}.meals`) || []).length === 0) {
+      const meals = detectMeals(description);
+      if (meals.length > 0) {
+        form.setValue(`itinerary.${dayIndex}.meals`, meals);
+        filledSomething = true;
+      }
+    }
+
+    const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim();
+    const hasCoords = form.getValues(`itinerary.${dayIndex}.lat`) != null && form.getValues(`itinerary.${dayIndex}.lng`) != null;
+    if (placeName && !hasCoords) {
+      try {
+        const token = localStorage.getItem("adminToken");
+        const response = await fetch(`/api/cms/geocode?q=${encodeURIComponent(placeName)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          form.setValue(`itinerary.${dayIndex}.lat`, result.lat);
+          form.setValue(`itinerary.${dayIndex}.lng`, result.lng);
+          filledSomething = true;
+        }
+      } catch {
+        // Silent — this is a background suggestion, not a directly requested lookup.
+      }
+    }
+
+    if (filledSomething) {
+      toast({ title: "Auto-filled from description", description: "Review the suggested fields below and adjust if needed." });
+    }
+  };
+
+  const suggestDayPhoto = (dayIndex: number) => {
+    const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim();
+    if (!placeName) {
+      toast({ title: "Add a place name first", description: "Suggest Photo matches against the place name.", variant: "destructive" });
+      return;
+    }
+    const needle = normalizeForMatch(placeName);
+    const match = mediaImages.find(
+      (m) => normalizeForMatch(m.originalName).includes(needle) || normalizeForMatch(m.altEn || "").includes(needle)
+    );
+    if (!match) {
+      toast({ title: "No matching photo found", description: "Upload one below, or add it to the Media Library first.", variant: "destructive" });
+      return;
+    }
+    form.setValue(`itinerary.${dayIndex}.image`, match.url);
+    if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim()) {
+      form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+    }
+    toast({ title: "Photo suggested", description: match.originalName });
+  };
+
+  const setGalleryAlt = (url: string, value: string) => {
+    form.setValue("galleryAlt", { ...(form.getValues("galleryAlt") || {}), [url]: value });
+  };
+
   const removeItineraryDay = (index: number) => {
     const currentItinerary = form.getValues("itinerary") || [];
     const updated = currentItinerary.filter((_: any, i: number) => i !== index);
@@ -218,6 +349,7 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
         lng: day.lng,
         placeName: day.placeName?.trim() || undefined,
         image: day.image?.trim() || undefined,
+        imageAlt: day.imageAlt?.trim() || undefined,
         accommodation: day.accommodation?.trim() || undefined,
         meals: day.meals || [],
       })),
@@ -225,6 +357,7 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       excludes: (data.excludes || []).filter(e => e.trim().length > 0),
       destinations: (data.destinations || []).filter(d => d.trim().length > 0),
       gallery: (data.gallery || []).filter(g => g.trim().length > 0),
+      heroImageAlt: data.heroImageAlt?.trim() || undefined,
     };
     onSubmit(transformedData);
   };
@@ -369,18 +502,54 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                     <div className="space-y-2">
                       <Label>Day Description *</Label>
                       <Textarea
-                        {...form.register(`itinerary.${index}.description`)}
+                        {...form.register(`itinerary.${index}.description`, {
+                          onBlur: () => autoDetectFromDescription(index),
+                        })}
                         placeholder="What happens on this day..."
                         rows={3}
                         data-testid={`input-itinerary-description-${index}`}
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Place name, accommodation and meals below are auto-suggested from this text when you click away — always reviewable and editable.
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label>Day Photo URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          {...form.register(`itinerary.${index}.image`)}
+                          placeholder="https://example.com/day-photo.jpg"
+                          data-testid={`input-itinerary-image-${index}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => suggestDayPhoto(index)}
+                          data-testid={`button-suggest-photo-${index}`}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          <span className="ml-2 hidden sm:inline">Suggest Photo</span>
+                        </Button>
+                        <Button type="button" variant="outline" className="relative" data-testid={`button-upload-day-photo-${index}`}>
+                          {uploadImageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleDayPhotoUpload(index)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        "Suggest Photo" searches the Media Library for a photo whose name matches the place name below. If nothing matches, upload a new one — it's automatically converted to WebP and compressed.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Day Photo Alt Text</Label>
                       <Input
-                        {...form.register(`itinerary.${index}.image`)}
-                        placeholder="https://example.com/day-photo.jpg"
-                        data-testid={`input-itinerary-image-${index}`}
+                        {...form.register(`itinerary.${index}.imageAlt`)}
+                        placeholder="e.g., Karnak Temple columns at sunset – iLuxury Egypt"
+                        data-testid={`input-itinerary-image-alt-${index}`}
                       />
                     </div>
                     <div className="space-y-2">
@@ -501,6 +670,16 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="heroImageAlt">Hero Image Alt Text</Label>
+                <Input
+                  id="heroImageAlt"
+                  data-testid="input-tour-hero-image-alt"
+                  {...form.register("heroImageAlt")}
+                  placeholder="e.g., Sailboat on the Nile at sunset near Aswan – iLuxury Egypt"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Gallery Images</Label>
                 <div className="flex gap-2">
                   <Input
@@ -520,19 +699,25 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="space-y-2 mt-3">
                   {form.watch("gallery")?.map((url: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="gap-1">
-                      Image {index + 1}
+                    <div key={index} className="flex items-center gap-2 border rounded-md p-2">
+                      <Badge variant="secondary" className="shrink-0">Image {index + 1}</Badge>
+                      <Input
+                        value={form.watch("galleryAlt")?.[url] || ""}
+                        onChange={(e) => setGalleryAlt(url, e.target.value)}
+                        placeholder="Alt text for this photo"
+                        className="flex-1"
+                        data-testid={`input-gallery-alt-${index}`}
+                      />
                       <button
                         type="button"
                         onClick={() => removeArrayItem("gallery", index)}
-                        className="ml-1"
                         data-testid={`button-remove-gallery-${index}`}
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-4 w-4" />
                       </button>
-                    </Badge>
+                    </div>
                   ))}
                 </div>
               </div>

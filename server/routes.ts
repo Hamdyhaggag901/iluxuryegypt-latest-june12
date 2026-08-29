@@ -33,9 +33,12 @@ import {
   insertLegalPageSchema,
   getLegalPageHref,
   LEGACY_LEGAL_SLUGS,
-  loginSchema
+  loginSchema,
+  type ItineraryDay,
 } from "@shared/schema";
+import { detectPlaceName, detectAccommodation, detectMeals, suggestDayPhotoAlt, normalizeForMatch } from "@shared/itinerary-detection";
 import multer from "multer";
+import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -555,6 +558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          galleryAlt: {},
           availabilityStatus: "available" as const,
           createdBy: adminUser.id
         },
@@ -580,6 +584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          galleryAlt: {},
           availabilityStatus: "available" as const,
           createdBy: adminUser.id
         },
@@ -607,6 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           featured: true,
           published: true,
           hotelIds: [],
+          galleryAlt: {},
           availabilityStatus: "available" as const,
           createdBy: adminUser.id
         }
@@ -1100,6 +1106,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk auto-enrich: walks every existing tour's itinerary and fills in
+  // ONLY empty placeName/coordinates/accommodation/meals/day-photo/photo-alt
+  // fields from the tour's own description text, the real hotels list, and
+  // the Media Library — never overwrites a value an admin already set, so
+  // it's safe to re-run at any time. Runs as a background job (not inside
+  // the request) because Nominatim caps geocoding at ~1 request/second and
+  // a full pass over many tours can take real time.
+  type BulkEnrichJobState = {
+    status: "idle" | "running" | "completed" | "failed";
+    startedAt?: string;
+    finishedAt?: string;
+    totalTours: number;
+    processedTours: number;
+    updatedTours: number;
+    updatedDays: number;
+    errors: string[];
+  };
+
+  let bulkEnrichJob: BulkEnrichJobState = {
+    status: "idle",
+    totalTours: 0,
+    processedTours: 0,
+    updatedTours: 0,
+    updatedDays: 0,
+    errors: [],
+  };
+
+  async function runBulkAutoEnrich() {
+    try {
+      const [tours, hotels, media] = await Promise.all([
+        storage.getTours(),
+        storage.getHotels(),
+        storage.getMedia(),
+      ]);
+
+      bulkEnrichJob.totalTours = tours.length;
+      const hotelNames = hotels.map((h) => h.name);
+      const imageMedia = media.filter((m) => m.mimeType.startsWith("image/"));
+
+      for (const tour of tours) {
+        bulkEnrichJob.processedTours++;
+        try {
+          const itinerary: ItineraryDay[] = Array.isArray(tour.itinerary) ? (tour.itinerary as ItineraryDay[]) : [];
+          let tourChanged = false;
+
+          for (const day of itinerary) {
+            const description = day.description || "";
+            let dayChanged = false;
+
+            if (!day.placeName?.trim()) {
+              const detected = detectPlaceName(description);
+              if (detected) {
+                day.placeName = detected;
+                dayChanged = true;
+              }
+            }
+
+            if ((day.lat == null || day.lng == null) && day.placeName?.trim()) {
+              try {
+                const geo = await geocodePlace(day.placeName.trim());
+                if (geo) {
+                  day.lat = geo.lat;
+                  day.lng = geo.lng;
+                  dayChanged = true;
+                }
+              } catch (err: any) {
+                bulkEnrichJob.errors.push(`Geocode failed for "${day.placeName}" (tour ${tour.slug}): ${err.message}`);
+              }
+              // Respect Nominatim's ~1 req/sec usage policy for every lookup attempted, success or not.
+              await new Promise((r) => setTimeout(r, 1100));
+            }
+
+            if (!day.accommodation?.trim()) {
+              const detected = detectAccommodation(description, hotelNames);
+              if (detected) {
+                day.accommodation = detected;
+                dayChanged = true;
+              }
+            }
+
+            if (!day.meals || day.meals.length === 0) {
+              const detected = detectMeals(description);
+              if (detected.length > 0) {
+                day.meals = detected;
+                dayChanged = true;
+              }
+            }
+
+            if (!day.image?.trim() && day.placeName?.trim()) {
+              const needle = normalizeForMatch(day.placeName.trim());
+              const match = imageMedia.find(
+                (m) => normalizeForMatch(m.originalName).includes(needle) || normalizeForMatch(m.altEn || "").includes(needle)
+              );
+              if (match) {
+                day.image = match.url;
+                dayChanged = true;
+              }
+            }
+
+            if (!day.imageAlt?.trim() && day.image?.trim() && day.placeName?.trim()) {
+              day.imageAlt = suggestDayPhotoAlt(day.placeName.trim(), tour.destinations?.[0]);
+              dayChanged = true;
+            }
+
+            if (dayChanged) {
+              tourChanged = true;
+              bulkEnrichJob.updatedDays++;
+            }
+          }
+
+          if (tourChanged) {
+            await storage.updateTour(tour.id, { itinerary: itinerary as any });
+            bulkEnrichJob.updatedTours++;
+          }
+        } catch (err: any) {
+          bulkEnrichJob.errors.push(`Tour "${tour.slug}" failed: ${err.message}`);
+        }
+      }
+
+      bulkEnrichJob.status = "completed";
+      bulkEnrichJob.finishedAt = new Date().toISOString();
+    } catch (err: any) {
+      bulkEnrichJob.status = "failed";
+      bulkEnrichJob.finishedAt = new Date().toISOString();
+      bulkEnrichJob.errors.push(`Job failed: ${err.message}`);
+    }
+  }
+
+  app.post("/api/cms/tours/bulk-auto-enrich", requireAuth, requireEditor, async (_req, res) => {
+    if (bulkEnrichJob.status === "running") {
+      return res.status(409).json({ success: false, message: "A bulk auto-enrich job is already running", job: bulkEnrichJob });
+    }
+    bulkEnrichJob = {
+      status: "running",
+      startedAt: new Date().toISOString(),
+      totalTours: 0,
+      processedTours: 0,
+      updatedTours: 0,
+      updatedDays: 0,
+      errors: [],
+    };
+    runBulkAutoEnrich();
+    res.json({ success: true, job: bulkEnrichJob });
+  });
+
+  app.get("/api/cms/tours/bulk-auto-enrich/status", requireAuth, requireEditor, async (_req, res) => {
+    res.json({ success: true, job: bulkEnrichJob });
+  });
+
   // Update tour (admin/editor access)
   app.put("/api/cms/tours/:id", requireAuth, requireEditor, async (req, res) => {
     try {
@@ -1383,9 +1538,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Shared with the bulk auto-enrich job below so both the interactive "Find
+  // on Map" button and the bulk pass use the exact same Nominatim call.
+  // Nominatim's usage policy requires a real identifying User-Agent (which
+  // browsers do not let client-side JS set) and caps at ~1 request/second —
+  // callers that loop over many places are responsible for spacing calls out.
+  async function geocodePlace(q: string): Promise<{ lat: number; lng: number; displayName: string } | null> {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", q);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("countrycodes", "eg");
+    url.searchParams.set("limit", "1");
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "ILuxuryEgyptAdmin/1.0 (concierge@iluxuryegypt.com)",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Nominatim responded with ${response.status}`);
+    }
+
+    const results = await response.json() as Array<{ lat: string; lon: string; display_name: string }>;
+    if (results.length === 0) return null;
+
+    return {
+      lat: parseFloat(results[0].lat),
+      lng: parseFloat(results[0].lon),
+      displayName: results[0].display_name,
+    };
+  }
+
   // Geocoding proxy (admin/editor access) — used by the "Find on Map" button in the
-  // itinerary editor. Proxied server-side because Nominatim's usage policy requires a
-  // real identifying User-Agent, which browsers do not let client-side JS set.
+  // itinerary editor.
   app.get("/api/cms/geocode", requireAuth, requireEditor, async (req, res) => {
     try {
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
@@ -1393,33 +1579,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Query parameter 'q' is required" });
       }
 
-      const url = new URL("https://nominatim.openstreetmap.org/search");
-      url.searchParams.set("q", q);
-      url.searchParams.set("format", "json");
-      url.searchParams.set("countrycodes", "eg");
-      url.searchParams.set("limit", "1");
-
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "ILuxuryEgyptAdmin/1.0 (concierge@iluxuryegypt.com)",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Nominatim responded with ${response.status}`);
-      }
-
-      const results = await response.json() as Array<{ lat: string; lon: string; display_name: string }>;
-      if (results.length === 0) {
+      const result = await geocodePlace(q);
+      if (!result) {
         return res.status(404).json({ success: false, message: "No location found for that place name" });
       }
 
-      res.json({
-        success: true,
-        lat: parseFloat(results[0].lat),
-        lng: parseFloat(results[0].lon),
-        displayName: results[0].display_name,
-      });
+      res.json({ success: true, ...result });
     } catch (error) {
       console.error('Error geocoding place name:', error);
       res.status(500).json({ success: false, message: 'Error looking up that place' });
@@ -1745,21 +1910,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Every uploaded image (Media Library, hotels, tours — they all share this
+  // one endpoint) is converted to WebP and compressed toward a 50-100KB
+  // target so admins never have to think about image weight themselves.
+  // Videos/PDFs/docs pass through untouched. Never inflates a naturally
+  // small/simple image up to hit the 50KB floor — that would work against
+  // the point of compressing it in the first place.
+  async function optimizeUploadedImage(
+    uploadDir: string,
+    savedFilename: string
+  ): Promise<{ filename: string; size: number } | null> {
+    const fs = await import("fs/promises");
+    const originalPath = path.join(uploadDir, savedFilename);
+    const webpFilename = `${path.parse(savedFilename).name}.webp`;
+    const webpPath = path.join(uploadDir, webpFilename);
+
+    const TARGET_BYTES = 100 * 1024;
+    const compressAtWidth = async (width: number): Promise<Buffer> => {
+      let quality = 82;
+      let buf = await sharp(originalPath).resize({ width, withoutEnlargement: true }).webp({ quality }).toBuffer();
+      while (buf.length > TARGET_BYTES && quality > 35) {
+        quality -= 12;
+        buf = await sharp(originalPath).resize({ width, withoutEnlargement: true }).webp({ quality }).toBuffer();
+      }
+      return buf;
+    };
+
+    // Quality alone can't hit the target on genuinely high-entropy images
+    // (dense texture, scanned noise) — once quality bottoms out, step the
+    // dimensions down too rather than shipping an oversized file.
+    const widths = [1600, 1200, 1000, 800, 600];
+    let buffer = await compressAtWidth(widths[0]);
+    for (let i = 1; i < widths.length && buffer.length > TARGET_BYTES; i++) {
+      buffer = await compressAtWidth(widths[i]);
+    }
+
+    await fs.writeFile(webpPath, buffer);
+    if (webpPath !== originalPath) {
+      await fs.unlink(originalPath).catch(() => {});
+    }
+
+    return { filename: webpFilename, size: buffer.length };
+  }
+
   // Upload media file
   app.post("/api/cms/media", requireAuth, requireEditor, upload.single('file'), async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      
+
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
+      let filename = req.file.filename;
+      let mimeType = req.file.mimetype;
+      let size = req.file.size;
+
+      if (mimeType.startsWith("image/")) {
+        try {
+          const optimized = await optimizeUploadedImage(uploadPath, req.file.filename);
+          if (optimized) {
+            filename = optimized.filename;
+            mimeType = "image/webp";
+            size = optimized.size;
+          }
+        } catch (err) {
+          console.error("Image optimization failed, keeping original upload:", err);
+        }
+      }
+
       const mediaData = {
-        filename: req.file.filename,
+        filename,
         originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
-        url: `/api/assets/uploads/${req.file.filename}`,
+        mimeType,
+        size,
+        url: `/api/assets/uploads/${filename}`,
         uploadedBy: authReq.user!.id
       };
 
@@ -1862,6 +2087,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       {
         name: "tours.availability_status",
         sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS availability_status text NOT NULL DEFAULT 'available'`,
+      },
+      {
+        name: "tours.hero_image_alt",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS hero_image_alt text`,
+      },
+      {
+        name: "tours.gallery_alt",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS gallery_alt jsonb NOT NULL DEFAULT '{}'::jsonb`,
       },
     ];
 

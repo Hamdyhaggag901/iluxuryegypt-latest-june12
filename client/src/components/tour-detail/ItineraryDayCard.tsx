@@ -84,7 +84,7 @@ export default function ItineraryDayCard({
         {day.image && (
           <div className="w-full sm:w-32 md:w-40 flex-shrink-0">
             <div className="relative aspect-square sm:aspect-[4/5] rounded-lg overflow-hidden">
-              <img src={day.image} alt={day.title} className="w-full h-full object-cover" loading="lazy" />
+              <img src={day.image} alt={day.imageAlt?.trim() || day.title} className="w-full h-full object-cover" loading="lazy" />
             </div>
           </div>
         )}

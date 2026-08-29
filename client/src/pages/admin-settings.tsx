@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { z } from "zod";
 import {
   Form,
@@ -384,6 +384,65 @@ export default function AdminSettings() {
       toast({
         title: "Migrations complete",
         description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  type BulkEnrichJob = {
+    status: "idle" | "running" | "completed" | "failed";
+    totalTours: number;
+    processedTours: number;
+    updatedTours: number;
+    updatedDays: number;
+    errors: string[];
+  };
+
+  const [enrichPolling, setEnrichPolling] = useState(false);
+
+  const { data: enrichStatusData } = useQuery<{ success: boolean; job: BulkEnrichJob }>({
+    queryKey: ["/api/cms/tours/bulk-auto-enrich/status"],
+    queryFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/tours/bulk-auto-enrich/status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.json();
+    },
+    enabled: enrichPolling,
+    refetchInterval: enrichPolling ? 2000 : false,
+  });
+
+  const enrichJob = enrichStatusData?.job;
+
+  useEffect(() => {
+    if (enrichJob && enrichJob.status !== "running") {
+      setEnrichPolling(false);
+    }
+  }, [enrichJob?.status]);
+
+  const startBulkEnrichMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/tours/bulk-auto-enrich", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to start bulk auto-enrich");
+      return data;
+    },
+    onSuccess: () => {
+      setEnrichPolling(true);
+      toast({
+        title: "Bulk auto-enrich started",
+        description: "Running in the background — geocoding is rate-limited to ~1 request/second, so a full pass over many tours can take a while.",
       });
     },
     onError: (error: Error) => {
@@ -876,6 +935,58 @@ export default function AdminSettings() {
                         <span>{e.name}: {e.error}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Bulk Auto-Enrich Tours */}
+          {activeSection === "database" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Bulk Auto-Enrich Tours
+                </CardTitle>
+                <CardDescription>
+                  Scans every existing tour's itinerary and fills in place name, map coordinates, accommodation,
+                  meals, a suggested day photo (from the Media Library), and photo alt text — but only for fields
+                  that are still empty. Never overwrites anything you've already entered, so it's safe to run
+                  repeatedly. Runs in the background; this page polls for progress.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={() => startBulkEnrichMutation.mutate()}
+                  disabled={startBulkEnrichMutation.isPending || enrichJob?.status === "running"}
+                  data-testid="button-bulk-auto-enrich"
+                >
+                  {enrichJob?.status === "running" ? "Running..." : "Run Bulk Auto-Enrich"}
+                </Button>
+
+                {enrichJob && enrichJob.status !== "idle" && (
+                  <div className="space-y-2 text-sm">
+                    <p className={enrichJob.status === "failed" ? "text-destructive" : "text-muted-foreground"}>
+                      Status: {enrichJob.status} — {enrichJob.processedTours}/{enrichJob.totalTours} tours processed,{" "}
+                      {enrichJob.updatedTours} tours updated ({enrichJob.updatedDays} days enriched)
+                    </p>
+                    {enrichJob.errors.length > 0 && (
+                      <ul className="space-y-1">
+                        {enrichJob.errors.map((err, i) => (
+                          <li key={i} className="flex items-start gap-2 text-destructive">
+                            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                            <span>{err}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {enrichJob.status === "completed" && (
+                      <p className="flex items-center gap-2 text-green-600">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        Done — review the updated tours in the Tours section.
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

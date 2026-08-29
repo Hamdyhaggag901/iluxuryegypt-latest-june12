@@ -158,7 +158,9 @@ export const tours = pgTable("tours", {
   description: text("description").notNull(),
   shortDescription: text("short_description"),
   heroImage: text("hero_image").notNull(),
+  heroImageAlt: text("hero_image_alt"), // Admin-written alt text for the hero image. Falls back to auto-generated text when empty.
   gallery: text("gallery").array().notNull().default([]),
+  galleryAlt: jsonb("gallery_alt").$type<Record<string, string>>().notNull().default({}), // Admin-written alt text, keyed by gallery image URL. Falls back to auto-generated text when a URL has no entry.
   duration: text("duration").notNull(),
   durationDays: integer("duration_days"), // Nullable; net number of days, used for auto date-block generation. Existing rows created before this field existed have NULL until an admin fills it in.
   groupSize: text("group_size"),
@@ -674,6 +676,7 @@ export const itineraryDaySchema = z.object({
   lng: z.number().min(-180).max(180).optional(),
   placeName: z.string().optional(), // Free-text place name, used as the "Find on Map" geocoding query
   image: z.string().optional(), // Optional day photo
+  imageAlt: z.string().optional(), // Admin-written (or auto-suggested) alt text for the day photo
   accommodation: z.string().optional(), // e.g. "Old Cataract Hotel" or "Nile Cruise"
   meals: z.array(z.string()).default([]), // e.g. ["Breakfast", "Lunch", "Dinner"]
 });
@@ -689,6 +692,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   description: z.string().min(1, "Description is required"),
   shortDescription: z.string().optional(),
   heroImage: z.string().url("Please provide a valid hero image URL"),
+  heroImageAlt: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   duration: z.string().min(1, "Duration is required"),
   durationDays: z.number().int().positive().nullable().optional(),
   groupSize: z.string().optional(),
@@ -700,6 +704,7 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   excludes: z.array(z.string()).default([]),
   destinations: z.array(z.string()).default([]),
   gallery: z.array(z.string()).default([]),
+  galleryAlt: z.record(z.string()).default({}), // Keyed by gallery image URL; entries are optional per-image, missing keys fall back to auto-generated alt text
   itinerary: z.any(),
   hotelIds: z.array(z.string()).default([]),
   availabilityStatus: z.enum(["available", "limited", "sold_out"]).default("available"),
