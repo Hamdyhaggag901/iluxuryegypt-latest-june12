@@ -1996,6 +1996,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Unsplash fallback for "Suggest Photo" — only used when the Media Library
+  // has no match. Demo-tier Unsplash apps are capped at 50 requests/hour, so
+  // this stays under that (45/hour) with >=1.1s spacing between calls,
+  // serializing concurrent admin clicks into one queue instead of bursting.
+  // Never used by the bulk-enrich job — Unsplash results always need the
+  // admin's explicit "Use this photo" before anything is saved.
+  const UNSPLASH_MAX_PER_HOUR = 45;
+  const unsplashCallTimestamps: number[] = [];
+  let unsplashQueueTail: Promise<void> = Promise.resolve();
+
+  async function throttledUnsplashCall<T>(fn: () => Promise<T>): Promise<T> {
+    const run = async (): Promise<T> => {
+      const now = Date.now();
+      while (unsplashCallTimestamps.length && now - unsplashCallTimestamps[0] > 60 * 60 * 1000) {
+        unsplashCallTimestamps.shift();
+      }
+      if (unsplashCallTimestamps.length >= UNSPLASH_MAX_PER_HOUR) {
+        throw new Error("Unsplash hourly rate limit reached — try again later, or use the Media Library instead.");
+      }
+      unsplashCallTimestamps.push(Date.now());
+      return fn();
+    };
+
+    const result = unsplashQueueTail.then(run);
+    unsplashQueueTail = result.then(
+      () => new Promise<void>((r) => setTimeout(r, 1100)),
+      () => new Promise<void>((r) => setTimeout(r, 1100))
+    );
+    return result;
+  }
+
+  // Search Unsplash for candidate photos (admin/editor access). Returns up
+  // to 5 candidates with attribution for the admin to preview and choose
+  // from — nothing is saved by this call. Degrades gracefully (configured:
+  // false) when UNSPLASH_ACCESS_KEY isn't set, so "Suggest Photo" just falls
+  // back to Media-Library-only matching with no error.
+  app.get("/api/cms/unsplash-search", requireAuth, requireEditor, async (req, res) => {
+    const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+    if (!accessKey) {
+      return res.json({ success: false, configured: false, message: "Unsplash is not configured" });
+    }
+
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Query parameter 'q' is required" });
+    }
+
+    try {
+      const data = await throttledUnsplashCall(async () => {
+        const url = new URL("https://api.unsplash.com/search/photos");
+        url.searchParams.set("query", q);
+        url.searchParams.set("per_page", "5");
+        url.searchParams.set("orientation", "landscape");
+        const response = await fetch(url, { headers: { Authorization: `Client-ID ${accessKey}` } });
+        if (!response.ok) throw new Error(`Unsplash responded with ${response.status}`);
+        return response.json() as Promise<{ results: any[] }>;
+      });
+
+      const candidates = (data.results || []).map((r: any) => ({
+        id: r.id,
+        thumbUrl: r.urls?.small,
+        fullUrl: r.urls?.regular,
+        downloadLocation: r.links?.download_location,
+        photographerName: r.user?.name,
+        photographerUrl: r.user?.links?.html,
+        description: r.alt_description || r.description || "",
+      }));
+
+      res.json({ success: true, configured: true, candidates });
+    } catch (error: any) {
+      console.error("Unsplash search error:", error);
+      // Non-fatal by design — the client falls back to "no match" UX either way.
+      res.json({ success: false, configured: true, message: error.message || "Unsplash search failed" });
+    }
+  });
+
+  // Downloads the admin-chosen Unsplash photo, runs it through the same
+  // WebP/50-100KB pipeline as a direct upload, and saves it as a permanent
+  // Media Library asset (not a live external URL). Also pings Unsplash's
+  // download_location endpoint, required by their API guidelines whenever a
+  // photo is actually used (not just searched).
+  app.post("/api/cms/unsplash-import", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+      if (!accessKey) {
+        return res.status(400).json({ success: false, message: "Unsplash is not configured" });
+      }
+
+      const { fullUrl, downloadLocation, description } = req.body || {};
+      if (!fullUrl || typeof fullUrl !== "string") {
+        return res.status(400).json({ success: false, message: "fullUrl is required" });
+      }
+
+      await throttledUnsplashCall(async () => {
+        if (downloadLocation) {
+          await fetch(downloadLocation, { headers: { Authorization: `Client-ID ${accessKey}` } }).catch(() => {});
+        }
+      });
+
+      const imageResponse = await fetch(fullUrl);
+      if (!imageResponse.ok) throw new Error(`Failed to download image (${imageResponse.status})`);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+
+      const fs = await import("fs/promises");
+      const savedFilename = `${uuidv4()}.jpg`;
+      await fs.writeFile(path.join(uploadPath, savedFilename), Buffer.from(arrayBuffer));
+
+      const optimized = await optimizeUploadedImage(uploadPath, savedFilename);
+      if (!optimized) throw new Error("Image optimization failed");
+
+      const mediaData = {
+        filename: optimized.filename,
+        originalName: description ? `unsplash-${description}` : "unsplash-photo",
+        mimeType: "image/webp",
+        size: optimized.size,
+        url: `/api/assets/uploads/${optimized.filename}`,
+        uploadedBy: authReq.user!.id,
+      };
+
+      const media = await storage.createMedia(mediaData);
+      res.status(201).json({ success: true, media });
+    } catch (error: any) {
+      console.error("Unsplash import error:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to import Unsplash photo" });
+    }
+  });
+
   // Delete media file
   app.delete("/api/cms/media/:id", requireAuth, requireEditor, async (req, res) => {
     try {

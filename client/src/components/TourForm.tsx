@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { insertTourSchema, type Media } from "@shared/schema";
-import { detectPlaceName, detectAccommodation, detectMeals, suggestDayPhotoAlt, normalizeForMatch } from "@shared/itinerary-detection";
+import { detectPlaceName, detectMeals, suggestDayPhotoAlt, normalizeForMatch } from "@shared/itinerary-detection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,6 +45,16 @@ const tourFormSchema = insertTourSchema.extend({
 
 type TourFormData = z.infer<typeof tourFormSchema>;
 
+interface UnsplashCandidate {
+  id: string;
+  thumbUrl: string;
+  fullUrl: string;
+  downloadLocation: string;
+  photographerName?: string;
+  photographerUrl?: string;
+  description?: string;
+}
+
 interface TourFormProps {
   initialData?: Partial<any>;
   onSubmit: (data: any) => void;
@@ -57,6 +67,9 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
   const [destinationsInput, setDestinationsInput] = useState("");
   const [galleryInput, setGalleryInput] = useState("");
   const [geocodingDayIndex, setGeocodingDayIndex] = useState<number | null>(null);
+  const [otherAccommodation, setOtherAccommodation] = useState<Record<number, boolean>>({});
+  const [unsplashPreview, setUnsplashPreview] = useState<Record<number, { candidates: UnsplashCandidate[]; currentIndex: number } | null>>({});
+  const [unsplashImportingIndex, setUnsplashImportingIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   const { data: categoriesData } = useQuery({
@@ -264,13 +277,13 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       }
     }
 
-    if (!form.getValues(`itinerary.${dayIndex}.accommodation`)?.trim()) {
-      const hotel = detectAccommodation(description, hotelNames);
-      if (hotel) {
-        form.setValue(`itinerary.${dayIndex}.accommodation`, hotel);
-        filledSomething = true;
-      }
-    }
+    // Accommodation is deliberately NOT auto-filled from text here — the admin
+    // picks it from the Hotels dropdown below instead. Text matching against
+    // hotel names proved unreliable in practice, and a wrong silent guess in
+    // a dropdown-backed field is worse than an empty one the admin fills in
+    // directly. detectAccommodation is still used by the server-side bulk
+    // job, where there's no dropdown UI and a best-effort empty-field fill is
+    // the only automation option.
 
     if ((form.getValues(`itinerary.${dayIndex}.meals`) || []).length === 0) {
       const meals = detectMeals(description);
@@ -304,25 +317,93 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     }
   };
 
-  const suggestDayPhoto = (dayIndex: number) => {
+  const suggestDayPhoto = async (dayIndex: number) => {
     const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim();
     if (!placeName) {
       toast({ title: "Add a place name first", description: "Suggest Photo matches against the place name.", variant: "destructive" });
       return;
     }
+
+    // 1) Media Library first — instant, and reuses an asset already hosted here.
     const needle = normalizeForMatch(placeName);
     const match = mediaImages.find(
       (m) => normalizeForMatch(m.originalName).includes(needle) || normalizeForMatch(m.altEn || "").includes(needle)
     );
-    if (!match) {
-      toast({ title: "No matching photo found", description: "Upload one below, or add it to the Media Library first.", variant: "destructive" });
+    if (match) {
+      form.setValue(`itinerary.${dayIndex}.image`, match.url);
+      if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim()) {
+        form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+      }
+      toast({ title: "Photo suggested", description: match.originalName });
       return;
     }
-    form.setValue(`itinerary.${dayIndex}.image`, match.url);
-    if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim()) {
-      form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+
+    // 2) No local match — try Unsplash. Never auto-saves; just opens a
+    // preview the admin has to explicitly approve.
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(`/api/cms/unsplash-search?q=${encodeURIComponent(placeName)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = await response.json();
+      if (result.success && result.candidates?.length > 0) {
+        setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: { candidates: result.candidates, currentIndex: 0 } }));
+        return;
+      }
+    } catch {
+      // Fall through to the "no match" toast below — Unsplash is a bonus, not a dependency.
     }
-    toast({ title: "Photo suggested", description: match.originalName });
+
+    toast({ title: "No matching photo found", description: "Upload one below, or add it to the Media Library first.", variant: "destructive" });
+  };
+
+  const cycleUnsplashPreview = (dayIndex: number) => {
+    setUnsplashPreview((prev) => {
+      const entry = prev[dayIndex];
+      if (!entry) return prev;
+      const nextIndex = (entry.currentIndex + 1) % entry.candidates.length;
+      return { ...prev, [dayIndex]: { ...entry, currentIndex: nextIndex } };
+    });
+  };
+
+  const cancelUnsplashPreview = (dayIndex: number) => {
+    setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: null }));
+  };
+
+  const useUnsplashPhoto = async (dayIndex: number) => {
+    const entry = unsplashPreview[dayIndex];
+    if (!entry) return;
+    const candidate = entry.candidates[entry.currentIndex];
+    const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim() || "";
+
+    setUnsplashImportingIndex(dayIndex);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/unsplash-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
+        body: JSON.stringify({
+          fullUrl: candidate.fullUrl,
+          downloadLocation: candidate.downloadLocation,
+          description: candidate.description || placeName,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Failed to import photo");
+      }
+
+      form.setValue(`itinerary.${dayIndex}.image`, result.media.url);
+      if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim() && placeName) {
+        form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+      }
+      setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: null }));
+      toast({ title: "Photo imported", description: `Credit: ${candidate.photographerName || "Unsplash"}` });
+    } catch (error: any) {
+      toast({ title: "Import failed", description: error.message, variant: "destructive" });
+    } finally {
+      setUnsplashImportingIndex(null);
+    }
   };
 
   const setGalleryAlt = (url: string, value: string) => {
@@ -541,8 +622,70 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        "Suggest Photo" searches the Media Library for a photo whose name matches the place name below. If nothing matches, upload a new one — it's automatically converted to WebP and compressed.
+                        "Suggest Photo" searches the Media Library first, then Unsplash if nothing matches — either way you review before it's saved. Uploads are automatically converted to WebP and compressed.
                       </p>
+
+                      {unsplashPreview[index] && (
+                        <div className="border rounded-md p-3 flex gap-3 items-start bg-muted/30" data-testid={`unsplash-preview-${index}`}>
+                          <img
+                            src={unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].thumbUrl}
+                            alt="Unsplash suggestion"
+                            className="w-24 h-24 object-cover rounded-md flex-shrink-0"
+                          />
+                          <div className="flex-1 space-y-2 min-w-0">
+                            <p className="text-xs text-muted-foreground">
+                              Suggested via Unsplash — photo by{" "}
+                              {unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerUrl ? (
+                                <a
+                                  href={unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline"
+                                >
+                                  {unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerName || "Unsplash"}
+                                </a>
+                              ) : (
+                                unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerName || "Unsplash"
+                              )}{" "}
+                              ({unsplashPreview[index]!.currentIndex + 1}/{unsplashPreview[index]!.candidates.length})
+                            </p>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => useUnsplashPhoto(index)}
+                                disabled={unsplashImportingIndex === index}
+                                data-testid={`button-use-unsplash-${index}`}
+                              >
+                                {unsplashImportingIndex === index ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                                Use this photo
+                              </Button>
+                              {unsplashPreview[index]!.candidates.length > 1 && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => cycleUnsplashPreview(index)}
+                                  disabled={unsplashImportingIndex === index}
+                                  data-testid={`button-try-another-unsplash-${index}`}
+                                >
+                                  Try another
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => cancelUnsplashPreview(index)}
+                                disabled={unsplashImportingIndex === index}
+                                data-testid={`button-cancel-unsplash-${index}`}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Day Photo Alt Text</Label>
@@ -606,11 +749,45 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                     </p>
                     <div className="space-y-2">
                       <Label>Accommodation</Label>
-                      <Input
-                        {...form.register(`itinerary.${index}.accommodation`)}
-                        placeholder="e.g., Old Cataract Hotel, or Nile Cruise"
-                        data-testid={`input-itinerary-accommodation-${index}`}
-                      />
+                      {(() => {
+                        const currentValue = form.watch(`itinerary.${index}.accommodation`) || "";
+                        const isKnownHotel = hotelNames.includes(currentValue);
+                        const isOther = otherAccommodation[index] ?? (currentValue !== "" && !isKnownHotel);
+                        const selectValue = isOther ? "__other__" : isKnownHotel ? currentValue : "";
+                        return (
+                          <>
+                            <Select
+                              value={selectValue}
+                              onValueChange={(value) => {
+                                if (value === "__other__") {
+                                  setOtherAccommodation((prev) => ({ ...prev, [index]: true }));
+                                } else {
+                                  setOtherAccommodation((prev) => ({ ...prev, [index]: false }));
+                                  form.setValue(`itinerary.${index}.accommodation`, value);
+                                }
+                              }}
+                            >
+                              <SelectTrigger data-testid={`select-itinerary-accommodation-${index}`}>
+                                <SelectValue placeholder="Select a hotel..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {hotelNames.map((name) => (
+                                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                                <SelectItem value="__other__">Other (specify)…</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {isOther && (
+                              <Input
+                                {...form.register(`itinerary.${index}.accommodation`)}
+                                placeholder="e.g., Nile Cruise, Desert Camp"
+                                className="mt-2"
+                                data-testid={`input-itinerary-accommodation-other-${index}`}
+                              />
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="space-y-2">
                       <Label>Meals Included</Label>
