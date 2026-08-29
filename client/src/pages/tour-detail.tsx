@@ -139,6 +139,7 @@ export default function TourDetail() {
       lng: day.lng,
       image: day.image,
       accommodation: day.accommodation,
+      placeName: day.placeName,
     })
   );
 

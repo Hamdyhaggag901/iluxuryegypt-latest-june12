@@ -118,6 +118,12 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
                   </div>
                 )}
 
+                {day.placeName && (
+                  <span className="inline-block text-[10px] md:text-xs font-bold uppercase tracking-wider text-accent-foreground bg-accent px-2.5 py-1 rounded-md mb-3">
+                    {day.placeName}
+                  </span>
+                )}
+
                 <div className="flex items-center gap-3 mb-3">
                   <span className="flex-shrink-0 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-sm">
                     {day.day}
