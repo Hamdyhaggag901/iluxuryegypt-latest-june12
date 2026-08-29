@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/hooks/use-seo";
@@ -28,6 +28,10 @@ import InclusionsList from "@/components/tour-detail/InclusionsList";
 import ReserveJourneyModal from "@/components/tour-detail/ReserveJourneyModal";
 import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
 import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
+import WhyILuxurySection from "@/components/tour-detail/WhyILuxurySection";
+import WhyYoullLoveJourneySection from "@/components/tour-detail/WhyYoullLoveJourneySection";
+import ReadBeforeYouGoSection from "@/components/tour-detail/ReadBeforeYouGoSection";
+import { buildTourHighlights } from "@/lib/tour-highlights";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -54,6 +58,11 @@ export default function TourDetail() {
 
   const tour = data?.tour;
   const stayHotels = data?.hotels || [];
+
+  const tourHighlights = useMemo(
+    () => (tour ? buildTourHighlights(tour, stayHotels) : []),
+    [tour, stayHotels]
+  );
 
   // All published tours, used for the "Continue the Journey" similarity matching
   const { data: allToursData } = useQuery<{ success: boolean; tours: Tour[] }>({
@@ -339,13 +348,19 @@ export default function TourDetail() {
         groupSize={tour.groupSize}
       />
 
+      <WhyYoullLoveJourneySection tourTitle={tour.title} highlights={tourHighlights} />
+
       <WhereYouWillStay hotels={stayHotels} />
+
+      <WhyILuxurySection />
 
       <CtaBanner tour={tour} onReserve={() => setIsReserveModalOpen(true)} />
 
       <InclusionsList includes={tour.includes} excludes={tour.excludes} />
 
       <DatesAndPrices basePrice={tour.price} currency={currency} seasons={seasonsData?.seasons || []} />
+
+      <ReadBeforeYouGoSection />
 
       <ContinueTheJourney currentTour={tour} allTours={allToursData?.tours || []} />
 
