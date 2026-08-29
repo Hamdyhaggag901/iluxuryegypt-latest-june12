@@ -300,29 +300,37 @@ interface UniquenessProperty {
 async function buildTourUniquenessSignals(tour: Tour): Promise<UniquenessProperty[]> {
   const properties: UniquenessProperty[] = [];
 
-  if (tour.hotelIds?.length) {
-    const hotels = (await Promise.all(tour.hotelIds.map((id) => storage.getHotel(id)))).filter(
-      (h): h is NonNullable<typeof h> => Boolean(h),
-    );
+  // Guarded like the seasons lookup below — this is best-effort structured
+  // data, so a failure here (or any weird linked-hotel data) must never take
+  // down the whole page's meta/SEO resolution, which used to hinge on this
+  // whole function not throwing.
+  try {
+    if (tour.hotelIds?.length) {
+      const hotels = (await Promise.all(tour.hotelIds.map((id) => storage.getHotel(id)))).filter(
+        (h): h is NonNullable<typeof h> => Boolean(h),
+      );
 
-    const signatureHotel = hotels.find((h) => h.featured || h.rating === 5);
-    if (signatureHotel) {
-      properties.push({
-        "@type": "PropertyValue",
-        name: "signatureExperience",
-        value: true,
-        description: `Includes a stay at ${signatureHotel.name}, one of our featured 5-star properties.`,
-      });
-    }
+      const signatureHotel = hotels.find((h) => h.featured || h.rating === 5);
+      if (signatureHotel) {
+        properties.push({
+          "@type": "PropertyValue",
+          name: "signatureExperience",
+          value: true,
+          description: `Includes a stay at ${signatureHotel.name}, one of our featured 5-star properties.`,
+        });
+      }
 
-    const cruiseHotel = hotels.find((h) => h.route && h.duration);
-    if (cruiseHotel) {
-      properties.push({
-        "@type": "PropertyValue",
-        name: "uniqueSellingPoint",
-        value: `Includes a private Nile cruise (${cruiseHotel.route}, ${cruiseHotel.duration}) aboard ${cruiseHotel.name}.`,
-      });
+      const cruiseHotel = hotels.find((h) => h.route && h.duration);
+      if (cruiseHotel) {
+        properties.push({
+          "@type": "PropertyValue",
+          name: "uniqueSellingPoint",
+          value: `Includes a private Nile cruise (${cruiseHotel.route}, ${cruiseHotel.duration}) aboard ${cruiseHotel.name}.`,
+        });
+      }
     }
+  } catch (err) {
+    console.error("[seo-meta] Failed to compute hotel-based uniqueness signal:", err);
   }
 
   try {
