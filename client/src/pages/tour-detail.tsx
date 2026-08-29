@@ -331,7 +331,13 @@ export default function TourDetail() {
         </div>
       </section>
 
-      <ItineraryMap itinerary={itinerary} />
+      <ItineraryMap
+        itinerary={itinerary}
+        price={tour.price}
+        currency={currency}
+        duration={tour.duration}
+        groupSize={tour.groupSize}
+      />
 
       <WhereYouWillStay hotels={stayHotels} />
 

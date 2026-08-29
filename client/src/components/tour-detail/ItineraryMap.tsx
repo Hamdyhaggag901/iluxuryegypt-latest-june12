@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Hotel, Utensils } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import type { ItineraryDay } from "@shared/schema";
+import ItineraryDayCard from "./ItineraryDayCard";
+import ItineraryPriceBar from "./ItineraryPriceBar";
 
 // Matches --primary (Nile Deep Blue) and --accent (Pharaoh Gold) from index.css
 const PRIMARY_COLOR = "hsl(220, 26%, 20%)";
@@ -27,9 +29,23 @@ function buildDayIcon(active: boolean) {
 
 type MappedDay = ItineraryDay & { day: number; title: string; description: string; activities: string[]; meals: string[] };
 
-export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) {
+export default function ItineraryMap({
+  itinerary,
+  price,
+  currency,
+  duration,
+  groupSize,
+}: {
+  itinerary: MappedDay[];
+  price?: number;
+  currency?: string;
+  duration?: string;
+  groupSize?: string | null;
+}) {
   const [activeDay, setActiveDay] = useState<number | null>(itinerary[0]?.day ?? null);
+  const [sectionVisible, setSectionVisible] = useState(false);
   const dayRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const sectionRef = useRef<HTMLElement>(null);
 
   const daysWithCoords = useMemo(
     () => itinerary.filter((d): d is MappedDay & { lat: number; lng: number } => d.lat != null && d.lng != null),
@@ -58,10 +74,24 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
     return () => observer.disconnect();
   }, [itinerary]);
 
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setSectionVisible(entry.isIntersecting), {
+      threshold: 0.1,
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToTop = () => {
+    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   if (itinerary.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-24 bg-background">
+    <section ref={sectionRef} className="py-12 md:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8 md:mb-16">
           <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>
@@ -76,9 +106,9 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-0 lg:items-start">
           {/* Map — a small sticky bar on mobile so it stays visible while scrolling the day
               list; a full-height sticky column on desktop (lg:) as before. */}
-          <div className="w-full lg:w-1/2 sticky top-20 lg:top-24 z-30 lg:z-auto">
+          <div className="w-full lg:w-[42%] sticky top-20 lg:top-24 z-30 lg:z-auto">
             {bounds ? (
-              <div className="h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
+              <div className="relative h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
                 <MapContainer bounds={bounds} boundsOptions={{ padding: [24, 24] }} className="h-full w-full" scrollWheelZoom={false}>
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -86,12 +116,22 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
                   />
                   <Polyline
                     positions={daysWithCoords.map((d) => [d.lat, d.lng])}
-                    pathOptions={{ color: PRIMARY_COLOR, weight: 3, opacity: 0.6, dashArray: "6 8" }}
+                    pathOptions={{ color: PRIMARY_COLOR, weight: 2.5, opacity: 0.7, dashArray: "1 9", lineCap: "round" }}
                   />
                   {daysWithCoords.map((d) => (
                     <Marker key={d.day} position={[d.lat, d.lng]} icon={buildDayIcon(d.day === activeDay)} />
                   ))}
                 </MapContainer>
+
+                <button
+                  type="button"
+                  onClick={scrollToTop}
+                  className="hidden lg:flex absolute top-3 right-3 z-[400] items-center justify-center w-9 h-9 rounded-full bg-card/95 border border-card-border shadow-md text-primary hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
+                  aria-label="Back to top"
+                  data-testid="button-itinerary-back-to-top"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </button>
               </div>
             ) : (
               <div className="h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl border border-border bg-muted flex items-center justify-center text-muted-foreground text-sm">
@@ -101,8 +141,8 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
           </div>
 
           {/* Day list — scrollable */}
-          <div className="w-full lg:w-1/2 lg:pl-10 xl:pl-16 space-y-10 md:space-y-16">
-            {itinerary.map((day) => (
+          <div className="w-full lg:w-[58%] lg:pl-10 xl:pl-16 space-y-10 md:space-y-0">
+            {itinerary.map((day, index) => (
               <div
                 key={day.day}
                 data-day={day.day}
@@ -110,67 +150,21 @@ export default function ItineraryMap({ itinerary }: { itinerary: MappedDay[] }) 
                   if (el) dayRefs.current.set(day.day, el);
                   else dayRefs.current.delete(day.day);
                 }}
-                className={`transition-opacity duration-300 ${day.day === activeDay ? "opacity-100" : "opacity-60"}`}
               >
-                {day.image && (
-                  <div className="relative h-56 md:h-72 rounded-lg overflow-hidden mb-5">
-                    <img src={day.image} alt={day.title} className="w-full h-full object-cover" loading="lazy" />
-                  </div>
-                )}
-
-                {day.placeName && (
-                  <span className="inline-block text-[10px] md:text-xs font-bold uppercase tracking-wider text-accent-foreground bg-accent px-2.5 py-1 rounded-md mb-3">
-                    {day.placeName}
-                  </span>
-                )}
-
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-sm">
-                    {day.day}
-                  </span>
-                  <h3 className="text-lg md:text-2xl font-serif text-primary leading-tight">
-                    {day.title}
-                  </h3>
-                </div>
-
-                {day.description && (
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-4">
-                    {day.description}
-                  </p>
-                )}
-
-                {day.activities.length > 0 && (
-                  <ul className="space-y-1.5 md:space-y-2 mb-4">
-                    {day.activities.map((activity, idx) => (
-                      <li key={idx} className="flex items-start gap-2 md:gap-3 text-sm md:text-base text-muted-foreground">
-                        <div className="w-1 h-1 md:w-1.5 md:h-1.5 bg-accent rounded-full mt-2 flex-shrink-0"></div>
-                        <span>{activity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {(day.accommodation || day.meals.length > 0) && (
-                  <div className="flex flex-wrap gap-x-6 gap-y-2 pt-3 border-t border-border">
-                    {day.accommodation && (
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Hotel className="h-4 w-4 text-accent" />
-                        <span>{day.accommodation}</span>
-                      </div>
-                    )}
-                    {day.meals.length > 0 && (
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Utensils className="h-4 w-4 text-accent" />
-                        <span>{day.meals.join(", ")}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <ItineraryDayCard day={day} active={day.day === activeDay} isFirst={index === 0} />
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      <ItineraryPriceBar
+        duration={duration ?? (itinerary.length > 0 ? `${itinerary.length} Days` : "")}
+        groupSize={groupSize}
+        price={price ?? 0}
+        currency={currency ?? "USD"}
+        visible={sectionVisible && price != null}
+      />
     </section>
   );
 }
