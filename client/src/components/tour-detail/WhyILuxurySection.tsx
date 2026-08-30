@@ -103,7 +103,7 @@ export default function WhyILuxurySection() {
   const { ref: introRef, visible: introVisible } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <section className="py-12 md:py-24 bg-background">
+    <section id="why-iluxury" className="py-12 md:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div
           ref={introRef}

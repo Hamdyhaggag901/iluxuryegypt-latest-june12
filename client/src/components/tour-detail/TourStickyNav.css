@@ -1,0 +1,9 @@
+/* Hides the horizontal scrollbar on the mobile tab strip while keeping it
+   swipeable — scoped to this component only, not a global utility. */
+.tour-sticky-nav-tabs.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tour-sticky-nav-tabs.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

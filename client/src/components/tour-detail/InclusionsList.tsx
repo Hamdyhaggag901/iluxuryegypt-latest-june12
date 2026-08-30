@@ -2,7 +2,7 @@ import { getInclusionIcon } from "@/lib/inclusion-icons";
 
 export default function InclusionsList({ includes, excludes }: { includes: string[]; excludes: string[] }) {
   return (
-    <section className="py-12 md:py-24 bg-background">
+    <section id="inclusions" className="py-12 md:py-24 bg-background">
       <div className="max-w-4xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           <div>

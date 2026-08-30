@@ -42,7 +42,7 @@ export default function DatesAndPrices({
   };
 
   return (
-    <section className="py-12 md:py-24 bg-[#f8f6f3]">
+    <section id="dates-prices" className="py-12 md:py-24 bg-[#f8f6f3]">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8 md:mb-16">
           <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>

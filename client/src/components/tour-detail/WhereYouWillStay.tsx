@@ -6,7 +6,7 @@ export default function WhereYouWillStay({ hotels }: { hotels: Hotel[] }) {
   if (hotels.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-24 bg-background">
+    <section id="stays" className="py-12 md:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8 md:mb-16">
           <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>

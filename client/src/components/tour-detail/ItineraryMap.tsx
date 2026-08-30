@@ -7,7 +7,6 @@ import { ArrowUp, RotateCcw } from "lucide-react";
 import type { ItineraryDay } from "@shared/schema";
 import { buildCurvedRoute } from "@/lib/route-curve";
 import ItineraryDayCard from "./ItineraryDayCard";
-import ItineraryPriceBar from "./ItineraryPriceBar";
 
 // Matches --primary (Nile Deep Blue) and --accent (Pharaoh Gold) from index.css
 const PRIMARY_COLOR = "hsl(220, 26%, 20%)";
@@ -128,7 +127,6 @@ export default function ItineraryMap({
   groupSize?: string | null;
 }) {
   const [activeDay, setActiveDay] = useState<number | null>(itinerary[0]?.day ?? null);
-  const [sectionVisible, setSectionVisible] = useState(false);
   const dayRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -182,16 +180,6 @@ export default function ItineraryMap({
     return () => observer.disconnect();
   }, [itinerary]);
 
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => setSectionVisible(entry.isIntersecting), {
-      threshold: 0.1,
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const scrollToTop = () => {
     sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -199,7 +187,7 @@ export default function ItineraryMap({
   if (itinerary.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="py-12 md:py-24 bg-background">
+    <section id="itinerary" ref={sectionRef} className="py-12 md:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8 md:mb-16">
           <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>
@@ -316,15 +304,6 @@ export default function ItineraryMap({
           </div>
         </div>
       </div>
-
-      <ItineraryPriceBar
-        tourTitle={tourTitle}
-        duration={duration ?? (itinerary.length > 0 ? `${itinerary.length} Days` : "")}
-        groupSize={groupSize}
-        price={price ?? 0}
-        currency={currency ?? "USD"}
-        visible={sectionVisible && price != null}
-      />
     </section>
   );
 }

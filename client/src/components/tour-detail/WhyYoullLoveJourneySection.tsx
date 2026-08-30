@@ -24,7 +24,7 @@ export default function WhyYoullLoveJourneySection({
   const FeaturedIcon = ICONS[featured.icon];
 
   return (
-    <section className="py-12 md:py-24 bg-primary text-primary-foreground">
+    <section id="why-love" className="py-12 md:py-24 bg-primary text-primary-foreground">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-8 md:mb-16 max-w-2xl mx-auto">
           <div className="w-12 md:w-16 h-px bg-accent mx-auto mb-4 md:mb-6"></div>

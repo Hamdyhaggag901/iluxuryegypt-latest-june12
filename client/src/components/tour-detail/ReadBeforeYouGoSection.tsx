@@ -15,7 +15,7 @@ export default function ReadBeforeYouGoSection() {
   if (curated.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-24 bg-background">
+    <section id="read-before-you-go" className="py-12 md:py-24 bg-background">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-16">
           <div>

@@ -29,11 +29,29 @@ import ReserveJourneyModal from "@/components/tour-detail/ReserveJourneyModal";
 import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
 import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
 import WhyILuxurySection from "@/components/tour-detail/WhyILuxurySection";
+import TourStickyNav, { type TourStickyNavSection } from "@/components/tour-detail/TourStickyNav";
 import WhyYoullLoveJourneySection from "@/components/tour-detail/WhyYoullLoveJourneySection";
 import ReadBeforeYouGoSection from "@/components/tour-detail/ReadBeforeYouGoSection";
 import { buildTourHighlights } from "@/lib/tour-highlights";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
+
+// Full candidate list, in page order — TourStickyNav checks the live DOM on
+// mount and only shows tabs for ids that actually rendered, since several
+// of these sections (gallery, itinerary, stays, why-love, read-before-you-go,
+// continue-journey) return null when a given tour has no matching data.
+const TOUR_NAV_SECTIONS: TourStickyNavSection[] = [
+  { id: "overview", label: "Overview" },
+  { id: "gallery", label: "Gallery" },
+  { id: "itinerary", label: "Itinerary" },
+  { id: "why-love", label: "Why You'll Love This Journey" },
+  { id: "stays", label: "Hotels & Stays" },
+  { id: "why-iluxury", label: "Why iLuxury Egypt" },
+  { id: "inclusions", label: "Inclusions" },
+  { id: "dates-prices", label: "Dates & Prices" },
+  { id: "read-before-you-go", label: "Read Before You Go" },
+  { id: "continue-journey", label: "Continue the Journey" },
+];
 
 export default function TourDetail() {
   const params = useParams();
@@ -239,6 +257,8 @@ export default function TourDetail() {
         </div>
       </section>
 
+      <TourStickyNav sections={TOUR_NAV_SECTIONS} price={tour.price} currency={currency} />
+
       {/* Main Content */}
       <section className="relative bg-background">
         <div className="max-w-7xl mx-auto px-4 py-10 md:py-20">
@@ -269,7 +289,7 @@ export default function TourDetail() {
               </div>
 
               {/* Overview */}
-              <div>
+              <div id="overview">
                 <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8">
                   <div className="w-8 md:w-12 h-px bg-accent"></div>
                   <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">The Experience</h2>
@@ -281,7 +301,7 @@ export default function TourDetail() {
 
               {/* Cinematic Gallery */}
               {allImages.length > 1 && (
-                <div>
+                <div id="gallery">
                   <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-8">
                     <div className="w-8 md:w-12 h-px bg-accent"></div>
                     <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">Gallery</h2>
