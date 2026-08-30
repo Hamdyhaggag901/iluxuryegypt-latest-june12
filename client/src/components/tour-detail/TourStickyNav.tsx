@@ -1,6 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Phone } from "lucide-react";
-import SpeakToExpertModal from "@/components/speak-to-expert-modal";
 import "./TourStickyNav.css";
 
 export interface TourStickyNavSection {
@@ -26,7 +24,6 @@ export default function TourStickyNav({
   const [visibleSections, setVisibleSections] = useState<TourStickyNavSection[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -152,9 +149,6 @@ export default function TourStickyNav({
 
   if (visibleSections.length === 0) return null;
 
-  const symbol = currency === "USD" ? "$" : currency ? `${currency} ` : "$";
-  const formattedPrice = price != null ? new Intl.NumberFormat("en-US").format(price) : null;
-
   return (
     <>
       <div ref={sentinelRef} />
@@ -164,8 +158,11 @@ export default function TourStickyNav({
         }`}
         style={{ top: HEADER_HEIGHT }}
       >
-        <div className="max-w-7xl mx-auto px-4 flex items-center gap-4">
-          <div ref={tabsScrollRef} className="tour-sticky-nav-tabs no-scrollbar relative flex-1 flex overflow-x-auto">
+        <div className="max-w-7xl mx-auto px-4">
+          <div
+            ref={tabsScrollRef}
+            className="tour-sticky-nav-tabs no-scrollbar relative flex items-center justify-between overflow-x-auto"
+          >
             {indicator && (
               <div
                 className="absolute bottom-0 h-[2.5px] bg-accent rounded-full transition-all duration-300 ease-out"
@@ -193,27 +190,8 @@ export default function TourStickyNav({
               );
             })}
           </div>
-
-          {formattedPrice && (
-            <div className="hidden md:flex items-center gap-3 shrink-0 py-2.5">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                from <span className="font-bold text-accent">{symbol}{formattedPrice}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-1.5 whitespace-nowrap bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-4 py-2 text-xs font-medium transition-all duration-300 hover:scale-[1.03]"
-                data-testid="button-sticky-nav-cta"
-              >
-                <Phone className="w-3 h-3 shrink-0" />
-                Speak to an Expert
-              </button>
-            </div>
-          )}
         </div>
       </div>
-
-      <SpeakToExpertModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </>
   );
 }
