@@ -146,13 +146,86 @@ export function detectMeals(description: string): string[] {
   return MEAL_PATTERNS.filter(({ pattern }) => pattern.test(description)).map(({ label }) => label);
 }
 
+// Activity → luxury alt-text phrase, keyed by the same style of keyword
+// pattern as tour-highlights.ts's NOTABLE_ACTIVITY_PATTERNS (kept as a
+// separate list here since these need to read as short image captions —
+// "Private camel excursion" — rather than that file's full body sentences).
+// Checked in order against the day's own description/activities text, first
+// match wins, so a more specific pattern (hot air balloon) is listed above a
+// broader one it could otherwise be mistaken for.
+const ACTIVITY_ALT_PHRASES: Array<{ pattern: RegExp; activity: string; qualifier: string }> = [
+  { pattern: /hot air balloon/i, activity: "Sunrise hot air balloon flight", qualifier: "with panoramic views over the Nile Valley" },
+  { pattern: /felucca/i, activity: "Private felucca sail", qualifier: "with a private crew and traditional sailing rig" },
+  { pattern: /private (dinner|lunch)|fine dining/i, activity: "Private fine dining experience", qualifier: "with bespoke table service" },
+  { pattern: /camel/i, activity: "Private camel excursion", qualifier: "with luxury desert guide service" },
+  { pattern: /snorkel|diving|dive/i, activity: "Private Red Sea snorkeling excursion", qualifier: "with a dedicated dive guide" },
+  { pattern: /desert|4x4|jeep/i, activity: "Private desert excursion", qualifier: "with an expert local guide" },
+  { pattern: /sunset/i, activity: "Private sunset viewing experience", qualifier: "arranged exclusively for your journey" },
+];
+
+const ARRIVAL_PATTERN = /\b(arrive|arrival|check-?in|welcome)\b/i;
+
+// Rotating clauses appended (by variantIndex) so a second, third, etc. photo
+// of the same place in the same tour never gets the literal same alt text —
+// varying the angle/time framing rather than inventing new scene content.
+const ALT_TEXT_VARIANT_SUFFIXES = [
+  ", captured at golden hour",
+  ", from an exclusive morning departure",
+  ", arranged as a private evening experience",
+  ", during an intimate small-group visit",
+];
+
+// English convention takes "the" before a handful of landmark-name shapes
+// ("the Great Pyramids of Giza", "the Valley of the Kings") but not most
+// others ("Karnak Temple", "Abu Simbel") — this covers the common shapes in
+// KNOWN_EGYPT_LANDMARKS above without hardcoding per-landmark grammar.
+function withArticle(placeName: string): string {
+  const needsThe = /^(great |valley of|pyramids of|tombs of|colossi of|temples of)/i.test(placeName) || /pyramids$/i.test(placeName);
+  return needsThe ? `the ${placeName}` : placeName;
+}
+
 /**
- * Builds a descriptive alt-text suggestion from a detected place name plus
- * the tour's own destinations/title, e.g. "Karnak Temple – iLuxury Egypt".
- * Only ever combines real data already on the tour; never invents scene
- * details (lighting, angle, etc.) that aren't knowable from the record.
+ * Builds a luxury-toned, SEO-oriented alt-text suggestion for an itinerary
+ * day's photo, e.g. "Private camel excursion at the Great Pyramids of Giza
+ * with luxury desert guide service". Mines the day's own description/
+ * activities text for a recognizable activity (the same keyword-family
+ * approach as tour-highlights.ts's notable-activity detection) rather than
+ * inventing scene details that aren't knowable from the record; falls back
+ * to a generic private-guide phrasing, or an arrival/stay phrasing when an
+ * accommodation is known and no specific activity was detected.
+ *
+ * @param variantIndex 0-based count of prior photos already suggested for
+ *   this same place name within the same tour — pass the running count so
+ *   repeated place photos get a distinguishing clause instead of identical
+ *   alt text.
  */
-export function suggestDayPhotoAlt(placeName: string, locationHint?: string): string {
-  const location = locationHint?.trim();
-  return location ? `${placeName}, ${location} – iLuxury Egypt` : `${placeName} – iLuxury Egypt`;
+export function suggestDayPhotoAlt(params: {
+  placeName: string;
+  description?: string;
+  activities?: string[];
+  accommodation?: string;
+  variantIndex?: number;
+}): string {
+  const { placeName, description = "", activities = [], accommodation, variantIndex = 0 } = params;
+  const text = `${description} ${activities.join(" ")}`;
+  const matched = ACTIVITY_ALT_PHRASES.find(({ pattern }) => pattern.test(text));
+  // Most days have an accommodation set regardless of what the day is
+  // actually about, so the arrival/stay phrasing below is only used when the
+  // day's own text is actually about arriving or checking in — not just
+  // because a hotel happens to be attached to a landmark-visit day.
+  const isArrivalDay = ARRIVAL_PATTERN.test(text);
+
+  let base: string;
+  if (matched) {
+    base = `${matched.activity} at ${withArticle(placeName)} ${matched.qualifier}`;
+  } else if (accommodation?.trim() && isArrivalDay) {
+    base = `Luxury arrival experience at ${accommodation.trim()}, ${placeName}`;
+  } else {
+    base = `Private guided visit to ${withArticle(placeName)} with a private Egyptologist guide`;
+  }
+
+  if (variantIndex > 0) {
+    base += ALT_TEXT_VARIANT_SUFFIXES[(variantIndex - 1) % ALT_TEXT_VARIANT_SUFFIXES.length];
+  }
+  return base;
 }

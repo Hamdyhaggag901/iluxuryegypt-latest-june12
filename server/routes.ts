@@ -1150,6 +1150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const itinerary: ItineraryDay[] = Array.isArray(tour.itinerary) ? (tour.itinerary as ItineraryDay[]) : [];
           let tourChanged = false;
+          // Tracks how many photos have already been suggested for each place
+          // name within this tour, so a repeated place gets distinguishing alt
+          // text (see suggestDayPhotoAlt's variantIndex) instead of a duplicate.
+          const placePhotoCounts = new Map<string, number>();
 
           for (const day of itinerary) {
             const description = day.description || "";
@@ -1206,7 +1210,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             if (!day.imageAlt?.trim() && day.image?.trim() && day.placeName?.trim()) {
-              day.imageAlt = suggestDayPhotoAlt(day.placeName.trim(), tour.destinations?.[0]);
+              const place = day.placeName.trim();
+              const variantIndex = placePhotoCounts.get(place) ?? 0;
+              day.imageAlt = suggestDayPhotoAlt({
+                placeName: place,
+                description: day.description,
+                activities: day.activities,
+                accommodation: day.accommodation,
+                variantIndex,
+              });
+              placePhotoCounts.set(place, variantIndex + 1);
               dayChanged = true;
             }
 
@@ -1996,38 +2009,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Unsplash fallback for "Suggest Photo" — only used when the Media Library
-  // has no match. Demo-tier Unsplash apps are capped at 50 requests/hour, so
-  // this stays under that (45/hour) with >=1.1s spacing between calls,
-  // serializing concurrent admin clicks into one queue instead of bursting.
-  // Never used by the bulk-enrich job — Unsplash results always need the
-  // admin's explicit "Use this photo" before anything is saved.
-  const UNSPLASH_MAX_PER_HOUR = 45;
-  const unsplashCallTimestamps: number[] = [];
-  let unsplashQueueTail: Promise<void> = Promise.resolve();
+  // "Suggest Photo" stock-photo fallbacks — searched in priority order
+  // (Pexels, then Pixabay, then Unsplash) whenever the itinerary day's own
+  // place name has no confident match. Each provider gets its own queued,
+  // rate-limited call wrapper built from this one factory rather than three
+  // copies of the same logic — every provider serializes concurrent admin
+  // clicks into one queue and stays under its own documented free-tier cap,
+  // with a safety margin the same way the pre-existing Unsplash limit did.
+  // None of these are ever used by the bulk-enrich job — a stock-photo
+  // result always needs the admin's explicit "Use this photo" first.
+  function createThrottledQueue(maxCallsPerWindow: number, windowMs: number, minSpacingMs: number) {
+    const callTimestamps: number[] = [];
+    let queueTail: Promise<void> = Promise.resolve();
 
-  async function throttledUnsplashCall<T>(fn: () => Promise<T>): Promise<T> {
-    const run = async (): Promise<T> => {
-      const now = Date.now();
-      while (unsplashCallTimestamps.length && now - unsplashCallTimestamps[0] > 60 * 60 * 1000) {
-        unsplashCallTimestamps.shift();
-      }
-      if (unsplashCallTimestamps.length >= UNSPLASH_MAX_PER_HOUR) {
-        throw new Error("Unsplash hourly rate limit reached — try again later, or use the Media Library instead.");
-      }
-      unsplashCallTimestamps.push(Date.now());
-      return fn();
+    return async function throttledCall<T>(fn: () => Promise<T>): Promise<T> {
+      const run = async (): Promise<T> => {
+        const now = Date.now();
+        while (callTimestamps.length && now - callTimestamps[0] > windowMs) {
+          callTimestamps.shift();
+        }
+        if (callTimestamps.length >= maxCallsPerWindow) {
+          throw new Error("Rate limit reached for this photo source — try again shortly, or use another source.");
+        }
+        callTimestamps.push(Date.now());
+        return fn();
+      };
+
+      const result = queueTail.then(run);
+      queueTail = result.then(
+        () => new Promise<void>((r) => setTimeout(r, minSpacingMs)),
+        () => new Promise<void>((r) => setTimeout(r, minSpacingMs))
+      );
+      return result;
     };
-
-    const result = unsplashQueueTail.then(run);
-    unsplashQueueTail = result.then(
-      () => new Promise<void>((r) => setTimeout(r, 1100)),
-      () => new Promise<void>((r) => setTimeout(r, 1100))
-    );
-    return result;
   }
 
-  // Search Unsplash for candidate photos (admin/editor access). Returns up
+  // Pexels free tier: documented as 200 requests/hour — stays at 180/hour.
+  const throttledPexelsCall = createThrottledQueue(180, 60 * 60 * 1000, 1100);
+  // Pixabay: documented as 100 requests/60s — stays at 90 per 60s window.
+  const throttledPixabayCall = createThrottledQueue(90, 60 * 1000, 700);
+  // Demo-tier Unsplash apps are capped at 50 requests/hour — stays at 45/hour.
+  const throttledUnsplashCall = createThrottledQueue(45, 60 * 60 * 1000, 1100);
+
+  // Search Pexels for candidate photos (admin/editor access) — first stop in
+  // the "Suggest Photo" priority order. Pexels' license permits commercial
+  // use with no attribution required, but photographer credit is still
+  // captured (stored in media.caption on import) as good practice, the same
+  // as the pre-existing Unsplash flow. Degrades gracefully (configured:
+  // false) when PEXELS_API_KEY isn't set, so "Suggest Photo" just moves on
+  // to the next source with no error.
+  app.get("/api/cms/pexels-search", requireAuth, requireEditor, async (req, res) => {
+    const apiKey = process.env.PEXELS_API_KEY;
+    if (!apiKey) {
+      return res.json({ success: false, configured: false, message: "Pexels is not configured" });
+    }
+
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Query parameter 'q' is required" });
+    }
+
+    try {
+      const data = await throttledPexelsCall(async () => {
+        const url = new URL("https://api.pexels.com/v1/search");
+        url.searchParams.set("query", q);
+        url.searchParams.set("per_page", "5");
+        url.searchParams.set("orientation", "landscape");
+        const response = await fetch(url, { headers: { Authorization: apiKey } });
+        if (!response.ok) throw new Error(`Pexels responded with ${response.status}`);
+        return response.json() as Promise<{ photos: any[] }>;
+      });
+
+      const candidates = (data.photos || []).map((p: any) => ({
+        id: String(p.id),
+        thumbUrl: p.src?.medium,
+        fullUrl: p.src?.large2x || p.src?.large || p.src?.original,
+        photographerName: p.photographer,
+        photographerUrl: p.photographer_url,
+        description: p.alt || "",
+      }));
+
+      res.json({ success: true, configured: true, candidates });
+    } catch (error: any) {
+      console.error("Pexels search error:", error);
+      res.json({ success: false, configured: true, message: error.message || "Pexels search failed" });
+    }
+  });
+
+  // Downloads the admin-chosen Pexels photo through the same WebP/50-100KB
+  // pipeline as a direct upload, and saves it as a permanent Media Library
+  // asset. Photographer credit goes into media.caption rather than a new
+  // column, mirroring how attribution is already handled for uploads.
+  app.post("/api/cms/pexels-import", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const apiKey = process.env.PEXELS_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ success: false, message: "Pexels is not configured" });
+      }
+
+      const { fullUrl, description, photographerName, photographerUrl } = req.body || {};
+      if (!fullUrl || typeof fullUrl !== "string") {
+        return res.status(400).json({ success: false, message: "fullUrl is required" });
+      }
+
+      const imageResponse = await fetch(fullUrl);
+      if (!imageResponse.ok) throw new Error(`Failed to download image (${imageResponse.status})`);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+
+      const fs = await import("fs/promises");
+      const savedFilename = `${uuidv4()}.jpg`;
+      await fs.writeFile(path.join(uploadPath, savedFilename), Buffer.from(arrayBuffer));
+
+      const optimized = await optimizeUploadedImage(uploadPath, savedFilename);
+      if (!optimized) throw new Error("Image optimization failed");
+
+      const mediaData = {
+        filename: optimized.filename,
+        originalName: description ? `pexels-${description}` : "pexels-photo",
+        mimeType: "image/webp",
+        size: optimized.size,
+        url: `/api/assets/uploads/${optimized.filename}`,
+        caption: photographerName ? `Photo by ${photographerName} on Pexels${photographerUrl ? ` (${photographerUrl})` : ""}` : "Photo via Pexels",
+        uploadedBy: authReq.user!.id,
+      };
+
+      const media = await storage.createMedia(mediaData);
+      res.status(201).json({ success: true, media });
+    } catch (error: any) {
+      console.error("Pexels import error:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to import Pexels photo" });
+    }
+  });
+
+  // Search Pixabay for candidate photos (admin/editor access) — second stop
+  // in the "Suggest Photo" priority order, tried when Pexels has no
+  // configured key or no results. Pixabay's Content License also permits
+  // commercial use with no attribution required; credit is still captured
+  // the same way as Pexels/Unsplash. Degrades gracefully (configured: false)
+  // when PIXABAY_API_KEY isn't set.
+  app.get("/api/cms/pixabay-search", requireAuth, requireEditor, async (req, res) => {
+    const apiKey = process.env.PIXABAY_API_KEY;
+    if (!apiKey) {
+      return res.json({ success: false, configured: false, message: "Pixabay is not configured" });
+    }
+
+    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+    if (!q) {
+      return res.status(400).json({ success: false, message: "Query parameter 'q' is required" });
+    }
+
+    try {
+      const data = await throttledPixabayCall(async () => {
+        const url = new URL("https://pixabay.com/api/");
+        url.searchParams.set("key", apiKey);
+        url.searchParams.set("q", q);
+        url.searchParams.set("image_type", "photo");
+        url.searchParams.set("orientation", "horizontal");
+        url.searchParams.set("per_page", "5");
+        url.searchParams.set("safesearch", "true");
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Pixabay responded with ${response.status}`);
+        return response.json() as Promise<{ hits: any[] }>;
+      });
+
+      const candidates = (data.hits || []).map((h: any) => ({
+        id: String(h.id),
+        thumbUrl: h.webformatURL,
+        fullUrl: h.largeImageURL,
+        photographerName: h.user,
+        photographerUrl: h.user_id ? `https://pixabay.com/users/${h.user}-${h.user_id}/` : undefined,
+        description: h.tags || "",
+      }));
+
+      res.json({ success: true, configured: true, candidates });
+    } catch (error: any) {
+      console.error("Pixabay search error:", error);
+      res.json({ success: false, configured: true, message: error.message || "Pixabay search failed" });
+    }
+  });
+
+  // Downloads the admin-chosen Pixabay photo through the same WebP/50-100KB
+  // pipeline as a direct upload, and saves it as a permanent Media Library asset.
+  app.post("/api/cms/pixabay-import", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const apiKey = process.env.PIXABAY_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ success: false, message: "Pixabay is not configured" });
+      }
+
+      const { fullUrl, description, photographerName, photographerUrl } = req.body || {};
+      if (!fullUrl || typeof fullUrl !== "string") {
+        return res.status(400).json({ success: false, message: "fullUrl is required" });
+      }
+
+      const imageResponse = await fetch(fullUrl);
+      if (!imageResponse.ok) throw new Error(`Failed to download image (${imageResponse.status})`);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+
+      const fs = await import("fs/promises");
+      const savedFilename = `${uuidv4()}.jpg`;
+      await fs.writeFile(path.join(uploadPath, savedFilename), Buffer.from(arrayBuffer));
+
+      const optimized = await optimizeUploadedImage(uploadPath, savedFilename);
+      if (!optimized) throw new Error("Image optimization failed");
+
+      const mediaData = {
+        filename: optimized.filename,
+        originalName: description ? `pixabay-${description}` : "pixabay-photo",
+        mimeType: "image/webp",
+        size: optimized.size,
+        url: `/api/assets/uploads/${optimized.filename}`,
+        caption: photographerName ? `Photo by ${photographerName} on Pixabay${photographerUrl ? ` (${photographerUrl})` : ""}` : "Photo via Pixabay",
+        uploadedBy: authReq.user!.id,
+      };
+
+      const media = await storage.createMedia(mediaData);
+      res.status(201).json({ success: true, media });
+    } catch (error: any) {
+      console.error("Pixabay import error:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to import Pixabay photo" });
+    }
+  });
+
+  // Search Unsplash for candidate photos (admin/editor access) — last stop
+  // in the "Suggest Photo" priority order. Returns up
   // to 5 candidates with attribution for the admin to preview and choose
   // from — nothing is saved by this call. Degrades gracefully (configured:
   // false) when UNSPLASH_ACCESS_KEY isn't set, so "Suggest Photo" just falls

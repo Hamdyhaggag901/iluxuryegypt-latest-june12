@@ -45,15 +45,25 @@ const tourFormSchema = insertTourSchema.extend({
 
 type TourFormData = z.infer<typeof tourFormSchema>;
 
-interface UnsplashCandidate {
+// Shared candidate shape across all three stock-photo sources — Unsplash is
+// the only one with a downloadLocation ping its API guidelines require.
+interface StockPhotoCandidate {
   id: string;
   thumbUrl: string;
   fullUrl: string;
-  downloadLocation: string;
+  downloadLocation?: string;
   photographerName?: string;
   photographerUrl?: string;
   description?: string;
 }
+
+type StockPhotoSource = "pexels" | "pixabay" | "unsplash";
+
+const STOCK_PHOTO_SOURCES: Array<{ source: StockPhotoSource; searchEndpoint: string; importEndpoint: string; label: string }> = [
+  { source: "pexels", searchEndpoint: "/api/cms/pexels-search", importEndpoint: "/api/cms/pexels-import", label: "Pexels" },
+  { source: "pixabay", searchEndpoint: "/api/cms/pixabay-search", importEndpoint: "/api/cms/pixabay-import", label: "Pixabay" },
+  { source: "unsplash", searchEndpoint: "/api/cms/unsplash-search", importEndpoint: "/api/cms/unsplash-import", label: "Unsplash" },
+];
 
 interface TourFormProps {
   initialData?: Partial<any>;
@@ -68,8 +78,8 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
   const [galleryInput, setGalleryInput] = useState("");
   const [geocodingDayIndex, setGeocodingDayIndex] = useState<number | null>(null);
   const [otherAccommodation, setOtherAccommodation] = useState<Record<number, boolean>>({});
-  const [unsplashPreview, setUnsplashPreview] = useState<Record<number, { candidates: UnsplashCandidate[]; currentIndex: number } | null>>({});
-  const [unsplashImportingIndex, setUnsplashImportingIndex] = useState<number | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<Record<number, { source: StockPhotoSource; candidates: StockPhotoCandidate[]; currentIndex: number } | null>>({});
+  const [photoImportingIndex, setPhotoImportingIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
   const { data: categoriesData } = useQuery({
@@ -317,6 +327,39 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     }
   };
 
+  // How many other days in this same itinerary already have a photo for the
+  // same place name — passed to suggestDayPhotoAlt as variantIndex so a
+  // second/third photo of one place gets distinguishing alt text instead of
+  // a literal duplicate.
+  const countExistingPhotosForPlace = (placeName: string, excludeIndex: number): number => {
+    const itinerary = form.getValues("itinerary") || [];
+    const needle = normalizeForMatch(placeName);
+    return itinerary.filter(
+      (d: any, i: number) => i !== excludeIndex && d.image?.trim() && normalizeForMatch(d.placeName || "").includes(needle)
+    ).length;
+  };
+
+  const buildDayPhotoAlt = (dayIndex: number, placeName: string): string =>
+    suggestDayPhotoAlt({
+      placeName,
+      description: form.getValues(`itinerary.${dayIndex}.description`),
+      activities: form.getValues(`itinerary.${dayIndex}.activities`),
+      accommodation: form.getValues(`itinerary.${dayIndex}.accommodation`),
+      variantIndex: countExistingPhotosForPlace(placeName, dayIndex),
+    });
+
+  // Mirrors the day photo into the tour's own gallery (with its alt text) so
+  // it shows up in both places without the admin uploading it twice — skips
+  // silently if that exact URL is already in the gallery.
+  const addToGallery = (url: string, alt: string) => {
+    const gallery: string[] = form.getValues("gallery") || [];
+    if (gallery.includes(url)) return;
+    form.setValue("gallery", [...gallery, url]);
+    if (alt) {
+      form.setValue("galleryAlt", { ...(form.getValues("galleryAlt") || {}), [url]: alt });
+    }
+  };
+
   const suggestDayPhoto = async (dayIndex: number) => {
     const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim();
     if (!placeName) {
@@ -324,41 +367,51 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       return;
     }
 
-    // 1) Media Library first — instant, and reuses an asset already hosted here.
+    // 1-3) Stock sources, tried in priority order (Pexels, then Pixabay,
+    // then Unsplash). Each just opens a preview the admin has to explicitly
+    // approve — nothing is saved by a search call. A source that isn't
+    // configured (no API key) or returns nothing is skipped silently, moving
+    // straight to the next one.
+    const token = localStorage.getItem("adminToken");
+    for (const { source, searchEndpoint } of STOCK_PHOTO_SOURCES) {
+      try {
+        const response = await fetch(`${searchEndpoint}?q=${encodeURIComponent(placeName)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await response.json();
+        if (result.success && result.candidates?.length > 0) {
+          setPhotoPreview((prev) => ({ ...prev, [dayIndex]: { source, candidates: result.candidates, currentIndex: 0 } }));
+          return;
+        }
+      } catch {
+        // Fall through to the next source — any one of these is a bonus, not a dependency.
+      }
+    }
+
+    // 4) Last resort — the local Media Library. Checked last on purpose: its
+    // existing assets aren't always an accurate match for a given place, so
+    // a real stock photo above is preferred whenever one is available.
     const needle = normalizeForMatch(placeName);
     const match = mediaImages.find(
       (m) => normalizeForMatch(m.originalName).includes(needle) || normalizeForMatch(m.altEn || "").includes(needle)
     );
     if (match) {
       form.setValue(`itinerary.${dayIndex}.image`, match.url);
-      if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim()) {
-        form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+      let alt = form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim();
+      if (!alt) {
+        alt = buildDayPhotoAlt(dayIndex, placeName);
+        form.setValue(`itinerary.${dayIndex}.imageAlt`, alt);
       }
+      addToGallery(match.url, alt);
       toast({ title: "Photo suggested", description: match.originalName });
       return;
-    }
-
-    // 2) No local match — try Unsplash. Never auto-saves; just opens a
-    // preview the admin has to explicitly approve.
-    try {
-      const token = localStorage.getItem("adminToken");
-      const response = await fetch(`/api/cms/unsplash-search?q=${encodeURIComponent(placeName)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const result = await response.json();
-      if (result.success && result.candidates?.length > 0) {
-        setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: { candidates: result.candidates, currentIndex: 0 } }));
-        return;
-      }
-    } catch {
-      // Fall through to the "no match" toast below — Unsplash is a bonus, not a dependency.
     }
 
     toast({ title: "No matching photo found", description: "Upload one below, or add it to the Media Library first.", variant: "destructive" });
   };
 
-  const cycleUnsplashPreview = (dayIndex: number) => {
-    setUnsplashPreview((prev) => {
+  const cyclePhotoPreview = (dayIndex: number) => {
+    setPhotoPreview((prev) => {
       const entry = prev[dayIndex];
       if (!entry) return prev;
       const nextIndex = (entry.currentIndex + 1) % entry.candidates.length;
@@ -366,26 +419,29 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     });
   };
 
-  const cancelUnsplashPreview = (dayIndex: number) => {
-    setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: null }));
+  const cancelPhotoPreview = (dayIndex: number) => {
+    setPhotoPreview((prev) => ({ ...prev, [dayIndex]: null }));
   };
 
-  const useUnsplashPhoto = async (dayIndex: number) => {
-    const entry = unsplashPreview[dayIndex];
+  const useStockPhoto = async (dayIndex: number) => {
+    const entry = photoPreview[dayIndex];
     if (!entry) return;
     const candidate = entry.candidates[entry.currentIndex];
     const placeName = form.getValues(`itinerary.${dayIndex}.placeName`)?.trim() || "";
+    const sourceConfig = STOCK_PHOTO_SOURCES.find((s) => s.source === entry.source)!;
 
-    setUnsplashImportingIndex(dayIndex);
+    setPhotoImportingIndex(dayIndex);
     try {
       const token = localStorage.getItem("adminToken");
-      const response = await fetch("/api/cms/unsplash-import", {
+      const response = await fetch(sourceConfig.importEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
         body: JSON.stringify({
           fullUrl: candidate.fullUrl,
           downloadLocation: candidate.downloadLocation,
           description: candidate.description || placeName,
+          photographerName: candidate.photographerName,
+          photographerUrl: candidate.photographerUrl,
         }),
       });
       const result = await response.json();
@@ -394,15 +450,18 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       }
 
       form.setValue(`itinerary.${dayIndex}.image`, result.media.url);
-      if (!form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim() && placeName) {
-        form.setValue(`itinerary.${dayIndex}.imageAlt`, suggestDayPhotoAlt(placeName));
+      let alt = form.getValues(`itinerary.${dayIndex}.imageAlt`)?.trim();
+      if (!alt && placeName) {
+        alt = buildDayPhotoAlt(dayIndex, placeName);
+        form.setValue(`itinerary.${dayIndex}.imageAlt`, alt);
       }
-      setUnsplashPreview((prev) => ({ ...prev, [dayIndex]: null }));
-      toast({ title: "Photo imported", description: `Credit: ${candidate.photographerName || "Unsplash"}` });
+      addToGallery(result.media.url, alt || "");
+      setPhotoPreview((prev) => ({ ...prev, [dayIndex]: null }));
+      toast({ title: "Photo imported", description: `Credit: ${candidate.photographerName || sourceConfig.label}` });
     } catch (error: any) {
       toast({ title: "Import failed", description: error.message, variant: "destructive" });
     } finally {
-      setUnsplashImportingIndex(null);
+      setPhotoImportingIndex(null);
     }
   };
 
@@ -622,70 +681,70 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        "Suggest Photo" searches the Media Library first, then Unsplash if nothing matches — either way you review before it's saved. Uploads are automatically converted to WebP and compressed.
+                        "Suggest Photo" tries Pexels, then Pixabay, then Unsplash, and the Media Library last — either way you review before it's saved. The chosen photo is also added to the tour's gallery automatically. Uploads are automatically converted to WebP and compressed.
                       </p>
 
-                      {unsplashPreview[index] && (
-                        <div className="border rounded-md p-3 flex gap-3 items-start bg-muted/30" data-testid={`unsplash-preview-${index}`}>
-                          <img
-                            src={unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].thumbUrl}
-                            alt="Unsplash suggestion"
-                            className="w-24 h-24 object-cover rounded-md flex-shrink-0"
-                          />
-                          <div className="flex-1 space-y-2 min-w-0">
-                            <p className="text-xs text-muted-foreground">
-                              Suggested via Unsplash — photo by{" "}
-                              {unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerUrl ? (
-                                <a
-                                  href={unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="underline"
-                                >
-                                  {unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerName || "Unsplash"}
-                                </a>
-                              ) : (
-                                unsplashPreview[index]!.candidates[unsplashPreview[index]!.currentIndex].photographerName || "Unsplash"
-                              )}{" "}
-                              ({unsplashPreview[index]!.currentIndex + 1}/{unsplashPreview[index]!.candidates.length})
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => useUnsplashPhoto(index)}
-                                disabled={unsplashImportingIndex === index}
-                                data-testid={`button-use-unsplash-${index}`}
-                              >
-                                {unsplashImportingIndex === index ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                                Use this photo
-                              </Button>
-                              {unsplashPreview[index]!.candidates.length > 1 && (
+                      {photoPreview[index] && (() => {
+                        const entry = photoPreview[index]!;
+                        const candidate = entry.candidates[entry.currentIndex];
+                        const sourceLabel = STOCK_PHOTO_SOURCES.find((s) => s.source === entry.source)!.label;
+                        return (
+                          <div className="border rounded-md p-3 flex gap-3 items-start bg-muted/30" data-testid={`photo-preview-${index}`}>
+                            <img
+                              src={candidate.thumbUrl}
+                              alt={`${sourceLabel} suggestion`}
+                              className="w-24 h-24 object-cover rounded-md flex-shrink-0"
+                            />
+                            <div className="flex-1 space-y-2 min-w-0">
+                              <p className="text-xs text-muted-foreground">
+                                Suggested via {sourceLabel} — photo by{" "}
+                                {candidate.photographerUrl ? (
+                                  <a href={candidate.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                                    {candidate.photographerName || sourceLabel}
+                                  </a>
+                                ) : (
+                                  candidate.photographerName || sourceLabel
+                                )}{" "}
+                                ({entry.currentIndex + 1}/{entry.candidates.length})
+                              </p>
+                              <div className="flex gap-2">
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="outline"
-                                  onClick={() => cycleUnsplashPreview(index)}
-                                  disabled={unsplashImportingIndex === index}
-                                  data-testid={`button-try-another-unsplash-${index}`}
+                                  onClick={() => useStockPhoto(index)}
+                                  disabled={photoImportingIndex === index}
+                                  data-testid={`button-use-photo-${index}`}
                                 >
-                                  Try another
+                                  {photoImportingIndex === index ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                                  Use this photo
                                 </Button>
-                              )}
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => cancelUnsplashPreview(index)}
-                                disabled={unsplashImportingIndex === index}
-                                data-testid={`button-cancel-unsplash-${index}`}
-                              >
-                                Cancel
-                              </Button>
+                                {entry.candidates.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => cyclePhotoPreview(index)}
+                                    disabled={photoImportingIndex === index}
+                                    data-testid={`button-try-another-photo-${index}`}
+                                  >
+                                    Try another
+                                  </Button>
+                                )}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => cancelPhotoPreview(index)}
+                                  disabled={photoImportingIndex === index}
+                                  data-testid={`button-cancel-photo-${index}`}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                     </div>
                     <div className="space-y-2">
                       <Label>Day Photo Alt Text</Label>
