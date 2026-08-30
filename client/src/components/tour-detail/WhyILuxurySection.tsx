@@ -1,46 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import luxuryHallImage from "@assets/elegant-hall_1757459228629.jpeg";
-import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
-import sunsetFeluccaImage from "@assets/sunset-felucca_1757456567256.jpg";
-import khanKhaliliImage from "@assets/khan-khalili-restaurant_1757459228636.jpeg";
-import columnHallImage from "@assets/inside-the-column-hall_1757699232094.jpg";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Tour, Hotel } from "@shared/schema";
+import { getWhyILuxuryContent, type WhyILuxuryStrength } from "@/lib/why-iluxury-content";
 
-interface Strength {
-  title: string;
-  body: string;
-  image?: string;
-}
-
-const STRENGTHS: Strength[] = [
-  {
-    title: "Private Egyptologist Guides",
-    body: "Every journey is led by a private, professionally trained Egyptologist — not a shared coach tour with a megaphone. You set the pace; they bring 5,000 years of history to life.",
-    image: columnHallImage,
-  },
-  {
-    title: "Small, Intimate Groups",
-    body: "Most of our departures are private or limited to a handful of travelers, so a temple visit feels like a discovery, not a queue.",
-    image: sunsetFeluccaImage,
-  },
-  {
-    title: "Hand-Picked Luxury Hotels",
-    body: "We personally vet every property on your itinerary — from Nile-view suites in Cairo to boutique dahabiyas on the river — so each night matches the standard of the day before it.",
-    image: suiteNileImage,
-  },
-  {
-    title: "24/7 Personal Concierge",
-    body: "A dedicated concierge is reachable around the clock throughout your trip, on the ground in Egypt — not a call center reading from a script.",
-  },
-  {
-    title: "Deep Local Expertise",
-    body: "Two decades of relationships across Cairo, Luxor, and Aswan mean access most operators simply don't have: early museum entry, private felucca sunsets, tables at restaurants without a sign.",
-    image: khanKhaliliImage,
-  },
-  {
-    title: "Bespoke, Not Templated",
-    body: "Every private Nile cruise and boutique Egypt travel itinerary we build starts from a conversation with you, not a brochure.",
-  },
-];
+type Strength = WhyILuxuryStrength;
 
 function useScrollReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -76,21 +38,15 @@ function RevealCard({ strength, index }: { strength: Strength; index: number }) 
       }`}
       style={{ transitionDelay: `${(index % 3) * 100}ms` }}
     >
-      {strength.image ? (
-        <div className="relative h-40 overflow-hidden">
-          <img
-            src={strength.image}
-            alt={`${strength.title} — iLuxury Egypt`}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent" />
-        </div>
-      ) : (
-        <div className="h-40 bg-primary flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full border border-accent/50" />
-        </div>
-      )}
+      <div className="relative h-40 overflow-hidden">
+        <img
+          src={strength.image}
+          alt={`${strength.title} — iLuxury Egypt`}
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-transparent to-transparent" />
+      </div>
       <div className="p-5 md:p-6">
         <h3 className="font-serif text-lg text-primary mb-2">{strength.title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{strength.body}</p>
@@ -99,8 +55,9 @@ function RevealCard({ strength, index }: { strength: Strength; index: number }) 
   );
 }
 
-export default function WhyILuxurySection() {
+export default function WhyILuxurySection({ tour, hotels }: { tour: Tour; hotels: Hotel[] }) {
   const { ref: introRef, visible: introVisible } = useScrollReveal<HTMLDivElement>();
+  const { heroImage, strengths } = useMemo(() => getWhyILuxuryContent(tour, hotels), [tour, hotels]);
 
   return (
     <section id="why-iluxury" className="py-12 md:py-24 bg-background">
@@ -126,7 +83,7 @@ export default function WhyILuxurySection() {
           </div>
           <div className="relative h-56 md:h-72 lg:h-80 rounded-lg overflow-hidden">
             <img
-              src={luxuryHallImage}
+              src={heroImage}
               alt="Elegant luxury hotel interior in Egypt – iLuxury Egypt"
               className="w-full h-full object-cover"
               loading="lazy"
@@ -135,7 +92,7 @@ export default function WhyILuxurySection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
-          {STRENGTHS.map((strength, index) => (
+          {strengths.map((strength, index) => (
             <RevealCard key={strength.title} strength={strength} index={index} />
           ))}
         </div>

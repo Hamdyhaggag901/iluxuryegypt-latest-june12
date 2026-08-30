@@ -11,7 +11,7 @@ import type { Hotel, ItineraryDay } from "@shared/schema";
 export interface TourHighlight {
   title: string;
   body: string;
-  icon: "stay" | "cruise" | "duration" | "activity" | "destinations" | "guide" | "concierge";
+  icon: "stay" | "cruise" | "duration" | "activity" | "destinations" | "guide" | "concierge" | "group" | "craft";
   image?: string;
 }
 
@@ -21,6 +21,7 @@ interface HighlightTour {
   durationDays?: number | null;
   destinations: string[];
   itinerary: unknown;
+  groupSize?: string | null;
 }
 
 const NOTABLE_ACTIVITY_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
@@ -43,6 +44,21 @@ const EVERGREEN_HIGHLIGHTS: TourHighlight[] = [
     title: "24/7 Concierge on the Ground",
     body: "A dedicated concierge based in Egypt is reachable around the clock for the length of your trip, for anything from a restaurant table to a change of plans.",
     icon: "concierge",
+  },
+  {
+    title: "Crafted by Egypt Travel Specialists",
+    body: "Every stop on this itinerary was chosen and sequenced by our own Egypt specialists — not licensed from a template, but built one relationship, one property, one guide at a time.",
+    icon: "craft",
+  },
+  {
+    title: "Seamless From Arrival to Departure",
+    body: "Airport pickup, transfers, and every handoff in between are arranged before you land, so the only thing you have to plan once you're here is which view to have breakfast with.",
+    icon: "concierge",
+  },
+  {
+    title: "Flexible by Design",
+    body: "Dates, pace, and even the itinerary itself can flex around you — this isn't a fixed departure you're slotting into, it's a trip built for your calendar.",
+    icon: "duration",
   },
 ];
 
@@ -104,19 +120,21 @@ export function buildTourHighlights(tour: HighlightTour, hotels: Hotel[]): TourH
     }
   }
 
+  if (tour.groupSize) {
+    highlights.push({
+      title: "A Group Sized for You",
+      body: `Group size on this journey: ${tour.groupSize} — intimate enough that your private Egyptologist adjusts the pace to you, not the other way around.`,
+      icon: "group",
+    });
+  }
+
+  // Evergreen highlights (5 of them) always top up the list, capped at 6 —
+  // with a data-thin tour producing 0 real highlights, this still guarantees
+  // a minimum of 5 distinct points, never a lone box or a literal repeat.
   const withEvergreen = [...highlights];
   for (const evergreen of EVERGREEN_HIGHLIGHTS) {
     if (withEvergreen.length >= 6) break;
     withEvergreen.push(evergreen);
-  }
-
-  // Guarantee at least 4 points even if a tour has thin data — evergreen
-  // highlights are safe to repeat pulling from since they're never
-  // tour-specific claims.
-  let i = 0;
-  while (withEvergreen.length < 4 && i < EVERGREEN_HIGHLIGHTS.length) {
-    if (!withEvergreen.includes(EVERGREEN_HIGHLIGHTS[i])) withEvergreen.push(EVERGREEN_HIGHLIGHTS[i]);
-    i++;
   }
 
   return withEvergreen.slice(0, 6);

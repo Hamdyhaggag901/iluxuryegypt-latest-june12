@@ -1,4 +1,4 @@
-import { Compass, Hotel, Ship, Clock, MapPin, UserCheck, Phone } from "lucide-react";
+import { Compass, Hotel, Ship, Clock, MapPin, UserCheck, Phone, Users, Sparkles } from "lucide-react";
 import type { TourHighlight } from "@/lib/tour-highlights";
 
 const ICONS: Record<TourHighlight["icon"], typeof Compass> = {
@@ -9,6 +9,8 @@ const ICONS: Record<TourHighlight["icon"], typeof Compass> = {
   destinations: MapPin,
   guide: UserCheck,
   concierge: Phone,
+  group: Users,
+  craft: Sparkles,
 };
 
 export default function WhyYoullLoveJourneySection({
@@ -61,12 +63,20 @@ export default function WhyYoullLoveJourneySection({
             </div>
           </div>
 
-          {rest.map((highlight) => {
+          {rest.map((highlight, index) => {
             const Icon = ICONS[highlight.icon];
+            // At 6 total boxes, "rest" has 5 items which doesn't tile evenly
+            // into a 3-column grid after the featured box's own row (2+3
+            // leaves a lone box on its own row) — stretching the last one
+            // full-width turns that leftover into a deliberate closing banner
+            // instead of an orphan.
+            const isTrailingWide = highlights.length === 6 && index === rest.length - 1;
             return (
               <div
                 key={highlight.title}
-                className="relative rounded-lg overflow-hidden bg-primary-foreground/5 border border-primary-foreground/10 p-6 md:p-8 flex flex-col justify-end min-h-[220px]"
+                className={`relative rounded-lg overflow-hidden bg-primary-foreground/5 border border-primary-foreground/10 p-6 md:p-8 flex flex-col justify-end min-h-[220px] ${
+                  isTrailingWide ? "md:col-span-2 lg:col-span-3" : ""
+                }`}
               >
                 {highlight.image && (
                   <>

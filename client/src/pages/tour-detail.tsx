@@ -373,7 +373,7 @@ export default function TourDetail() {
 
       <WhereYouWillStay hotels={stayHotels} />
 
-      <WhyILuxurySection />
+      <WhyILuxurySection tour={tour} hotels={stayHotels} />
 
       <CtaBanner tour={tour} onReserve={() => setIsReserveModalOpen(true)} />
 
