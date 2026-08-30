@@ -342,6 +342,7 @@ export default function TourDetail() {
 
       <ItineraryMap
         itinerary={itinerary}
+        tourTitle={tour.title}
         price={tour.price}
         currency={currency}
         duration={tour.duration}

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "./ItineraryMap.css";
 import { ArrowUp, RotateCcw } from "lucide-react";
 import type { ItineraryDay } from "@shared/schema";
 import { buildCurvedRoute } from "@/lib/route-curve";
@@ -11,35 +12,71 @@ import ItineraryPriceBar from "./ItineraryPriceBar";
 // Matches --primary (Nile Deep Blue) and --accent (Pharaoh Gold) from index.css
 const PRIMARY_COLOR = "hsl(220, 26%, 20%)";
 const ACCENT_COLOR = "hsl(41, 37%, 60%)";
+const INACTIVE_RING = "hsl(220, 18%, 62%)";
 
-function buildStopIcon(active: boolean) {
-  const size = active ? 34 : 22;
-  const bg = active ? ACCENT_COLOR : PRIMARY_COLOR;
+// A couple of small, curated line-art glyphs shown next to a handful of
+// well-known place names — purely decorative depth, deliberately not a
+// full icon set (kept to the two clearest, least-ambiguous matches so the
+// map doesn't get busy).
+const PYRAMID_SVG = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/></svg>`;
+const PALM_SVG = `<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V13"/><path d="M12 13c-3-4-8-3-9-1 2 2 6 2 9 1Z"/><path d="M12 13c3-4 8-3 9-1-2 2-6 2-9 1Z"/><path d="M12 13c-1-4 0-8 2-10-3 0-5 3-5 6"/></svg>`;
+
+function getPlaceGlyph(placeName: string): string | null {
+  const key = placeName.toLowerCase();
+  if (key.includes("giza") || key.includes("pyramid")) return PYRAMID_SVG;
+  if (key.includes("aswan")) return PALM_SVG;
+  return null;
+}
+
+function buildStopIcon(active: boolean, placeName: string) {
+  const outer = active ? 38 : 24;
+  const inner = active ? 15 : 9;
+  const ringColor = active ? ACCENT_COLOR : INACTIVE_RING;
+  const glyph = getPlaceGlyph(placeName);
+  const glyphBadge = glyph
+    ? `<div style="
+        position:absolute; top:-4px; right:-4px; width:16px; height:16px;
+        border-radius:9999px; background:white; border:1px solid hsl(var(--card-border));
+        display:flex; align-items:center; justify-content:center;
+        box-shadow:0 1px 3px rgba(0,0,0,0.2);
+      ">${glyph}</div>`
+    : "";
   return L.divIcon({
     className: "",
-    html: `<div style="
-      width:${size}px;height:${size}px;border-radius:9999px;
-      background:${bg};border:2px solid white;
-      box-shadow:0 2px 8px rgba(0,0,0,0.35);
-      transition:all 0.25s ease;
-    "></div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    html: `<div style="position:relative;width:${outer}px;height:${outer}px;">
+      <div style="
+        width:${outer}px;height:${outer}px;border-radius:9999px;
+        display:flex;align-items:center;justify-content:center;
+        background:${active ? "hsla(41, 45%, 60%, 0.18)" : "transparent"};
+        border:1.5px solid ${ringColor};
+        opacity:${active ? 1 : 0.65};
+        transition:all 0.3s ease;
+      ">
+        <div style="
+          width:${inner}px;height:${inner}px;border-radius:9999px;
+          background:${ringColor};border:1.5px solid white;
+          box-shadow:0 2px 6px rgba(0,0,0,0.3);
+        "></div>
+      </div>
+      ${glyphBadge}
+    </div>`,
+    iconSize: [outer, outer],
+    iconAnchor: [outer / 2, outer / 2],
   });
 }
 
 // Outline-style plane glyph (matches lucide's stroke aesthetic used
 // everywhere else on the site) inside a small white pin, dropped at the
 // midpoint of any route segment the itinerary text describes as a flight.
-const PLANE_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg)"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.4 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.2.6-.6.5-1.1"/></svg>`;
+const PLANE_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg)"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.4 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.2.6-.6.5-1.1"/></svg>`;
 
 function buildPlaneIcon() {
   const html = `<div style="
-    width:22px;height:22px;border-radius:9999px;background:white;
-    border:1.5px solid ${PRIMARY_COLOR};display:flex;align-items:center;
-    justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.25);
+    width:21px;height:21px;border-radius:9999px;background:white;
+    border:1.5px solid hsl(var(--card-border));display:flex;align-items:center;
+    justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.2);
   ">${PLANE_SVG}</div>`;
-  return L.divIcon({ className: "", html, iconSize: [22, 22], iconAnchor: [11, 11] });
+  return L.divIcon({ className: "", html, iconSize: [21, 21], iconAnchor: [10, 10] });
 }
 
 const FLIGHT_PATTERN = /\bfly\b|\bflying\b|\bflight\b/i;
@@ -77,12 +114,14 @@ function buildStops(days: (MappedDay & { lat: number; lng: number })[]): Stop[] 
 
 export default function ItineraryMap({
   itinerary,
+  tourTitle,
   price,
   currency,
   duration,
   groupSize,
 }: {
   itinerary: MappedDay[];
+  tourTitle?: string;
   price?: number;
   currency?: string;
   duration?: string;
@@ -177,7 +216,7 @@ export default function ItineraryMap({
               list; a full-height sticky column on desktop (lg:) as before. */}
           <div className="w-full lg:w-[42%] sticky top-20 lg:top-24 z-30 lg:z-auto">
             {bounds ? (
-              <div className="relative h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
+              <div className="itinerary-map-wrap relative h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
                 <MapContainer
                   ref={mapRef}
                   bounds={bounds}
@@ -186,12 +225,31 @@ export default function ItineraryMap({
                   scrollWheelZoom={false}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
                   />
+                  {/* Soft glow layer beneath the main dashed line, plus a slow
+                      marching-dash animation on top — a lightweight stand-in
+                      for a single travelling light, CSS-driven (see
+                      ItineraryMap.css). react-leaflet's pathOptions only
+                      reaches Leaflet's setStyle() (color/weight/dashArray),
+                      not the path's className (only read at DOM-creation
+                      time internally) — so the animation class is added
+                      imperatively via the layer ref instead. */}
                   <Polyline
                     positions={curvedRoute}
-                    pathOptions={{ color: PRIMARY_COLOR, weight: 2.5, opacity: 0.7, dashArray: "1 9", lineCap: "round" }}
+                    pathOptions={{ color: ACCENT_COLOR, weight: 6, opacity: 0.15, lineCap: "round" }}
+                  />
+                  <Polyline
+                    ref={(layer) => layer?.getElement()?.classList.add("itinerary-route-glow")}
+                    positions={curvedRoute}
+                    pathOptions={{
+                      color: ACCENT_COLOR,
+                      weight: 2.5,
+                      opacity: 0.85,
+                      dashArray: "1 11",
+                      lineCap: "round",
+                    }}
                   />
                   {flightMidpoints.map((pos, i) => (
                     <Marker key={`flight-${i}`} position={pos} icon={buildPlaneIcon()} />
@@ -200,8 +258,12 @@ export default function ItineraryMap({
                     const active = stop.days.includes(activeDay ?? -1);
                     const dayLabel = stop.days.length > 1 ? `Days ${stop.days[0]}–${stop.days[stop.days.length - 1]}` : `Day ${stop.days[0]}`;
                     return (
-                      <Marker key={`${stop.placeName}-${stop.days[0]}`} position={[stop.lat, stop.lng]} icon={buildStopIcon(active)}>
-                        <Tooltip direction="top" offset={[0, -12]} opacity={1}>
+                      <Marker
+                        key={`${stop.placeName}-${stop.days[0]}`}
+                        position={[stop.lat, stop.lng]}
+                        icon={buildStopIcon(active, stop.placeName)}
+                      >
+                        <Tooltip className="itinerary-city-tooltip" direction="top" offset={[0, -16]} opacity={1}>
                           <span className="font-semibold">{stop.placeName}</span> — {dayLabel}
                         </Tooltip>
                       </Marker>
@@ -256,6 +318,7 @@ export default function ItineraryMap({
       </div>
 
       <ItineraryPriceBar
+        tourTitle={tourTitle}
         duration={duration ?? (itinerary.length > 0 ? `${itinerary.length} Days` : "")}
         groupSize={groupSize}
         price={price ?? 0}
