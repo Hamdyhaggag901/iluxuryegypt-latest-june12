@@ -38,13 +38,10 @@ import {
 } from "@shared/schema";
 import { detectPlaceName, detectAccommodation, detectMeals, suggestDayPhotoAlt, normalizeForMatch } from "@shared/itinerary-detection";
 import {
-  isVisionConfigured,
-  checkVisionQuota,
+  isHuggingFaceConfigured,
   analyzeImageForAltText,
-  recordVisionUsage,
-  getVisionUsage,
-  VisionQuotaExceededError,
-} from "./vision-alt-text";
+  HuggingFaceRateLimitError,
+} from "./huggingface-alt-text";
 import multer from "multer";
 import sharp from "sharp";
 import { v4 as uuidv4 } from "uuid";
@@ -1277,13 +1274,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk Auto Alt Text: walks every tour's itinerary photos and gallery
-  // images and OVERWRITES imageAlt/galleryAlt with Google Vision-driven
+  // images and OVERWRITES imageAlt/galleryAlt with Hugging Face-driven
   // luxury copy — unlike bulk-auto-enrich above, this never checks whether
-  // a field is already filled, by design (see vision-alt-text.ts's module
-  // comment). Matches bulk-auto-enrich's own scope of "every tour" rather
-  // than filtering to published-only, for consistency with that job.
-  type VisionAltTextJobState = {
-    status: "idle" | "running" | "completed" | "failed" | "stopped_quota";
+  // a field is already filled, by design (see huggingface-alt-text.ts's
+  // module comment). Matches bulk-auto-enrich's own scope of "every tour"
+  // rather than filtering to published-only, for consistency with that job.
+  //
+  // No persisted quota tracking here (unlike the earlier Google Vision
+  // version this replaced) — Hugging Face's free tier is rate-limited, not
+  // billed, so there's no overage-cost risk to guard against with a hard
+  // pre-check. It follows huggingface-alt-text.ts's own throttled queue
+  // instead, and simply stops the run (rather than failing every remaining
+  // image one by one) if that queue's cap is ever hit mid-run.
+  type AltTextJobState = {
+    status: "idle" | "running" | "completed" | "failed" | "stopped_rate_limit";
     startedAt?: string;
     finishedAt?: string;
     totalImages: number;
@@ -1293,7 +1297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     errors: string[];
   };
 
-  let visionAltTextJob: VisionAltTextJobState = {
+  let altTextJob: AltTextJobState = {
     status: "idle",
     totalImages: 0,
     processedImages: 0,
@@ -1313,12 +1317,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return count;
   }
 
-  // Resolves a stored image URL to something the Vision API can read: local
-  // uploads (the vast majority — everything Suggest Photo/direct upload
-  // produces) are read straight off disk and sent as raw bytes, so analysis
-  // never depends on the image being publicly reachable; a manually-pasted
-  // external URL is passed through as imageUri instead.
-  async function resolveVisionImageSource(imageUrl: string): Promise<{ content: Buffer } | { imageUri: string } | null> {
+  // Resolves a stored image URL to something that can be sent to the
+  // captioning model: local uploads (the vast majority — everything Suggest
+  // Photo/direct upload produces) are read straight off disk and sent as
+  // raw bytes, so analysis never depends on the image being publicly
+  // reachable; a manually-pasted external URL is passed through as
+  // imageUri (downloaded by huggingface-alt-text.ts) instead.
+  async function resolveAltTextImageSource(imageUrl: string): Promise<{ content: Buffer } | { imageUri: string } | null> {
     const trimmed = imageUrl.trim();
     if (!trimmed) return null;
     const uploadsPrefix = "/api/assets/uploads/";
@@ -1339,18 +1344,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return null;
   }
 
-  async function runBulkVisionAltText(adminUserId: string) {
+  async function runBulkAutoAltText() {
     try {
       const tours = await storage.getTours();
-      let usage = await getVisionUsage();
-
-      const recordSuccess = async () => {
-        usage = { ...usage, unitsUsed: usage.unitsUsed + 2 };
-        await recordVisionUsage(usage.unitsUsed, adminUserId);
-      };
 
       outer: for (const tour of tours) {
-        if (visionAltTextJob.status !== "running") break;
+        if (altTextJob.status !== "running") break;
         try {
           const itinerary: ItineraryDay[] = Array.isArray(tour.itinerary) ? (tour.itinerary as ItineraryDay[]) : [];
           const galleryAlt: Record<string, string> = { ...(tour.galleryAlt || {}) };
@@ -1358,44 +1357,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           for (const day of itinerary) {
             if (!day.image?.trim()) continue;
-            if (visionAltTextJob.status !== "running") break outer;
-            visionAltTextJob.processedImages++;
+            if (altTextJob.status !== "running") break outer;
+            altTextJob.processedImages++;
             try {
-              const source = await resolveVisionImageSource(day.image);
+              const source = await resolveAltTextImageSource(day.image);
               if (!source) throw new Error("Image could not be read");
-              day.imageAlt = await analyzeImageForAltText(source, day.placeName || undefined);
+              day.imageAlt = await analyzeImageForAltText(source, { placeNameHint: day.placeName || undefined });
               tourChanged = true;
-              visionAltTextJob.succeededImages++;
-              await recordSuccess();
+              altTextJob.succeededImages++;
             } catch (err: any) {
-              if (err instanceof VisionQuotaExceededError) {
-                visionAltTextJob.status = "stopped_quota";
-                visionAltTextJob.errors.push(`Stopped: Google Vision reported the monthly quota is exhausted (${err.message}).`);
+              if (err instanceof HuggingFaceRateLimitError) {
+                altTextJob.status = "stopped_rate_limit";
+                altTextJob.errors.push(`Stopped: ${err.message}`);
                 break outer;
               }
-              visionAltTextJob.failedImages++;
-              visionAltTextJob.errors.push(`${tour.slug} — day ${day.day}: ${err.message}`);
+              altTextJob.failedImages++;
+              altTextJob.errors.push(`${tour.slug} — day ${day.day}: ${err.message}`);
             }
           }
 
           for (const url of tour.gallery || []) {
-            if (visionAltTextJob.status !== "running") break outer;
-            visionAltTextJob.processedImages++;
+            if (altTextJob.status !== "running") break outer;
+            altTextJob.processedImages++;
             try {
-              const source = await resolveVisionImageSource(url);
+              const source = await resolveAltTextImageSource(url);
               if (!source) throw new Error("Image could not be read");
-              galleryAlt[url] = await analyzeImageForAltText(source);
+              galleryAlt[url] = await analyzeImageForAltText(source, { locationHint: tour.title });
               tourChanged = true;
-              visionAltTextJob.succeededImages++;
-              await recordSuccess();
+              altTextJob.succeededImages++;
             } catch (err: any) {
-              if (err instanceof VisionQuotaExceededError) {
-                visionAltTextJob.status = "stopped_quota";
-                visionAltTextJob.errors.push(`Stopped: Google Vision reported the monthly quota is exhausted (${err.message}).`);
+              if (err instanceof HuggingFaceRateLimitError) {
+                altTextJob.status = "stopped_rate_limit";
+                altTextJob.errors.push(`Stopped: ${err.message}`);
                 break outer;
               }
-              visionAltTextJob.failedImages++;
-              visionAltTextJob.errors.push(`${tour.slug} — gallery photo: ${err.message}`);
+              altTextJob.failedImages++;
+              altTextJob.errors.push(`${tour.slug} — gallery photo: ${err.message}`);
             }
           }
 
@@ -1403,59 +1400,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.updateTour(tour.id, { itinerary: itinerary as any, galleryAlt });
           }
         } catch (err: any) {
-          visionAltTextJob.errors.push(`Tour "${tour.slug}" failed: ${err.message}`);
+          altTextJob.errors.push(`Tour "${tour.slug}" failed: ${err.message}`);
         }
       }
 
-      if (visionAltTextJob.status === "running") {
-        visionAltTextJob.status = "completed";
+      if (altTextJob.status === "running") {
+        altTextJob.status = "completed";
       }
-      visionAltTextJob.finishedAt = new Date().toISOString();
+      altTextJob.finishedAt = new Date().toISOString();
     } catch (err: any) {
-      visionAltTextJob.status = "failed";
-      visionAltTextJob.finishedAt = new Date().toISOString();
-      visionAltTextJob.errors.push(`Job failed: ${err.message}`);
+      altTextJob.status = "failed";
+      altTextJob.finishedAt = new Date().toISOString();
+      altTextJob.errors.push(`Job failed: ${err.message}`);
     }
   }
 
-  // Reports the exact numbers an admin needs before deciding to start the
-  // job: how many images actually exist right now, how much of the monthly
-  // quota is already spent, and whether this run would exceed it — computed
-  // live against the real database, not a stale estimate.
-  // Nested two levels deep (not /api/cms/tours/vision-usage-preview) so it
-  // can't collide with the earlier GET /api/cms/tours/:id route above,
-  // which matches any single path segment after /tours/.
-  app.get("/api/cms/tours/bulk-vision-alt-text/usage-preview", requireAuth, requireEditor, async (_req, res) => {
+  // Lightweight preview (no quota math, unlike the Vision version this
+  // replaced — Hugging Face's free tier has no overage-billing risk to
+  // guard against) so the Settings UI can show a real image count and
+  // disable the button when the API token isn't configured.
+  app.get("/api/cms/tours/bulk-auto-alt-text/usage-preview", requireAuth, requireEditor, async (_req, res) => {
     try {
       const totalImages = await countTotalTourImages();
-      const quota = await checkVisionQuota(totalImages);
-      res.json({ success: true, configured: isVisionConfigured(), totalImages, quota });
+      res.json({ success: true, configured: isHuggingFaceConfigured(), totalImages });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || "Failed to compute Vision usage preview" });
+      res.status(500).json({ success: false, message: error.message || "Failed to compute alt-text usage preview" });
     }
   });
 
-  app.post("/api/cms/tours/bulk-vision-alt-text", requireAuth, requireEditor, async (req, res) => {
-    if (!isVisionConfigured()) {
-      return res.status(400).json({ success: false, message: "Google Vision is not configured" });
+  app.post("/api/cms/tours/bulk-auto-alt-text", requireAuth, requireEditor, async (_req, res) => {
+    if (!isHuggingFaceConfigured()) {
+      return res.status(400).json({ success: false, message: "Hugging Face is not configured" });
     }
-    if (visionAltTextJob.status === "running") {
-      return res.status(409).json({ success: false, message: "A bulk Vision alt-text job is already running", job: visionAltTextJob });
+    if (altTextJob.status === "running") {
+      return res.status(409).json({ success: false, message: "A bulk auto alt-text job is already running", job: altTextJob });
     }
     try {
-      const authReq = req as AuthenticatedRequest;
       const totalImages = await countTotalTourImages();
-      const quota = await checkVisionQuota(totalImages);
-      // Hard pre-check — refuses to start rather than stopping partway
-      // through, so nothing is ever spent before the admin sees these numbers.
-      if (!quota.ok) {
-        return res.status(400).json({
-          success: false,
-          message: `This run needs ${quota.unitsNeeded} Vision units, but only ${quota.remaining} remain this month (${quota.alreadyUsed}/${quota.limit} already used). Refusing to start — wait for next month or process fewer tours.`,
-          quota,
-        });
-      }
-      visionAltTextJob = {
+      altTextJob = {
         status: "running",
         startedAt: new Date().toISOString(),
         totalImages,
@@ -1464,15 +1446,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         failedImages: 0,
         errors: [],
       };
-      runBulkVisionAltText(authReq.user!.id);
-      res.json({ success: true, job: visionAltTextJob });
+      runBulkAutoAltText();
+      res.json({ success: true, job: altTextJob });
     } catch (error: any) {
-      res.status(500).json({ success: false, message: error.message || "Failed to start bulk Vision alt-text job" });
+      res.status(500).json({ success: false, message: error.message || "Failed to start bulk auto alt-text job" });
     }
   });
 
-  app.get("/api/cms/tours/bulk-vision-alt-text/status", requireAuth, requireEditor, async (_req, res) => {
-    res.json({ success: true, job: visionAltTextJob });
+  app.get("/api/cms/tours/bulk-auto-alt-text/status", requireAuth, requireEditor, async (_req, res) => {
+    res.json({ success: true, job: altTextJob });
   });
 
   // Update tour (admin/editor access)

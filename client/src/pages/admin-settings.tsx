@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle, Sparkles, AlertTriangle } from "lucide-react";
+import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle, Sparkles } from "lucide-react";
 import { z } from "zod";
 import {
   Form,
@@ -454,28 +454,21 @@ export default function AdminSettings() {
     },
   });
 
-  // Bulk Auto Alt Text (Google Vision) — the usage preview is fetched live
-  // whenever the Database section is open, so the number an admin sees is
-  // always the real current count, not a stale estimate computed earlier.
-  type VisionQuota = {
-    ok: boolean;
-    alreadyUsed: number;
-    imagesToProcess: number;
-    unitsNeeded: number;
-    remaining: number;
-    limit: number;
-  };
-
-  const { data: visionPreviewData, isLoading: visionPreviewLoading } = useQuery<{
+  // Bulk Auto Alt Text (Hugging Face) — the image-count preview is fetched
+  // live whenever the Database section is open, so the number an admin sees
+  // is always the real current count. Unlike the earlier Google Vision
+  // version, there's no quota math here: Hugging Face's free tier is
+  // rate-limited rather than billed, so there's no overage-cost risk to
+  // warn about before starting.
+  const { data: altTextPreviewData, isLoading: altTextPreviewLoading } = useQuery<{
     success: boolean;
     configured: boolean;
     totalImages: number;
-    quota: VisionQuota;
   }>({
-    queryKey: ["/api/cms/tours/bulk-vision-alt-text/usage-preview"],
+    queryKey: ["/api/cms/tours/bulk-auto-alt-text/usage-preview"],
     queryFn: async () => {
       const token = localStorage.getItem("adminToken");
-      const response = await fetch("/api/cms/tours/bulk-vision-alt-text/usage-preview", {
+      const response = await fetch("/api/cms/tours/bulk-auto-alt-text/usage-preview", {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.json();
@@ -483,8 +476,8 @@ export default function AdminSettings() {
     enabled: activeSection === "database",
   });
 
-  type VisionAltTextJob = {
-    status: "idle" | "running" | "completed" | "failed" | "stopped_quota";
+  type AltTextJob = {
+    status: "idle" | "running" | "completed" | "failed" | "stopped_rate_limit";
     totalImages: number;
     processedImages: number;
     succeededImages: number;
@@ -492,53 +485,50 @@ export default function AdminSettings() {
     errors: string[];
   };
 
-  const [visionPolling, setVisionPolling] = useState(false);
+  const [altTextPolling, setAltTextPolling] = useState(false);
 
-  const { data: visionStatusData } = useQuery<{ success: boolean; job: VisionAltTextJob }>({
-    queryKey: ["/api/cms/tours/bulk-vision-alt-text/status"],
+  const { data: altTextStatusData } = useQuery<{ success: boolean; job: AltTextJob }>({
+    queryKey: ["/api/cms/tours/bulk-auto-alt-text/status"],
     queryFn: async () => {
       const token = localStorage.getItem("adminToken");
-      const response = await fetch("/api/cms/tours/bulk-vision-alt-text/status", {
+      const response = await fetch("/api/cms/tours/bulk-auto-alt-text/status", {
         headers: { Authorization: `Bearer ${token}` },
       });
       return response.json();
     },
-    enabled: visionPolling,
-    refetchInterval: visionPolling ? 2000 : false,
+    enabled: altTextPolling,
+    refetchInterval: altTextPolling ? 2000 : false,
   });
 
-  const visionJob = visionStatusData?.job;
+  const altTextJob = altTextStatusData?.job;
 
   useEffect(() => {
-    if (visionJob && visionJob.status !== "running") {
-      setVisionPolling(false);
-      // The next run's pre-check needs the just-updated quota usage, not the
-      // number fetched before this job spent any of it.
-      queryClient.invalidateQueries({ queryKey: ["/api/cms/tours/bulk-vision-alt-text/usage-preview"] });
+    if (altTextJob && altTextJob.status !== "running") {
+      setAltTextPolling(false);
     }
-  }, [visionJob?.status]);
+  }, [altTextJob?.status]);
 
-  const startBulkVisionMutation = useMutation({
+  const startBulkAltTextMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("adminToken");
-      const response = await fetch("/api/cms/tours/bulk-vision-alt-text", {
+      const response = await fetch("/api/cms/tours/bulk-auto-alt-text", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to start bulk Vision alt-text job");
+      if (!response.ok) throw new Error(data.message || "Failed to start bulk auto alt-text job");
       return data;
     },
     onSuccess: () => {
-      setVisionPolling(true);
+      setAltTextPolling(true);
       toast({
-        title: "Bulk Vision alt-text started",
+        title: "Bulk auto alt-text started",
         description: "Running in the background — this page polls for progress.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Refused to start",
+        title: "Error",
         description: error.message,
         variant: "destructive",
       });
@@ -1084,7 +1074,7 @@ export default function AdminSettings() {
             </Card>
           )}
 
-          {/* Bulk Auto Alt Text (Google Vision) */}
+          {/* Bulk Auto Alt Text (Hugging Face) */}
           {activeSection === "database" && (
             <Card>
               <CardHeader>
@@ -1093,67 +1083,54 @@ export default function AdminSettings() {
                   Bulk Auto Alt Text
                 </CardTitle>
                 <CardDescription>
-                  Analyzes every itinerary photo and gallery image across every tour with Google Vision (label +
-                  landmark detection) and writes a luxury-toned, SEO-oriented alt text for each — unlike Bulk
+                  Analyzes every itinerary photo and gallery image across every tour with Hugging Face Vision
+                  (image captioning) and writes a luxury-toned, SEO-oriented alt text for each — unlike Bulk
                   Auto-Enrich above, this OVERWRITES any alt text already set. Runs in the background; this page
                   polls for progress.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {visionPreviewData && !visionPreviewData.configured && (
+                {altTextPreviewData && !altTextPreviewData.configured && (
                   <p className="flex items-center gap-2 text-sm text-muted-foreground">
                     <XCircle className="h-4 w-4 shrink-0" />
-                    Google Vision is not configured — set GOOGLE_APPLICATION_CREDENTIALS on the server to enable this.
+                    Hugging Face is not configured — set HUGGINGFACE_API_TOKEN on the server to enable this.
                   </p>
                 )}
 
-                {visionPreviewData?.configured && (
-                  <p className="text-sm text-muted-foreground" data-testid="text-vision-quota-preview">
-                    {visionPreviewData.totalImages} images across every tour right now — this run would use{" "}
-                    {visionPreviewData.quota.unitsNeeded} of the {visionPreviewData.quota.remaining} Vision units
-                    left this month ({visionPreviewData.quota.alreadyUsed}/{visionPreviewData.quota.limit} already
-                    used).
-                  </p>
-                )}
-
-                {visionPreviewData?.configured && !visionPreviewData.quota.ok && (
-                  <p className="flex items-start gap-2 text-sm text-destructive" data-testid="text-vision-quota-warning">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    This would exceed the free monthly quota by{" "}
-                    {visionPreviewData.quota.unitsNeeded - visionPreviewData.quota.remaining} units — refusing to
-                    start. Wait for next month, or process fewer tours by hand.
+                {altTextPreviewData?.configured && (
+                  <p className="text-sm text-muted-foreground" data-testid="text-alt-text-preview">
+                    {altTextPreviewData.totalImages} images across every tour right now.
                   </p>
                 )}
 
                 <Button
-                  onClick={() => startBulkVisionMutation.mutate()}
+                  onClick={() => startBulkAltTextMutation.mutate()}
                   disabled={
-                    startBulkVisionMutation.isPending ||
-                    visionJob?.status === "running" ||
-                    visionPreviewLoading ||
-                    !visionPreviewData?.configured ||
-                    !visionPreviewData?.quota.ok
+                    startBulkAltTextMutation.isPending ||
+                    altTextJob?.status === "running" ||
+                    altTextPreviewLoading ||
+                    !altTextPreviewData?.configured
                   }
-                  data-testid="button-bulk-vision-alt-text"
+                  data-testid="button-bulk-auto-alt-text"
                 >
-                  {visionJob?.status === "running" ? "Running..." : "Run Bulk Auto Alt Text"}
+                  {altTextJob?.status === "running" ? "Running..." : "Run Bulk Auto Alt Text"}
                 </Button>
 
-                {visionJob && visionJob.status !== "idle" && (
+                {altTextJob && altTextJob.status !== "idle" && (
                   <div className="space-y-2 text-sm">
                     <p
                       className={
-                        visionJob.status === "failed" || visionJob.status === "stopped_quota"
+                        altTextJob.status === "failed" || altTextJob.status === "stopped_rate_limit"
                           ? "text-destructive"
                           : "text-muted-foreground"
                       }
                     >
-                      Status: {visionJob.status} — {visionJob.processedImages}/{visionJob.totalImages} images
-                      processed, {visionJob.succeededImages} succeeded, {visionJob.failedImages} failed
+                      Status: {altTextJob.status} — {altTextJob.processedImages}/{altTextJob.totalImages} images
+                      processed, {altTextJob.succeededImages} succeeded, {altTextJob.failedImages} failed
                     </p>
-                    {visionJob.errors.length > 0 && (
+                    {altTextJob.errors.length > 0 && (
                       <ul className="space-y-1">
-                        {visionJob.errors.map((err, i) => (
+                        {altTextJob.errors.map((err, i) => (
                           <li key={i} className="flex items-start gap-2 text-destructive">
                             <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
                             <span>{err}</span>
@@ -1161,7 +1138,7 @@ export default function AdminSettings() {
                         ))}
                       </ul>
                     )}
-                    {visionJob.status === "completed" && (
+                    {altTextJob.status === "completed" && (
                       <p className="flex items-center gap-2 text-green-600">
                         <CheckCircle2 className="h-4 w-4 shrink-0" />
                         Done — review the updated tours in the Tours section.

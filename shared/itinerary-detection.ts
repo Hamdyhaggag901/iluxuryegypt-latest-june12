@@ -153,7 +153,7 @@ export function detectMeals(description: string): string[] {
 // Checked in order against the day's own description/activities text, first
 // match wins, so a more specific pattern (hot air balloon) is listed above a
 // broader one it could otherwise be mistaken for.
-// Exported so server/vision-alt-text.ts can reuse the same luxury-phrase
+// Exported so server/huggingface-alt-text.ts can reuse the same luxury-phrase
 // dictionary when composing alt text from Google Vision's own labels,
 // instead of maintaining a second, drifting copy of this list.
 export const ACTIVITY_ALT_PHRASES: Array<{ pattern: RegExp; activity: string; qualifier: string }> = [
