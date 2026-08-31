@@ -153,7 +153,10 @@ export function detectMeals(description: string): string[] {
 // Checked in order against the day's own description/activities text, first
 // match wins, so a more specific pattern (hot air balloon) is listed above a
 // broader one it could otherwise be mistaken for.
-const ACTIVITY_ALT_PHRASES: Array<{ pattern: RegExp; activity: string; qualifier: string }> = [
+// Exported so server/vision-alt-text.ts can reuse the same luxury-phrase
+// dictionary when composing alt text from Google Vision's own labels,
+// instead of maintaining a second, drifting copy of this list.
+export const ACTIVITY_ALT_PHRASES: Array<{ pattern: RegExp; activity: string; qualifier: string }> = [
   { pattern: /hot air balloon/i, activity: "Sunrise hot air balloon flight", qualifier: "with panoramic views over the Nile Valley" },
   { pattern: /felucca/i, activity: "Private felucca sail", qualifier: "with a private crew and traditional sailing rig" },
   { pattern: /private (dinner|lunch)|fine dining/i, activity: "Private fine dining experience", qualifier: "with bespoke table service" },
@@ -179,7 +182,7 @@ const ALT_TEXT_VARIANT_SUFFIXES = [
 // ("the Great Pyramids of Giza", "the Valley of the Kings") but not most
 // others ("Karnak Temple", "Abu Simbel") — this covers the common shapes in
 // KNOWN_EGYPT_LANDMARKS above without hardcoding per-landmark grammar.
-function withArticle(placeName: string): string {
+export function withArticle(placeName: string): string {
   const needsThe = /^(great |valley of|pyramids of|tombs of|colossi of|temples of)/i.test(placeName) || /pyramids$/i.test(placeName);
   return needsThe ? `the ${placeName}` : placeName;
 }

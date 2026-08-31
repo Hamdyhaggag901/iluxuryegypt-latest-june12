@@ -31,7 +31,7 @@ export default function ReadBeforeYouGoSection() {
               expect once you land.
             </p>
           </div>
-          <Link href="/blog">
+          <Link href="/blog" target="_blank" rel="noopener noreferrer">
             <span className="inline-block text-sm font-medium text-primary border-b border-accent pb-0.5 hover:text-accent transition-colors cursor-pointer whitespace-nowrap">
               View All Travel Guides
             </span>
@@ -40,7 +40,7 @@ export default function ReadBeforeYouGoSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {curated.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`}>
+            <Link key={post.slug} href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
               <article className="group cursor-pointer">
                 {post.featuredImage && (
                   <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-4">

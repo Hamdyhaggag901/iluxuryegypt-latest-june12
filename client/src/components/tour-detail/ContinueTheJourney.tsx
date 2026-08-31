@@ -62,6 +62,7 @@ export default function ContinueTheJourney({
                   price={t.price}
                   currency={t.currency}
                   link={`/${t.slug}`}
+                  openInNewTab
                 />
               </CarouselItem>
             ))}
@@ -75,7 +76,7 @@ export default function ContinueTheJourney({
         </Carousel>
 
         <div className="text-center mt-8 md:mt-12">
-          <Link href="/egypt-tour-packages">
+          <Link href="/egypt-tour-packages" target="_blank" rel="noopener noreferrer">
             <Button className="bg-primary hover:bg-primary/90 text-white px-6 md:px-8 py-4 md:py-6 text-sm md:text-base">
               View All Experiences
             </Button>

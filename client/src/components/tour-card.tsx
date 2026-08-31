@@ -17,6 +17,10 @@ export interface TourCardProps {
   price: number;
   currency?: string;
   link: string;
+  /** Opens the card's link in a new tab instead of navigating away — used
+   *  where the card sits on a page the visitor is likely still using (e.g.
+   *  a "you might also like" carousel), off by default everywhere else. */
+  openInNewTab?: boolean;
 }
 
 export default function TourCard({
@@ -31,11 +35,16 @@ export default function TourCard({
   price,
   currency = "USD",
   link,
+  openInNewTab = false,
 }: TourCardProps) {
   const currencySymbol = currency === "USD" ? "$" : `${currency} `;
 
   return (
-    <Link href={link} data-testid={`card-tour-${link}`}>
+    <Link
+      href={link}
+      data-testid={`card-tour-${link}`}
+      {...(openInNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+    >
       <article className="group h-full flex flex-col cursor-pointer bg-card border border-card-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
         {/* Cover image */}
         <div className="relative aspect-[4/3] overflow-hidden">
