@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Loader2, ArrowRight, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
-import TripBuilderModal from "@/components/trip-builder-modal";
 import type { Category, Tour } from "@shared/schema";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+
+// Pulls in react-hook-form + Radix select; load it only once someone
+// actually opens the trip builder instead of on every category page load.
+const TripBuilderModal = lazy(() => import("@/components/trip-builder-modal"));
 
 type CategoryGroup = "packages" | "day-tours" | "nile-cruise";
 
@@ -44,6 +47,7 @@ export default function CategoryGroupPage({
   basePath,
 }: CategoryGroupPageProps) {
   const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+  const [hasOpenedTripBuilder, setHasOpenedTripBuilder] = useState(false);
 
   const { data, isLoading, isError } = useQuery<{ success: boolean; categories: Category[] }>({
     queryKey: ["/api/public/categories", group],
@@ -158,7 +162,10 @@ export default function CategoryGroupPage({
       <section className="py-12 bg-background border-b border-accent/10">
         <div className="max-w-[90rem] mx-auto px-6 sm:px-10 lg:px-16">
           <button
-            onClick={() => setIsTripBuilderOpen(true)}
+            onClick={() => {
+              setHasOpenedTripBuilder(true);
+              setIsTripBuilderOpen(true);
+            }}
             className="group block w-full text-left"
             data-testid="button-category-tailor-made-cta"
           >
@@ -324,7 +331,11 @@ export default function CategoryGroupPage({
       </section>
 
       <Footer />
-      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+      {hasOpenedTripBuilder && (
+        <Suspense fallback={null}>
+          <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+        </Suspense>
+      )}
     </div>
   );
 }

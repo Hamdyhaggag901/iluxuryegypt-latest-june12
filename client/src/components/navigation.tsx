@@ -1,9 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, Phone, Search, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import TripBuilderModal from "@/components/trip-builder-modal";
+
+// Pulls in react-hook-form + Radix select; Navigation renders on every route,
+// so load that only once someone actually opens the trip builder instead of
+// on every page load.
+const TripBuilderModal = lazy(() => import("@/components/trip-builder-modal"));
 
 interface NavItem {
   id: string;
@@ -69,6 +73,7 @@ export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+  const [hasOpenedTripBuilder, setHasOpenedTripBuilder] = useState(false);
   const [location] = useLocation();
 
   const { data: navItemsResponse } = useQuery<{ success: boolean; navItems: NavItem[] }>({
@@ -281,7 +286,10 @@ export default function Navigation() {
 
           <div className="flex items-center gap-2 sm:gap-3">
             <Button
-              onClick={() => setIsTripBuilderOpen(true)}
+              onClick={() => {
+                setHasOpenedTripBuilder(true);
+                setIsTripBuilderOpen(true);
+              }}
               className="hidden sm:inline-flex bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-5 h-10 rounded-lg whitespace-nowrap"
               data-testid="button-nav-start-planning"
             >
@@ -397,6 +405,7 @@ export default function Navigation() {
             <Button
               onClick={() => {
                 setIsMobileMenuOpen(false);
+                setHasOpenedTripBuilder(true);
                 setIsTripBuilderOpen(true);
               }}
               className="w-full bg-accent hover:bg-accent/90 text-primary font-semibold py-6 text-base"
@@ -408,7 +417,11 @@ export default function Navigation() {
         </div>
       )}
 
-      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+      {hasOpenedTripBuilder && (
+        <Suspense fallback={null}>
+          <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+        </Suspense>
+      )}
     </nav>
   );
 }

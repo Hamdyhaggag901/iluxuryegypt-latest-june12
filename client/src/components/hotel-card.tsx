@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 interface HotelCardProps {
   image: string;
@@ -13,7 +14,8 @@ export default function HotelCard({ image, badge, location, name, link }: HotelC
     <article className="bg-card border border-card-border rounded-2xl overflow-hidden flex flex-col h-full">
       <div className="relative aspect-square sm:aspect-[4/3] overflow-hidden">
         <img
-          src={image}
+          {...getResponsiveImageProps(image, 640)}
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           alt={name}
           className="w-full h-full object-cover"
           loading="lazy"

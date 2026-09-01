@@ -105,12 +105,17 @@ export default function WhyUseSection() {
           {whyUseItems.map((item) => (
             <div
               key={item.id}
-              className={`relative bg-card shadow-xl overflow-hidden transition-all duration-700 ease-in-out border border-primary/10 hover:border-accent/50 group transform hover:shadow-2xl min-h-[280px] md:min-h-[320px] lg:min-h-0 ${
-                hoveredCard === null
-                  ? 'lg:flex-1'
-                  : hoveredCard === item.id
-                    ? 'lg:flex-[2.5]'
-                    : 'lg:flex-[0.5] lg:opacity-30'
+              // Fixed lg:flex-1 at all times (was flex-[2.5]/flex-[0.5] on
+              // hover) — animating flex-basis forces the whole row to
+              // recompute layout on every hover frame. The "expand" effect
+              // now comes from a transform: scale on just this card, which
+              // the compositor can animate without reflowing its siblings.
+              className={`relative bg-card shadow-xl overflow-hidden transition-all duration-500 ease-in-out border border-primary/10 hover:border-accent/50 group hover:shadow-2xl min-h-[280px] md:min-h-[320px] lg:min-h-0 lg:flex-1 ${
+                hoveredCard === item.id
+                  ? 'lg:scale-110 lg:z-20'
+                  : hoveredCard !== null
+                    ? 'lg:opacity-40'
+                    : ''
               }`}
               onMouseEnter={() => setHoveredCard(item.id)}
               onMouseLeave={() => setHoveredCard(null)}
@@ -121,10 +126,9 @@ export default function WhyUseSection() {
 
               {/* Main Card Content */}
               <div className="relative flex flex-col lg:flex-row h-full">
-                {/* Image Section */}
-                <div className={`relative overflow-hidden transition-all duration-700 ease-in-out h-48 md:h-56 lg:h-full ${
-                  hoveredCard === item.id ? 'lg:w-1/2' : 'lg:w-full'
-                }`}>
+                {/* Image Section — stays full width; the content panel below
+                    overlays on top instead of sharing flex space with it. */}
+                <div className="relative overflow-hidden h-48 md:h-56 lg:h-full lg:w-full">
                   <img
                     src={item.image}
                     alt={item.title}
@@ -135,38 +139,33 @@ export default function WhyUseSection() {
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10 transition-all duration-300 group-hover:from-black/70 group-hover:via-black/30 group-hover:to-black/5" />
 
-                  {/* Title on Image - Mobile & Default */}
-                  <div className={`absolute left-0 right-0 transform transition-all duration-500 ease-out lg:block ${
-                    hoveredCard === item.id
-                      ? 'bottom-4 lg:bottom-6 translate-y-0'
-                      : 'bottom-4 lg:bottom-1/2 lg:translate-y-1/2'
-                  }`}>
+                  {/* Title on Image */}
+                  <div className="absolute left-0 right-0 bottom-4 lg:bottom-6">
                     <div className="px-4 lg:px-6">
                       <div className="flex items-center justify-center mb-2 lg:mb-4">
                         <div className="w-8 lg:w-12 h-px bg-accent"></div>
                       </div>
 
-                      <h3 className={`font-serif font-bold text-white leading-tight transition-all duration-300 text-center text-lg lg:text-xl ${
-                        hoveredCard === item.id ? 'lg:text-2xl lg:group-hover:text-accent/90' : ''
-                      }`}>
+                      <h3 className="font-serif font-bold text-white leading-tight transition-colors duration-300 text-center text-lg lg:text-xl group-hover:text-accent/90">
                         {item.title}
                       </h3>
                     </div>
                   </div>
 
                   {/* Side Accent Line - Desktop only */}
-                  <div className={`hidden lg:block absolute left-0 top-6 bottom-6 bg-gradient-to-b from-accent/0 via-accent/80 to-accent/0 transition-all duration-300 ease-out ${
-                    hoveredCard === item.id ? 'w-1 via-accent/100' : 'w-0.5'
-                  }`} />
+                  <div className="hidden lg:block absolute left-0 top-6 bottom-6 w-1 bg-gradient-to-b from-accent/0 via-accent/80 to-accent/0 transition-opacity duration-300 ease-out opacity-50 group-hover:opacity-100" />
                 </div>
 
-                {/* Content Section - Always visible on mobile, expandable on desktop */}
-                <div className={`bg-gradient-to-br from-card via-card/95 to-accent/5 backdrop-blur-lg transition-all duration-500 ease-in-out overflow-hidden lg:border-l lg:border-accent/20 p-4 lg:p-0 ${
-                  hoveredCard === item.id ? 'lg:w-1/2 lg:opacity-100' : 'lg:w-0 lg:opacity-0'
-                }`}>
-                  <div className={`h-full flex flex-col justify-center lg:px-6 lg:py-8 transform transition-all duration-300 ease-in-out ${
-                    hoveredCard === item.id ? 'lg:translate-x-0 lg:opacity-100' : 'lg:translate-x-4 lg:opacity-0'
-                  }`}>
+                {/* Content Section — a fixed-size overlay panel that slides
+                    in from the right on hover (transform only), rather than
+                    growing from width:0 which reflowed the row. On mobile it
+                    stays in normal flow, stacked below the image. */}
+                <div
+                  className={`relative bg-gradient-to-br from-card via-card/95 to-accent/5 backdrop-blur-lg lg:border-l lg:border-accent/20 p-4 lg:p-0 lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2 transition-transform duration-500 ease-in-out ${
+                    hoveredCard === item.id ? 'lg:translate-x-0' : 'lg:translate-x-full'
+                  }`}
+                >
+                  <div className="h-full flex flex-col justify-center lg:px-6 lg:py-8">
                     <div className="text-center space-y-3 lg:space-y-5">
                       <p className="text-foreground/85 text-sm lg:text-base leading-relaxed font-light max-w-sm mx-auto">
                         {item.content}
@@ -177,8 +176,8 @@ export default function WhyUseSection() {
               </div>
 
               {/* Bottom Accent Line */}
-              <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent transition-all duration-300 ease-out ${
-                hoveredCard === item.id ? 'opacity-100 via-accent/70' : 'opacity-60'
+              <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent transition-opacity duration-300 ease-out ${
+                hoveredCard === item.id ? 'opacity-100' : 'opacity-60'
               }`} />
             </div>
           ))}

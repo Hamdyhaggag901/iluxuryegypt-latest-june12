@@ -133,7 +133,8 @@ function StayGridCard({ hotel }: { hotel: Hotel }) {
     >
       <div className="relative h-48 overflow-hidden">
         <img
-          src={hotel.image}
+          {...getResponsiveImageProps(hotel.image, 640)}
+          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           alt={`${hotel.name} — ${hotel.location}, Egypt`}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"

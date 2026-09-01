@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import type { Hotel } from "@shared/schema";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 // Import luxury Egyptian images
 import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
@@ -232,7 +233,8 @@ export default function Stay() {
       <Card className={cardClasses} data-testid={`hotel-card-${hotel.id}`}>
         <div className={`relative ${imageHeight} overflow-hidden`}>
           <img
-            src={hotel.image}
+            {...getResponsiveImageProps(hotel.image, isSpotlight ? 1080 : 640)}
+            sizes={isSpotlight ? "100vw" : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"}
             alt={`${hotel.name} luxury hotel in ${hotel.location}, Egypt`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             loading="lazy"

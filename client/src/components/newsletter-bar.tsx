@@ -1,34 +1,25 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle } from "lucide-react";
 
-const subscribeSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-});
-
-type SubscribeFormData = z.infer<typeof subscribeSchema>;
+// A single-field email form doesn't need react-hook-form + zod (~30KB of JS
+// that would otherwise load on every page via the footer).
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function NewsletterBar() {
+  const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<SubscribeFormData>({
-    resolver: zodResolver(subscribeSchema),
-    defaultValues: { email: "" },
-  });
-
   const subscribeMutation = useMutation({
-    mutationFn: async (data: SubscribeFormData) => {
+    mutationFn: async (email: string) => {
       const response = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ email }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Failed to subscribe");
@@ -36,7 +27,7 @@ export default function NewsletterBar() {
     },
     onSuccess: (data) => {
       setIsSubscribed(true);
-      form.reset();
+      setEmail("");
       toast({ title: "Subscribed!", description: data.message });
     },
     onError: (error: any) => {
@@ -48,8 +39,17 @@ export default function NewsletterBar() {
     },
   });
 
-  const onSubmit = (data: SubscribeFormData) => {
-    subscribeMutation.mutate(data);
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!EMAIL_RE.test(email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email",
+        variant: "destructive",
+      });
+      return;
+    }
+    subscribeMutation.mutate(email);
   };
 
   if (isSubscribed) {
@@ -62,11 +62,12 @@ export default function NewsletterBar() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2">
+    <form onSubmit={onSubmit} className="flex gap-2">
       <Input
         type="email"
         placeholder="Your email"
-        {...form.register("email")}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         className="h-9 w-48 bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/60 text-sm"
         disabled={subscribeMutation.isPending}
       />

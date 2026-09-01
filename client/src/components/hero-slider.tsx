@@ -4,6 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+import Player from "@vimeo/player";
+
+// Vimeo's "external/…hd.mp4?s=…" progressive-download links carry a
+// time-limited signed hash and 403 once it expires — they were never meant
+// to be hotlinked permanently. This matches that legacy format as well as
+// the canonical player.vimeo.com/video/ID and bare vimeo.com/ID forms, so
+// both the fallback data below and any slide already saved in the database
+// with an old signed URL resolve to a stable embed.
+function extractVimeoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(?:external\/|video\/)?(\d+)/);
+  return match ? match[1] : null;
+}
+
+function toVimeoEmbedUrl(url: string): string | null {
+  const id = extractVimeoId(url);
+  if (!id) return null;
+  return `https://player.vimeo.com/video/${id}?background=1&autoplay=1&loop=1&muted=1`;
+}
 
 interface Slide {
   id: string;
@@ -24,7 +42,7 @@ const fallbackSlides: Slide[] = [
   {
     id: "1",
     type: "video",
-    src: "https://player.vimeo.com/external/434045526.hd.mp4?s=c27eecc69a27dbc4ff2b87d38afc35f1a9e7c02d&profile_id=175",
+    src: "https://player.vimeo.com/video/434045526",
     poster: "",
     subtitle: "Discover Ancient Wonders",
     title: "The Pyramids of Giza",
@@ -37,7 +55,7 @@ const fallbackSlides: Slide[] = [
   {
     id: "2",
     type: "video",
-    src: "https://player.vimeo.com/external/371867030.hd.mp4?s=45917fe3ef32bd82d5ca8b7e72b5a8e5e71a1db3&profile_id=175",
+    src: "https://player.vimeo.com/video/371867030",
     poster: "",
     subtitle: "Sail in Ultimate Luxury",
     title: "Nile River Cruises",
@@ -50,7 +68,7 @@ const fallbackSlides: Slide[] = [
   {
     id: "3",
     type: "video",
-    src: "https://player.vimeo.com/external/370467553.hd.mp4?s=ce49c8c6d8e28a89298ffb4c53a2e842bdb11546&profile_id=175",
+    src: "https://player.vimeo.com/video/370467553",
     poster: "",
     subtitle: "Unwind in Paradise",
     title: "Red Sea Retreats",
@@ -104,6 +122,10 @@ export default function HeroSlider() {
   // retrying against a broken element.
   const [erroredSlides, setErroredSlides] = useState<Set<number>>(() => new Set());
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  // Vimeo slides render as an iframe (background-mode embed) instead of a
+  // <video> tag, so playback/mute are controlled through the official
+  // Player SDK's postMessage API rather than direct DOM properties.
+  const vimeoPlayers = useRef<Record<number, Player>>({});
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -148,6 +170,15 @@ export default function HeroSlider() {
         }
       }
     });
+    Object.entries(vimeoPlayers.current).forEach(([indexStr, player]) => {
+      const index = Number(indexStr);
+      if (index === currentSlide) {
+        player.setCurrentTime(0).catch(() => {});
+        player.play().catch(() => {});
+      } else {
+        player.pause().catch(() => {});
+      }
+    });
   }, [currentSlide]);
 
   const goToSlide = (index: number) => {
@@ -174,11 +205,15 @@ export default function HeroSlider() {
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
     videoRefs.current.forEach((video) => {
       if (video) {
-        video.muted = !isMuted;
+        video.muted = nextMuted;
       }
+    });
+    Object.values(vimeoPlayers.current).forEach((player) => {
+      player.setMuted(nextMuted).catch(() => {});
     });
   };
 
@@ -205,6 +240,25 @@ export default function HeroSlider() {
                   loading={index === 0 ? "eager" : "lazy"}
                 />
               )
+            ) : slide.type === "video" && toVimeoEmbedUrl(slide.src) ? (
+              <iframe
+                key={slide.src}
+                ref={(el) => {
+                  if (el && !vimeoPlayers.current[index]) {
+                    const player = new Player(el);
+                    vimeoPlayers.current[index] = player;
+                    player.setMuted(isMuted).catch(() => {});
+                    player.on("error", () =>
+                      setErroredSlides((prev) => new Set(prev).add(index))
+                    );
+                  }
+                }}
+                src={toVimeoEmbedUrl(slide.src)!}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                style={{ border: 0 }}
+                allow="autoplay; fullscreen"
+                title={slide.title}
+              />
             ) : slide.type === "video" ? (
               <video
                 ref={(el) => (videoRefs.current[index] = el)}

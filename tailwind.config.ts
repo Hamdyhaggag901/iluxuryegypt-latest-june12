@@ -45,6 +45,9 @@ export default {
           DEFAULT: "hsl(var(--accent) / <alpha-value>)",
           foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
           border: "var(--accent-border)",
+          // Same hue as DEFAULT but contrast-safe for text on a light card —
+          // see the --accent-readable comment in index.css.
+          readable: "hsl(var(--accent-readable) / <alpha-value>)",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive) / <alpha-value>)",

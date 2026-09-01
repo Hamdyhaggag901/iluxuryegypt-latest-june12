@@ -36,6 +36,8 @@ import {
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
+import sharp from "sharp";
+import fs from "fs";
 import { 
   hashPassword, 
   verifyPassword, 
@@ -1494,14 +1496,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Configure multer for file uploads
   const uploadPath = path.resolve(import.meta.dirname, "..", "attached_assets", "uploads");
-  
+  // Resized/converted variants served by the on-the-fly image route below are
+  // cached here so repeat requests for the same file+width are a disk read,
+  // not a re-encode.
+  const uploadCachePath = path.join(uploadPath, ".cache");
+
   // Ensure uploads directory exists
-  import('fs').then(fs => {
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-      console.log('Created uploads directory:', uploadPath);
-    }
-  });
+  if (!fs.existsSync(uploadPath)) {
+    fs.mkdirSync(uploadPath, { recursive: true });
+    console.log('Created uploads directory:', uploadPath);
+  }
+  if (!fs.existsSync(uploadCachePath)) {
+    fs.mkdirSync(uploadCachePath, { recursive: true });
+  }
+
+  // Raster formats we'll transcode to WebP. Skips GIF (would lose animation)
+  // and formats that are already efficient (webp/avif/svg).
+  const OPTIMIZABLE_IMAGE_EXT = new Set([".jpg", ".jpeg", ".png"]);
 
   const storage_config = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -1568,12 +1579,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
+      let finalFilename = req.file.filename;
+      let finalMimeType = req.file.mimetype;
+      let finalSize = req.file.size;
+
+      const ext = path.extname(req.file.filename).toLowerCase();
+      if (req.file.mimetype.startsWith("image/") && OPTIMIZABLE_IMAGE_EXT.has(ext)) {
+        try {
+          const webpFilename = `${path.basename(req.file.filename, ext)}.webp`;
+          const webpPath = path.join(uploadPath, webpFilename);
+          await sharp(req.file.path).rotate().webp({ quality: 80 }).toFile(webpPath);
+          await fs.promises.unlink(req.file.path);
+          finalFilename = webpFilename;
+          finalMimeType = "image/webp";
+          finalSize = (await fs.promises.stat(webpPath)).size;
+        } catch (conversionError) {
+          console.error('WebP conversion failed, keeping original upload:', conversionError);
+        }
+      }
+
       const mediaData = {
-        filename: req.file.filename,
+        filename: finalFilename,
         originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
-        url: `/api/assets/uploads/${req.file.filename}`,
+        mimeType: finalMimeType,
+        size: finalSize,
+        url: `/api/assets/uploads/${finalFilename}`,
         uploadedBy: authReq.user!.id
       };
 
@@ -2066,6 +2096,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching Trusted Worldwide page content:', error);
       res.status(500).json({ message: 'Error fetching Trusted Worldwide page content' });
+    }
+  });
+
+  // On-the-fly image optimization for uploaded media. Handles two cases the
+  // upload-time WebP conversion above doesn't: files uploaded before that
+  // conversion existed, and responsive width variants (?w=640) for srcset —
+  // both are generated once and cached to disk so repeat requests are just a
+  // file read, not a re-encode.
+  const RASTER_IMAGE_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
+  app.get("/api/assets/uploads/:filename", async (req, res, next) => {
+    try {
+      const filename = req.params.filename;
+      if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
+        return next();
+      }
+      const srcPath = path.join(uploadPath, filename);
+      if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) {
+        return next();
+      }
+
+      const ext = path.extname(filename).toLowerCase();
+      if (!RASTER_IMAGE_EXT.has(ext)) {
+        return next(); // videos, PDFs, docs, GIFs (would lose animation) — serve as-is
+      }
+
+      const widthParam = req.query.w ? parseInt(String(req.query.w), 10) : NaN;
+      const width = widthParam > 0 && widthParam <= 3840 ? widthParam : undefined;
+
+      if (!width && (ext === ".webp" || ext === ".avif")) {
+        return next(); // already an efficient format and no resize requested
+      }
+
+      const cacheKey = `${path.basename(filename, ext)}${width ? `-w${width}` : "-orig"}.webp`;
+      const cachePath = path.join(uploadCachePath, cacheKey);
+
+      if (!fs.existsSync(cachePath)) {
+        let pipeline = sharp(srcPath).rotate();
+        if (width) pipeline = pipeline.resize({ width, withoutEnlargement: true });
+        await pipeline.webp({ quality: 80 }).toFile(cachePath);
+      }
+
+      res.setHeader("Content-Type", "image/webp");
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      fs.createReadStream(cachePath).pipe(res);
+    } catch (error) {
+      console.error("On-the-fly image optimization failed, serving original:", error);
+      next();
     }
   });
 

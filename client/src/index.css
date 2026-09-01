@@ -146,6 +146,10 @@
   --muted-foreground: 210 6% 30%; /* Darker Obsidian */
   --accent: 41 37% 60%; /* Pharaoh Gold */
   --accent-foreground: 210 6% 6%; /* Obsidian Black */
+  /* Same hue, darkened so it's usable as text on a light card — plain
+     --accent at 60% lightness is ~2.3:1 against papyrus/white and fails
+     WCAG AA; this hits ~4.9:1. */
+  --accent-readable: 41 37% 38%; /* Pharaoh Gold, darkened for text */
 
 
 /* Why Use Section - Clean accordion effect handled in component */
@@ -241,6 +245,9 @@
   --muted-foreground: 33 22% 70%; /* Light Desert Sand */
   --accent: 41 37% 60%; /* Pharaoh Gold */
   --accent-foreground: 210 6% 6%; /* Obsidian Black */
+  /* Dark theme's cards are already near-black, so the plain gold already
+     has strong contrast as text — no darkening needed here. */
+  --accent-readable: 41 37% 60%; /* Pharaoh Gold */
   --destructive: 0 84% 60%; /* Red for errors */
   --destructive-foreground: 36 25% 96%; /* Papyrus White */
   --input: 220 26% 15%; /* Dark Nile Blue */

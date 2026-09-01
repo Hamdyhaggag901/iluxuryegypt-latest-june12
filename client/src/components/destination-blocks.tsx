@@ -128,7 +128,7 @@ export default function LuxuryPackagesSection({
 
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="flex flex-col gap-3 flex-grow">
-                    <span className="text-xs font-semibold text-accent tracking-[0.15em] uppercase">
+                    <span className="text-xs font-semibold text-accent-readable tracking-[0.15em] uppercase">
                       {tour.category}
                     </span>
 
@@ -139,7 +139,7 @@ export default function LuxuryPackagesSection({
                       {tour.title}
                     </h3>
 
-                    <p className="text-xs font-semibold text-accent tracking-[0.1em] uppercase">
+                    <p className="text-xs font-semibold text-accent-readable tracking-[0.1em] uppercase">
                       {tour.duration}
                       {tour.groupSize ? ` · ${tour.groupSize}` : ""}
                     </p>
@@ -149,7 +149,7 @@ export default function LuxuryPackagesSection({
                         <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
                           The Route
                         </span>
-                        <p className="text-sm text-muted-foreground/70 leading-relaxed">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
                           {tour.destinations.join(" → ")}
                         </p>
                       </div>

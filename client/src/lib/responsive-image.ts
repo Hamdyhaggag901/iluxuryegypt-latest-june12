@@ -1,13 +1,18 @@
-// Builds srcset/sizes for Unsplash-hosted images so mobile viewports fetch a
-// smaller file instead of the same desktop-sized (~2070px) image used everywhere.
-// Non-Unsplash sources (e.g. CMS-uploaded files served from /api/assets/uploads)
-// are passed through unchanged — they need a server-side resize pipeline, not
-// a URL-param trick, which is out of scope here.
+// Builds srcset/sizes so mobile viewports fetch a smaller file instead of the
+// same desktop-sized image used everywhere. Two sources support this via a
+// `?w=` query param: Unsplash-hosted images (Unsplash's own resizing), and
+// CMS-uploaded files served from /api/assets/uploads/ (resized + converted to
+// WebP on the fly by the server route, cached to disk after the first hit).
+// Any other source is passed through unchanged.
 
-const UNSPLASH_WIDTHS = [480, 768, 1080, 1600, 2070];
+const RESPONSIVE_WIDTHS = [480, 768, 1080, 1600, 2070];
 
 export function isUnsplashUrl(url: string | undefined | null): boolean {
   return !!url && url.includes("images.unsplash.com");
+}
+
+export function isCmsUploadUrl(url: string | undefined | null): boolean {
+  return !!url && url.includes("/api/assets/uploads/");
 }
 
 export function getResponsiveImageProps(
@@ -15,7 +20,7 @@ export function getResponsiveImageProps(
   defaultWidth = 1920
 ): { src: string; srcSet?: string; sizes?: string } {
   if (!url) return { src: "" };
-  if (!isUnsplashUrl(url)) return { src: url };
+  if (!isUnsplashUrl(url) && !isCmsUploadUrl(url)) return { src: url };
 
   const [base, query = ""] = url.split("?");
   const params = new URLSearchParams(query);
@@ -29,7 +34,7 @@ export function getResponsiveImageProps(
 
   return {
     src: buildUrl(defaultWidth),
-    srcSet: UNSPLASH_WIDTHS.map((w) => `${buildUrl(w)} ${w}w`).join(", "),
+    srcSet: RESPONSIVE_WIDTHS.map((w) => `${buildUrl(w)} ${w}w`).join(", "),
     sizes: "100vw",
   };
 }

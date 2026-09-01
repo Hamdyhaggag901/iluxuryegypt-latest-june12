@@ -749,7 +749,7 @@ export default function TourDetail() {
                             <span className="text-xs font-semibold text-muted-foreground tracking-[0.15em] uppercase block mb-1">
                               The Route
                             </span>
-                            <p className="text-xs md:text-sm text-muted-foreground/70 leading-relaxed">
+                            <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
                               {t.destinations.join(" → ")}
                             </p>
                           </div>
