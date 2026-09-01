@@ -314,7 +314,7 @@ export default function BlogArchive() {
                                     {/* Read More Button */}
                                     <div className="flex-shrink-0">
                                       <Button variant="outline" size="sm" asChild>
-                                        <Link href={`/blog/${post.id}`} data-testid={`read-more-${post.id}`}>
+                                        <Link href={`/blog/${post.id}`} data-testid={`read-more-${post.id}`} target="_blank" rel="noopener noreferrer">
                                           <span className="hidden sm:inline">Read Article</span>
                                           <span className="sm:hidden">Read</span>
                                           <ArrowRight className="ml-2 h-3 w-3" />

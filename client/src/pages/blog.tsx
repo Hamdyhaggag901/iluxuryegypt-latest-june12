@@ -232,7 +232,7 @@ export default function Blog() {
 
                     <div className="flex items-center justify-between">
                       <Button variant="outline" size="sm" asChild data-testid={`button-read-${post.slug}`}>
-                        <Link href={`/blog/${post.slug}`}>
+                        <Link href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
                           <span>Read More</span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
