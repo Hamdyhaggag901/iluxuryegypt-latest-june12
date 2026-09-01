@@ -54,10 +54,10 @@ import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
 import poolRiverImage from "@assets/pool-and-rivet_1757457083793.jpg";
 import sunsetFeluccaImage from "@assets/sunset-felucca_1757456567256.jpg";
 import khanKhaliliImage from "@assets/khan-khalili-restaurant_1757459228636.jpeg";
-import columnHallImage from "@assets/inside-the-column-hall_1757699232094.jpg";
-import islamicDistrictImage from "@assets/islamic-district-at-dawn_1757699232100.jpg";
-import poolsideDrinkImage from "@assets/pool-side-drink_1757699232100.jpg";
-import siwaPalmTreesImage from "@assets/siwa-palm-trees_1757699232101.jpg";
+import columnHallImage from "@assets/inside-the-column-hall_1757699232094.webp";
+import islamicDistrictImage from "@assets/islamic-district-at-dawn_1757699232100.webp";
+import poolsideDrinkImage from "@assets/pool-side-drink_1757699232100.webp";
+import siwaPalmTreesImage from "@assets/siwa-palm-trees_1757699232101.webp";
 
 // Default content for fallback
 const defaultContent: AboutPageContent = {

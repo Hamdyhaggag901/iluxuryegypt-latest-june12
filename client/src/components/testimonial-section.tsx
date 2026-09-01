@@ -122,6 +122,7 @@ export default function TestimonialSection() {
               disabled={isAnimating}
               className="pointer-events-auto w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-lg hover-elevate transition-all duration-300 disabled:opacity-50 hidden lg:flex"
               data-testid="testimonial-prev"
+              aria-label="Previous testimonial"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -131,6 +132,7 @@ export default function TestimonialSection() {
               disabled={isAnimating}
               className="pointer-events-auto w-12 h-12 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-lg hover-elevate transition-all duration-300 disabled:opacity-50 hidden lg:flex"
               data-testid="testimonial-next"
+              aria-label="Next testimonial"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -194,6 +196,7 @@ export default function TestimonialSection() {
                     : 'bg-accent/30 hover:bg-accent/60'
                 }`}
                 data-testid={`testimonial-dot-${index}`}
+                aria-label={`Go to testimonial ${index + 1}`}
               />
             ))}
           </div>

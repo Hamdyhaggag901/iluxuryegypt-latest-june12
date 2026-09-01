@@ -42,6 +42,7 @@ export default function ScrollToTopButton() {
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
       data-testid="button-scroll-to-top"
+      aria-label="Scroll to top"
       style={{
         position: 'fixed',
         bottom: '6rem',

@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Package, ArrowRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Tour } from "@shared/schema";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 interface LuxuryPackagesSectionProps {
   category?: string;
@@ -117,7 +118,8 @@ export default function LuxuryPackagesSection({
               >
                 <div className="relative h-64 overflow-hidden">
                   <img
-                    src={tour.heroImage}
+                    {...getResponsiveImageProps(tour.heroImage, 640)}
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                     alt={tour.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"

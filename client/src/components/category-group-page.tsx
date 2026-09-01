@@ -7,6 +7,7 @@ import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import TripBuilderModal from "@/components/trip-builder-modal";
 import type { Category, Tour } from "@shared/schema";
+import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 type CategoryGroup = "packages" | "day-tours" | "nile-cruise";
 
@@ -231,7 +232,8 @@ export default function CategoryGroupPage({
                     {/* Image section with overlay */}
                     <div className="aspect-[4/3] relative overflow-hidden flex-shrink-0">
                       <img
-                        src={category.image}
+                        {...getResponsiveImageProps(category.image, 640)}
+                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                         alt={category.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         loading="lazy"

@@ -97,6 +97,12 @@ export default function HeroSlider() {
   // the rest are preloaded in idle time so autoplay never shows a blank slide,
   // without making every slide's video/image compete for bandwidth up front.
   const [loadedSlides, setLoadedSlides] = useState<Set<number>>(() => new Set([0]));
+  // Vimeo's "external" progressive-download links carry a time-limited
+  // signed hash and can start 403ing once it expires. When that happens we
+  // stop rendering the <video> (falling back to the section's black
+  // background + gradient) instead of leaving a permanently failed request
+  // retrying against a broken element.
+  const [erroredSlides, setErroredSlides] = useState<Set<number>>(() => new Set());
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -190,7 +196,16 @@ export default function HeroSlider() {
               marked loaded, so the initial page load fetches just one hero
               media file instead of every slide's video/image at once. */}
           {loadedSlides.has(index) && (
-            slide.type === "video" ? (
+            erroredSlides.has(index) ? (
+              slide.poster && (
+                <img
+                  {...getResponsiveImageProps(slide.poster)}
+                  alt={slide.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+              )
+            ) : slide.type === "video" ? (
               <video
                 ref={(el) => (videoRefs.current[index] = el)}
                 className="absolute inset-0 w-full h-full object-cover"
@@ -200,6 +215,9 @@ export default function HeroSlider() {
                 loop
                 playsInline
                 preload={index === 0 ? "auto" : "metadata"}
+                onError={() =>
+                  setErroredSlides((prev) => new Set(prev).add(index))
+                }
               />
             ) : (
               <img

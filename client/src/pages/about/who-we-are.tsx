@@ -49,9 +49,9 @@ import pyramidLobbyImage from "@assets/pyramid-from-lobby_1757459228637.jpeg";
 import menahousePyramidImage from "@assets/the-pyramid-from-mena-house_1757459228638.jpeg";
 import sunsetFeluccaImage from "@assets/sunset-felucca_1757456567256.jpg";
 import khanKhaliliImage from "@assets/khan-khalili-restaurant_1757459228636.jpeg";
-import islamicDistrictImage from "@assets/islamic-district-at-dawn_1757699232100.jpg";
-import poolsideDrinkImage from "@assets/pool-side-drink_1757699232100.jpg";
-import siwaPalmTreesImage from "@assets/siwa-palm-trees_1757699232101.jpg";
+import islamicDistrictImage from "@assets/islamic-district-at-dawn_1757699232100.webp";
+import poolsideDrinkImage from "@assets/pool-side-drink_1757699232100.webp";
+import siwaPalmTreesImage from "@assets/siwa-palm-trees_1757699232101.webp";
 
 // Default content
 const defaultContent: WhoWeArePageContent = {

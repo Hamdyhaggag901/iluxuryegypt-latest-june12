@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import luxuryHallImage from "@assets/elegant-hall_1757459228629.jpeg";
 import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
 import poolRiverImage from "@assets/pool-and-rivet_1757457083793.jpg";
-import columnHallImage from "@assets/inside-the-column-hall_1757699232094.jpg";
+import columnHallImage from "@assets/inside-the-column-hall_1757699232094.webp";
 
 interface ILuxuryDifferencePageContent {
   heroSubtitle: string;

@@ -18,7 +18,7 @@ import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
 import poolRiverImage from "@assets/pool-and-rivet_1757457083793.jpg";
 import sunsetFeluccaImage from "@assets/sunset-felucca_1757456567256.jpg";
 import khanKhaliliImage from "@assets/khan-khalili-restaurant_1757459228636.jpeg";
-import columnHallImage from "@assets/inside-the-column-hall_1757699232094.jpg";
+import columnHallImage from "@assets/inside-the-column-hall_1757699232094.webp";
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {

@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { Link } from "wouter";
-import insideColumnHallImg from "@assets/inside-the-column-hall_1757699232094.jpg";
-import islamicDistrictImg from "@assets/islamic-district-at-dawn_1757699232100.jpg";
-import poolSideDrinkImg from "@assets/pool-side-drink_1757699232100.jpg";
-import siwaPalmTreesImg from "@assets/siwa-palm-trees_1757699232101.jpg";
+import insideColumnHallImg from "@assets/inside-the-column-hall_1757699232094.webp";
+import islamicDistrictImg from "@assets/islamic-district-at-dawn_1757699232100.webp";
+import poolSideDrinkImg from "@assets/pool-side-drink_1757699232100.webp";
+import siwaPalmTreesImg from "@assets/siwa-palm-trees_1757699232101.webp";
 
 interface WhyUseItem {
   id: string;
@@ -129,6 +129,7 @@ export default function WhyUseSection() {
                     src={item.image}
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+                    loading="lazy"
                   />
 
                   {/* Gradient Overlay */}

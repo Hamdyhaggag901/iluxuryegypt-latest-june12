@@ -80,7 +80,7 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Call Us</h3>
               <p className="text-muted-foreground">{contact.phone}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Available 24/7</p>
+              <p className="text-sm text-muted-foreground mt-1">Available 24/7</p>
             </div>
 
             {/* Email */}
@@ -90,7 +90,7 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Email Us</h3>
               <p className="text-muted-foreground">{contact.email}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Response within 2 hours</p>
+              <p className="text-sm text-muted-foreground mt-1">Response within 2 hours</p>
             </div>
 
             {/* Consultation */}
@@ -100,7 +100,7 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Free Consultation</h3>
               <p className="text-muted-foreground">30-minute planning session</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">No commitment required</p>
+              <p className="text-sm text-muted-foreground mt-1">No commitment required</p>
             </div>
           </div>
         </div>
