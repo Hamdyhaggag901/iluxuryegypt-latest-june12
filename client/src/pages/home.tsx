@@ -3,6 +3,7 @@ import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
 import OurStorySection from "../components/our-story-section";
 import CategoriesCarouselSection from "../components/categories-carousel-section";
+import WhereYouWillStaySection from "../components/where-you-will-stay-section";
 import BrandBanner from "../components/brand-banner";
 import GuestExperienceIntro from "../components/guest-experience-intro";
 import WhyUseSection from "../components/why-use-section";
@@ -30,16 +31,17 @@ export default function Home() {
         <HeroSlider />
         <OurStorySection />
         <CategoriesCarouselSection />
+        <WhereYouWillStaySection />
         <BrandBanner />
         <GuestExperienceIntro />
         <WhyUseSection />
-        <HighlightsSection />
-        <LuxuryPackagesSection limit={3} />
+        <LuxuryPackagesSection limit={3} layout="bento" />
         <InteractiveMapSection />
+        <HighlightsSection />
         <TestimonialSection />
         <CallToActionSection />
-        <NewsletterSection />
         <HomeFAQSection />
+        <NewsletterSection />
       </main>
       <Footer />
       <ScrollToTopButton />
