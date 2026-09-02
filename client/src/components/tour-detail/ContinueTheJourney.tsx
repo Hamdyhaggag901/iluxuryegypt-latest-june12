@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Tour } from "@shared/schema";
 import TourCard from "@/components/tour-card";
+import { openLinkInNewTab } from "@/lib/open-in-new-tab";
 
 function similarityScore(current: Tour, candidate: Tour): number {
   let score = 0;
@@ -76,7 +77,7 @@ export default function ContinueTheJourney({
         </Carousel>
 
         <div className="text-center mt-8 md:mt-12">
-          <Link href="/egypt-tour-packages" target="_blank" rel="noopener noreferrer">
+          <Link href="/egypt-tour-packages" target="_blank" rel="noopener noreferrer" onClick={openLinkInNewTab}>
             <Button className="bg-primary hover:bg-primary/90 text-white px-6 md:px-8 py-4 md:py-6 text-sm md:text-base">
               View All Experiences
             </Button>

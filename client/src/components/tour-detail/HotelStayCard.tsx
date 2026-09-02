@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+import { openLinkInNewTab } from "@/lib/open-in-new-tab";
 
 export interface HotelStayCardProps {
   image: string;
@@ -38,7 +39,7 @@ export default function HotelStayCard({ image, imageAlt, location, name, badge, 
         </h3>
 
         <div className="mt-auto pt-3">
-          <Link href={link} target="_blank" rel="noopener noreferrer">
+          <Link href={link} target="_blank" rel="noopener noreferrer" onClick={openLinkInNewTab}>
             <span className="block w-full text-center border border-primary text-primary font-semibold text-sm py-3 rounded-md transition-colors duration-300 hover:bg-primary hover:text-primary-foreground cursor-pointer">
               View Details
             </span>

@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { openLinkInNewTab } from "@/lib/open-in-new-tab";
 
 export interface TourCardProps {
   image: string;
@@ -43,7 +44,7 @@ export default function TourCard({
     <Link
       href={link}
       data-testid={`card-tour-${link}`}
-      {...(openInNewTab ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      {...(openInNewTab ? { target: "_blank", rel: "noopener noreferrer", onClick: openLinkInNewTab } : {})}
     >
       <article className="group h-full flex flex-col cursor-pointer bg-card border border-card-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
         {/* Cover image */}

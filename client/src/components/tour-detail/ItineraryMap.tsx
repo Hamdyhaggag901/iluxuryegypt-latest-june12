@@ -202,7 +202,17 @@ export default function ItineraryMap({
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-0 lg:items-start">
           {/* Map — a small sticky bar on mobile so it stays visible while scrolling the day
               list; a full-height sticky column on desktop (lg:) as before. */}
-          <div className="w-full lg:w-[42%] sticky top-20 lg:top-24 z-30 lg:z-auto">
+          {/* Sticks directly beneath TourStickyNav's own sticky bar — its
+              published --tour-sticky-nav-height (header + tabs + price row,
+              all of which can vary in height) replaces what used to be a
+              hardcoded top-20/lg:top-24 guess that only ever matched the
+              header alone and drifted out of sync once that bar grew a
+              second row. Falls back to just the header height if the
+              variable isn't set for any reason (e.g. very first paint). */}
+          <div
+            className="w-full lg:w-[42%] sticky z-30 lg:z-auto"
+            style={{ top: "var(--tour-sticky-nav-height, 80px)" }}
+          >
             {bounds ? (
               <div className="itinerary-map-wrap relative h-[110px] lg:h-[calc(100vh-8rem)] rounded-lg lg:rounded-xl overflow-hidden border border-border shadow-md lg:shadow-lg [&_.leaflet-control-zoom]:hidden lg:[&_.leaflet-control-zoom]:block">
                 <MapContainer

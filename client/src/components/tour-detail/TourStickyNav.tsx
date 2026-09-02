@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Phone } from "lucide-react";
+import SpeakToExpertModal from "@/components/speak-to-expert-modal";
 import "./TourStickyNav.css";
 
 export interface TourStickyNavSection {
@@ -21,12 +23,17 @@ export default function TourStickyNav({
   price?: number;
   currency?: string;
 }) {
+  const symbol = currency === "USD" ? "$" : currency ? `${currency} ` : "$";
+  const formattedPrice = price != null ? new Intl.NumberFormat("en-US").format(price) : null;
+
   const [visibleSections, setVisibleSections] = useState<TourStickyNavSection[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const stickyContainerRef = useRef<HTMLDivElement>(null);
   const tabsScrollRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   // While true, the scroll-spy observer effect below doesn't even exist — a
@@ -108,6 +115,34 @@ export default function TourStickyNav({
     // once that happens so the observer actually attaches to a real node.
   }, [visibleSections]);
 
+  // Publishes the absolute distance from the viewport top to the bottom of
+  // this whole cluster (fixed header + tabs row + price row) as a CSS
+  // custom property on the root element, so other sticky/fixed elements
+  // further down the page (the itinerary map's own sticky mini-column) can
+  // position themselves directly beneath it without a hardcoded, easily-
+  // stale offset guess — el.getBoundingClientRect().height alone would only
+  // be this bar's own height, not counting the header stacked above it. A
+  // ResizeObserver rather than a one-off measurement, since the price row
+  // only appears once `price` resolves and the tabs can wrap differently at
+  // various widths.
+  useEffect(() => {
+    const el = stickyContainerRef.current;
+    if (!el) return;
+    const publish = () => {
+      document.documentElement.style.setProperty(
+        "--tour-sticky-nav-height",
+        `${HEADER_HEIGHT + el.getBoundingClientRect().height}px`
+      );
+    };
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--tour-sticky-nav-height");
+    };
+  }, [visibleSections, formattedPrice]);
+
   useLayoutEffect(() => {
     if (!activeId) return;
     const tab = tabRefs.current.get(activeId);
@@ -153,45 +188,78 @@ export default function TourStickyNav({
     <>
       <div ref={sentinelRef} />
       <div
-        className={`sticky z-30 bg-card/95 backdrop-blur-md border-b border-card-border transition-shadow duration-300 ${
+        ref={stickyContainerRef}
+        className={`sticky z-30 transition-shadow duration-300 ${
           isStuck ? "shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)]" : ""
         }`}
         style={{ top: HEADER_HEIGHT }}
       >
-        <div className="max-w-7xl mx-auto px-4">
-          <div
-            ref={tabsScrollRef}
-            className="tour-sticky-nav-tabs no-scrollbar relative flex items-center justify-between overflow-x-auto"
-          >
-            {indicator && (
-              <div
-                className="absolute bottom-0 h-[2.5px] bg-accent rounded-full transition-all duration-300 ease-out"
-                style={{ left: indicator.left, width: indicator.width }}
-              />
-            )}
-            {visibleSections.map((section) => {
-              const active = section.id === activeId;
-              return (
-                <button
-                  key={section.id}
-                  ref={(el) => {
-                    if (el) tabRefs.current.set(section.id, el);
-                    else tabRefs.current.delete(section.id);
-                  }}
-                  type="button"
-                  onClick={() => handleTabClick(section.id)}
-                  className={`relative shrink-0 whitespace-nowrap px-4 md:px-5 py-4 text-xs md:text-sm uppercase tracking-wider transition-all duration-300 ${
-                    active ? "text-primary font-bold scale-[1.03]" : "text-muted-foreground font-medium hover:text-primary"
-                  }`}
-                  data-testid={`tab-section-${section.id}`}
-                >
-                  {section.label}
-                </button>
-              );
-            })}
+        <div className="bg-card/95 backdrop-blur-md border-b border-card-border">
+          <div className="max-w-7xl mx-auto px-4">
+            <div
+              ref={tabsScrollRef}
+              className="tour-sticky-nav-tabs no-scrollbar relative flex items-center justify-between overflow-x-auto"
+            >
+              {indicator && (
+                <div
+                  className="absolute bottom-0 h-[2.5px] bg-accent rounded-full transition-all duration-300 ease-out"
+                  style={{ left: indicator.left, width: indicator.width }}
+                />
+              )}
+              {visibleSections.map((section) => {
+                const active = section.id === activeId;
+                return (
+                  <button
+                    key={section.id}
+                    ref={(el) => {
+                      if (el) tabRefs.current.set(section.id, el);
+                      else tabRefs.current.delete(section.id);
+                    }}
+                    type="button"
+                    onClick={() => handleTabClick(section.id)}
+                    className={`relative shrink-0 whitespace-nowrap px-4 md:px-5 py-4 text-xs md:text-sm uppercase tracking-wider transition-all duration-300 ${
+                      active ? "text-primary font-bold scale-[1.03]" : "text-muted-foreground font-medium hover:text-primary"
+                    }`}
+                    data-testid={`tab-section-${section.id}`}
+                  >
+                    {section.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        {/* Price strip — a distinct second row directly beneath the tabs,
+            inside the same sticky container so it's always positioned
+            correctly (right under the tabs row's real rendered height)
+            without hardcoding an offset. Kept as its own row rather than
+            sharing the tabs row (an earlier version crammed a price/CTA
+            into that same row and it looked cramped once the tabs needed
+            the full width to spread evenly). */}
+        {formattedPrice && (
+          <div className="bg-primary text-primary-foreground">
+            <div className="max-w-7xl mx-auto px-4 flex items-center justify-between gap-3 py-2 md:py-2.5">
+              <span className="text-xs md:text-sm text-primary-foreground/80 whitespace-nowrap">
+                From <span className="font-serif font-bold text-accent text-sm md:text-base">{symbol}{formattedPrice}</span>
+                <span className="hidden sm:inline"> per person</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-1.5 whitespace-nowrap bg-accent hover:bg-accent/90 text-accent-foreground rounded-full px-3.5 py-1.5 md:px-4 md:py-2 text-xs font-medium transition-all duration-300 hover:scale-[1.03] shrink-0"
+                data-testid="button-sticky-price-cta"
+              >
+                <Phone className="w-3 h-3 shrink-0" />
+                <span className="hidden sm:inline">Speak to an Expert</span>
+                <span className="inline sm:hidden">Book Now</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <SpeakToExpertModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </>
   );
 }
