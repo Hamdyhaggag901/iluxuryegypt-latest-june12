@@ -14,6 +14,7 @@ import {
   type HeroSlide, type InsertHeroSlide,
   type SiwaSection, type InsertSiwaSection,
   type GuestExperienceSection, type InsertGuestExperienceSection,
+  type OurStorySection, type InsertOurStorySection,
   type WhyChooseSection, type InsertWhyChooseSection,
   type WhyChooseCard, type InsertWhyChooseCard,
   type Testimonial, type InsertTestimonial,
@@ -27,7 +28,7 @@ import {
   type LegalPage, type InsertLegalPage,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings, seasons,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
-  guestExperienceSection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
+  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
   legalPages, getLegalPageHref,
   brochureDownloads
@@ -1011,6 +1012,27 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       const [created] = await db.insert(guestExperienceSection).values(data).returning();
+      return created;
+    }
+  }
+
+  // Our Story Section methods
+  async getOurStorySection(): Promise<OurStorySection | undefined> {
+    const [section] = await db.select().from(ourStorySection).limit(1);
+    return section;
+  }
+
+  async upsertOurStorySection(data: InsertOurStorySection): Promise<OurStorySection> {
+    const existing = await this.getOurStorySection();
+    if (existing) {
+      const [updated] = await db
+        .update(ourStorySection)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ourStorySection.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(ourStorySection).values(data).returning();
       return created;
     }
   }

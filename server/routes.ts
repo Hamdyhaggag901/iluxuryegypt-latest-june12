@@ -27,6 +27,7 @@ import {
   insertHeroSlideSchema,
   insertSiwaSectionSchema,
   insertGuestExperienceSectionSchema,
+  insertOurStorySectionSchema,
   insertWhyChooseSectionSchema,
   insertWhyChooseCardSchema,
   insertStayListingSettingsSchema,
@@ -3762,6 +3763,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error('Error updating guest experience section:', error);
       res.status(500).json({ message: 'Error updating guest experience section' });
+    }
+  });
+
+  // ==================== OUR STORY SECTION ROUTES ====================
+
+  // Public: Get our story section
+  app.get("/api/public/our-story-section", async (req, res) => {
+    try {
+      const section = await storage.getOurStorySection();
+      res.json({ success: true, section });
+    } catch (error) {
+      console.error('Error fetching our story section:', error);
+      res.status(500).json({ message: 'Error fetching our story section' });
+    }
+  });
+
+  // CMS: Get our story section
+  app.get("/api/cms/our-story-section", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const section = await storage.getOurStorySection();
+      res.json({ success: true, section });
+    } catch (error) {
+      console.error('Error fetching our story section:', error);
+      res.status(500).json({ message: 'Error fetching our story section' });
+    }
+  });
+
+  // CMS: Update/Create our story section
+  app.post("/api/cms/our-story-section", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertOurStorySectionSchema.parse(req.body);
+      const section = await storage.upsertOurStorySection(data);
+      res.json({ success: true, section });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+      }
+      console.error('Error updating our story section:', error);
+      res.status(500).json({ message: 'Error updating our story section' });
     }
   });
 

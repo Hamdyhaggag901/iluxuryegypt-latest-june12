@@ -369,6 +369,18 @@ export const guestExperienceSection = pgTable("guest_experience_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Our Story Section Content (homepage, between the hero and the categories carousel)
+export const ourStorySection = pgTable("our_story_section", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eyebrow: text("eyebrow").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  image: text("image").notNull(),
+  buttonText: text("button_text").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Why Choose Section Content
 export const whyChooseSection = pgTable("why_choose_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -882,6 +894,18 @@ export const insertGuestExperienceSectionSchema = createInsertSchema(guestExperi
   isActive: z.boolean().default(true),
 });
 
+export const insertOurStorySectionSchema = createInsertSchema(ourStorySection).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  eyebrow: z.string().min(1, "Eyebrow is required"),
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  image: z.string().min(1, "Image is required"),
+  buttonText: z.string().min(1, "Button text is required"),
+  isActive: z.boolean().default(true),
+});
+
 export const insertWhyChooseSectionSchema = createInsertSchema(whyChooseSection).omit({
   id: true,
   updatedAt: true,
@@ -1150,6 +1174,8 @@ export type InsertSiwaSection = z.infer<typeof insertSiwaSectionSchema>;
 export type SiwaSection = typeof siwaSection.$inferSelect;
 export type InsertGuestExperienceSection = z.infer<typeof insertGuestExperienceSectionSchema>;
 export type GuestExperienceSection = typeof guestExperienceSection.$inferSelect;
+export type InsertOurStorySection = z.infer<typeof insertOurStorySectionSchema>;
+export type OurStorySection = typeof ourStorySection.$inferSelect;
 export type InsertWhyChooseSection = z.infer<typeof insertWhyChooseSectionSchema>;
 export type WhyChooseSection = typeof whyChooseSection.$inferSelect;
 export type InsertWhyChooseCard = z.infer<typeof insertWhyChooseCardSchema>;

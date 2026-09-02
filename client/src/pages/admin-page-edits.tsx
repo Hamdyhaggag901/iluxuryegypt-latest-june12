@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, GripVertical, Video, Image as ImageIcon, Loader2, ArrowLeft, Home, ChevronRight, Star, Phone, Mail, MessageSquare, Info, Users, Award, BookOpen, MapPin, Globe, Shield, Building2, Plane, Quote } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Video, Image as ImageIcon, Loader2, ArrowLeft, Home, ChevronRight, Star, Phone, Mail, MessageSquare, Info, Users, Award, BookOpen, MapPin, Globe, Shield, Building2, Plane, Quote, Upload } from "lucide-react";
 
 interface HeroSlide {
   id: string;
@@ -42,6 +42,16 @@ interface GuestExperienceSection {
   title: string;
   description?: string;
   tagline?: string;
+  isActive: boolean;
+}
+
+interface OurStorySection {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  image: string;
+  buttonText: string;
   isActive: boolean;
 }
 
@@ -275,6 +285,16 @@ export default function AdminPageEdits() {
     title: "",
     description: "",
     tagline: "",
+    isActive: true,
+  });
+
+  // Our Story Section state (homepage — between the hero and the categories carousel)
+  const [ourStoryForm, setOurStoryForm] = useState({
+    eyebrow: "",
+    title: "",
+    description: "",
+    image: "",
+    buttonText: "",
     isActive: true,
   });
 
@@ -717,6 +737,30 @@ export default function AdminPageEdits() {
     enabled: currentView === "home",
   });
 
+  // Fetch our story section
+  const { data: ourStoryData, isLoading: ourStoryLoading } = useQuery({
+    queryKey: ["ourStorySection"],
+    queryFn: async () => {
+      const response = await fetch("/api/cms/our-story-section", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to fetch our story section");
+      const data = await response.json();
+      if (data.section) {
+        setOurStoryForm({
+          eyebrow: data.section.eyebrow || "",
+          title: data.section.title || "",
+          description: data.section.description || "",
+          image: data.section.image || "",
+          buttonText: data.section.buttonText || "",
+          isActive: data.section.isActive ?? true,
+        });
+      }
+      return data;
+    },
+    enabled: currentView === "home",
+  });
+
   // Fetch why choose section
   const { data: whyChooseData, isLoading: whyChooseLoading } = useQuery({
     queryKey: ["whyChooseSection"],
@@ -961,6 +1005,48 @@ export default function AdminPageEdits() {
       toast({ title: "Success", description: "Guest Experience section updated" });
     },
     onError: () => toast({ title: "Error", description: "Failed to update guest experience section", variant: "destructive" }),
+  });
+
+  // Our story section mutation
+  const updateOurStoryMutation = useMutation({
+    mutationFn: async (data: typeof ourStoryForm) => {
+      const response = await fetch("/api/cms/our-story-section", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update our story section");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ourStorySection"] });
+      toast({ title: "Success", description: "Our Story section updated" });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to update our story section", variant: "destructive" }),
+  });
+
+  // Our story image upload — uploads to the Media Library and fills the
+  // image field with the returned URL, same pattern as TourForm's day-photo
+  // upload (no separate media-picker component exists in this codebase; the
+  // established pattern is upload-in-place, or paste a URL from /admin/media).
+  const uploadOurStoryImageMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+    onSuccess: (url) => setOurStoryForm((prev) => ({ ...prev, image: url })),
+    onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
   });
 
   // Why choose section mutation
@@ -2871,6 +2957,69 @@ export default function AdminPageEdits() {
                   </div>
                 ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Our Story Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Our Story Section</CardTitle>
+            <CardDescription>Between the Hero and the Categories Carousel</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {ourStoryLoading ? (
+              <div className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); updateOurStoryMutation.mutate(ourStoryForm); }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Eyebrow</Label>
+                  <Input value={ourStoryForm.eyebrow} onChange={(e) => setOurStoryForm({ ...ourStoryForm, eyebrow: e.target.value })} placeholder="Our Story" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input value={ourStoryForm.title} onChange={(e) => setOurStoryForm({ ...ourStoryForm, title: e.target.value })} placeholder="Egypt, Curated for the Few" required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea value={ourStoryForm.description} onChange={(e) => setOurStoryForm({ ...ourStoryForm, description: e.target.value })} rows={4} placeholder="iLuxury Egypt is a boutique private tour operator..." required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Image</Label>
+                  <div className="flex gap-2">
+                    <Input value={ourStoryForm.image} onChange={(e) => setOurStoryForm({ ...ourStoryForm, image: e.target.value })} placeholder="https://... or upload from the Media Library" required />
+                    <Button type="button" variant="outline" className="relative shrink-0" data-testid="button-upload-our-story-image">
+                      {uploadOurStoryImageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadOurStoryImageMutation.mutate(file);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </Button>
+                  </div>
+                  {ourStoryForm.image && (
+                    <img src={ourStoryForm.image} alt="Preview" className="mt-2 h-24 w-32 object-cover rounded-md border" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Button Text</Label>
+                  <Input value={ourStoryForm.buttonText} onChange={(e) => setOurStoryForm({ ...ourStoryForm, buttonText: e.target.value })} placeholder="Start Planning" required />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch checked={ourStoryForm.isActive} onCheckedChange={(c) => setOurStoryForm({ ...ourStoryForm, isActive: c })} />
+                    <Label>Section visible</Label>
+                  </div>
+                  <Button type="submit" disabled={updateOurStoryMutation.isPending}>
+                    {updateOurStoryMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              </form>
             )}
           </CardContent>
         </Card>
