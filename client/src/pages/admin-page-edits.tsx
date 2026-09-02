@@ -3007,7 +3007,7 @@ export default function AdminPageEdits() {
                 </div>
                 <div className="space-y-2">
                   <Label>Button Text</Label>
-                  <Input value={ourStoryForm.buttonText} onChange={(e) => setOurStoryForm({ ...ourStoryForm, buttonText: e.target.value })} placeholder="Start Planning" required />
+                  <Input value={ourStoryForm.buttonText} onChange={(e) => setOurStoryForm({ ...ourStoryForm, buttonText: e.target.value })} placeholder="Discover Who We Are" required />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
