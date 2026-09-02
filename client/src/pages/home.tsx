@@ -1,7 +1,8 @@
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
-import WhoIsILuxurySection from "../components/who-is-iluxury-section";
+import OurStorySection from "../components/our-story-section";
+import CategoriesCarouselSection from "../components/categories-carousel-section";
 import BrandBanner from "../components/brand-banner";
 import GuestExperienceIntro from "../components/guest-experience-intro";
 import WhyUseSection from "../components/why-use-section";
@@ -27,7 +28,8 @@ export default function Home() {
       <Navigation />
       <main>
         <HeroSlider />
-        <WhoIsILuxurySection />
+        <OurStorySection />
+        <CategoriesCarouselSection />
         <BrandBanner />
         <GuestExperienceIntro />
         <WhyUseSection />
