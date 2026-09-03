@@ -116,6 +116,8 @@ export const hotels = pgTable("hotels", {
   sortOrder: integer("sort_order").notNull().default(0), // Manual grid ordering
   focusKeyword: text("focus_keyword"), // Optional SEO focus keyword
   featured: boolean("featured").notNull().default(false), // Deprecated: featured hotel is now chosen via stayListingSettings.featuredHotelId
+  isPartner: boolean("is_partner").notNull().default(false), // Shows a "Trusted Partner" badge on the homepage's Where You Will Stay cards
+  partnerLogoUrl: text("partner_logo_url"), // Optional; badge falls back to text-only when empty
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -654,6 +656,8 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   sortOrder: z.number().default(0),
   focusKeyword: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
   featured: z.boolean().default(false),
+  isPartner: z.boolean().default(false),
+  partnerLogoUrl: z.string().nullable().optional(),
 });
 
 export const insertDestinationSchema = createInsertSchema(destinations).omit({

@@ -6,6 +6,9 @@ import TourCard from "@/components/tour-card";
 
 interface LuxuryPackagesSectionProps {
   category?: string;
+  /** Small uppercase label above the title. Omitted entirely (no empty
+   *  space reserved) on pages that don't pass one — only the homepage does. */
+  eyebrow?: string;
   title?: string;
   description?: string;
   limit?: number;
@@ -65,6 +68,7 @@ function BentoCard({ tour, big }: { tour: Tour; big?: boolean }) {
 
 export default function LuxuryPackagesSection({
   category,
+  eyebrow,
   title = "Our Luxury Packages",
   description = "Discover our carefully curated luxury travel packages, each designed to offer extraordinary experiences across Egypt's most iconic destinations.",
   limit,
@@ -95,6 +99,11 @@ export default function LuxuryPackagesSection({
       <div className="flex justify-center mb-6">
         <Package className="h-12 w-12 text-accent" />
       </div>
+      {eyebrow && (
+        <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium block mb-4">
+          {eyebrow}
+        </span>
+      )}
       <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-8">
         {title}
       </h2>

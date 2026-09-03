@@ -38,13 +38,31 @@ export default function WhereYouWillStaySection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
           {hotels.map((hotel) => (
             <div key={hotel.id} className="group" data-testid={`card-stay-${hotel.slug}`}>
-              <div className="aspect-[4/3] rounded-lg overflow-hidden mb-5">
+              <div className="aspect-[4/3] rounded-lg overflow-hidden mb-5 relative">
                 <img
                   src={hotel.image}
                   alt={hotel.imageAlt || hotel.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
+                {hotel.isPartner && (
+                  <div
+                    className="absolute top-4 left-4 flex items-center gap-2 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm"
+                    data-testid={`badge-trusted-partner-${hotel.slug}`}
+                  >
+                    {hotel.partnerLogoUrl && (
+                      <img
+                        src={hotel.partnerLogoUrl}
+                        alt={`${hotel.name} logo`}
+                        className="h-4 max-w-[60px] w-auto object-contain shrink-0"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    )}
+                    <span className="text-primary text-[11px] font-semibold uppercase tracking-wide">
+                      Trusted Partner
+                    </span>
+                  </div>
+                )}
               </div>
               <span className="text-xs tracking-[0.2em] uppercase text-accent font-medium">
                 {hotel.region}, Egypt

@@ -35,7 +35,13 @@ export default function Home() {
         <BrandBanner />
         <GuestExperienceIntro />
         <WhyUseSection />
-        <LuxuryPackagesSection limit={3} layout="bento" />
+        <LuxuryPackagesSection
+          limit={3}
+          layout="bento"
+          eyebrow="Our Collection"
+          title="Luxury Egypt Tours"
+          description="Handpicked luxury Egypt tours that pair private guides, five-star stays, and iconic sites into one seamless journey."
+        />
         <InteractiveMapSection />
         <HighlightsSection />
         <TestimonialSection />

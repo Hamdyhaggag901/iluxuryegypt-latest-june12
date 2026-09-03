@@ -110,9 +110,12 @@ export default function TestimonialSection() {
           <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
             What Our Guests Say
           </span>
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mt-4">
+          <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mt-4 mb-4">
             Voices From the Journey
           </h2>
+          <p className="text-base md:text-lg text-white/75 max-w-2xl mx-auto">
+            Real stories from travelers who trusted us with their journey through Egypt.
+          </p>
         </div>
 
         <div className="relative w-full">

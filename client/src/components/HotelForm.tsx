@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { WysiwygEditor } from "@/components/ui/wysiwyg-editor";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, X, Loader2, GripVertical, Upload, AlertTriangle } from "lucide-react";
@@ -210,6 +211,8 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       status: "published",
       focusKeyword: "",
       featured: false,
+      isPartner: false,
+      partnerLogoUrl: "",
       ...initialData,
     },
   });
@@ -310,6 +313,15 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
     if (!file) return;
     uploadImageMutation.mutate(file, {
       onSuccess: (url) => addArrayItem("gallery", url),
+    });
+    e.target.value = "";
+  };
+
+  const handlePartnerLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadImageMutation.mutate(file, {
+      onSuccess: (url) => form.setValue("partnerLogoUrl", url),
     });
     e.target.value = "";
   };
@@ -542,6 +554,54 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                   <p className="text-xs text-muted-foreground">Draft hotels are hidden from /stay</p>
                 </div>
               </div>
+
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  id="isPartner"
+                  checked={form.watch("isPartner")}
+                  onCheckedChange={(checked) => form.setValue("isPartner", checked)}
+                  data-testid="switch-hotel-is-partner"
+                />
+                <Label htmlFor="isPartner">Trusted Partner</Label>
+              </div>
+              <p className="text-xs text-muted-foreground -mt-2">
+                Shows a "Trusted Partner" badge on this hotel's card in the homepage's Where You Will Stay section
+              </p>
+
+              {form.watch("isPartner") && (
+                <div className="space-y-2">
+                  <Label htmlFor="partnerLogoUrl">Partner Logo (optional)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="partnerLogoUrl"
+                      data-testid="input-hotel-partner-logo"
+                      {...form.register("partnerLogoUrl")}
+                      placeholder="https://example.com/logo.png"
+                    />
+                    <Button type="button" variant="outline" className="relative" data-testid="button-upload-partner-logo">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePartnerLogoUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to show a text-only "Trusted Partner" badge until a logo is uploaded
+                  </p>
+                  {form.watch("partnerLogoUrl") && (
+                    <img
+                      src={form.watch("partnerLogoUrl") || undefined}
+                      alt="Partner logo preview"
+                      className="h-10 max-w-[160px] mt-1 object-contain"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
