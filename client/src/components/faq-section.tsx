@@ -9,13 +9,15 @@ interface FaqSectionProps {
   faqs: FaqItem[];
   description?: string;
   testId?: string;
+  /** DOM id, e.g. for a sticky in-page nav to scroll/detect this section. */
+  id?: string;
 }
 
-export default function FaqSection({ faqs, description, testId = "faq-section" }: FaqSectionProps) {
+export default function FaqSection({ faqs, description, testId = "faq-section", id }: FaqSectionProps) {
   if (faqs.length === 0) return null;
 
   return (
-    <section className="py-12 md:py-20 bg-muted" data-testid={testId}>
+    <section id={id} className="py-12 md:py-20 bg-muted" data-testid={testId}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mb-4 md:mb-6">

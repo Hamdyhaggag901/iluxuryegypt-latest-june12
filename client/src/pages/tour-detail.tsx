@@ -33,6 +33,8 @@ import TourStickyNav, { type TourStickyNavSection } from "@/components/tour-deta
 import WhyYoullLoveJourneySection from "@/components/tour-detail/WhyYoullLoveJourneySection";
 import ReadBeforeYouGoSection from "@/components/tour-detail/ReadBeforeYouGoSection";
 import { buildTourHighlights } from "@/lib/tour-highlights";
+import { buildTourFaqs } from "@/lib/tour-faq";
+import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -49,6 +51,7 @@ const TOUR_NAV_SECTIONS: TourStickyNavSection[] = [
   { id: "why-iluxury", label: "Why iLuxury Egypt" },
   { id: "inclusions", label: "Inclusions" },
   { id: "dates-prices", label: "Dates & Prices" },
+  { id: "tour-faq", label: "FAQ" },
   { id: "read-before-you-go", label: "Read Before You Go" },
   { id: "continue-journey", label: "Continue the Journey" },
 ];
@@ -82,6 +85,11 @@ export default function TourDetail() {
     [tour, stayHotels]
   );
 
+  const tourFaqs = useMemo(
+    () => (tour ? buildTourFaqs(tour, stayHotels) : []),
+    [tour, stayHotels]
+  );
+
   // All published tours, used for the "Continue the Journey" similarity matching
   const { data: allToursData } = useQuery<{ success: boolean; tours: Tour[] }>({
     queryKey: ["/api/public/tours"],
@@ -112,6 +120,7 @@ export default function TourDetail() {
     description: tour?.shortDescription || tour?.description?.slice(0, 160),
     image: tour?.heroImage,
     type: "article",
+    jsonLd: buildFaqJsonLd(tourFaqs),
   });
 
   if (!slug || blockedSlugs.has(slug)) {
@@ -380,6 +389,8 @@ export default function TourDetail() {
       <InclusionsList includes={tour.includes} excludes={tour.excludes} />
 
       <DatesAndPrices basePrice={tour.price} currency={currency} seasons={seasonsData?.seasons || []} />
+
+      <FaqSection id="tour-faq" faqs={tourFaqs} testId="tour-faq-section" />
 
       <ReadBeforeYouGoSection />
 
