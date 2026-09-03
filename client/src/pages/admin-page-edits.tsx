@@ -1015,14 +1015,23 @@ export default function AdminPageEdits() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to update our story section");
-      return response.json();
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        // Surface the server's real validation error (e.g. which field
+        // failed insertOurStorySectionSchema) instead of a generic message
+        // that hides the actual cause from the admin.
+        const zodDetail = body?.errors?.[0]
+          ? `${body.errors[0].path?.join(".")}: ${body.errors[0].message}`
+          : undefined;
+        throw new Error(zodDetail || body?.message || "Failed to update our story section");
+      }
+      return body;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ourStorySection"] });
       toast({ title: "Success", description: "Our Story section updated" });
     },
-    onError: () => toast({ title: "Error", description: "Failed to update our story section", variant: "destructive" }),
+    onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to update our story section", variant: "destructive" }),
   });
 
   // Our story image upload — uploads to the Media Library and fills the
