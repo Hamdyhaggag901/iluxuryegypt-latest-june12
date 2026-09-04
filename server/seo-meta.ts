@@ -1,6 +1,7 @@
 import { storage } from "./storage";
 import type { Facility, Tour } from "@shared/schema";
 import { getLegalPageHref } from "@shared/schema";
+import { stripHtml } from "@shared/strip-html";
 
 const SITE_NAME = "iLuxury Egypt";
 export const SITE_URL = "https://iluxuryegypt.com";
@@ -710,8 +711,11 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       // sensible fallback otherwise) — an empty/whitespace-only override is
       // treated as unset so a blank field never wins over the fallback.
       const titleBase = tour.seoTitle?.trim() || tour.title;
+      // tour.description can now contain rich-text HTML (the WysiwygEditor-
+      // backed "The Experience" field) — stripped here so a meta description
+      // falling back to it never leaks raw markup into <meta>/og: tags.
       const description = truncate(
-        tour.metaDescription?.trim() || tour.shortDescription || tour.description || DEFAULT_DESCRIPTION,
+        tour.metaDescription?.trim() || tour.shortDescription || stripHtml(tour.description) || DEFAULT_DESCRIPTION,
         160,
       );
       const image = tour.heroImage || DEFAULT_IMAGE;

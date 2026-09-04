@@ -35,6 +35,9 @@ import ReadBeforeYouGoSection from "@/components/tour-detail/ReadBeforeYouGoSect
 import { buildTourHighlights } from "@/lib/tour-highlights";
 import { buildTourFaqs } from "@/lib/tour-faq";
 import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
+import { legacyTextToHtml } from "@/lib/legacy-text-to-html";
+import { sanitizeHtml } from "@/lib/sanitize-html";
+import { stripHtml } from "@shared/strip-html";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -117,7 +120,10 @@ export default function TourDetail() {
 
   useSEO({
     title: tour?.seoTitle?.trim() || tour?.title,
-    description: tour?.metaDescription?.trim() || tour?.shortDescription || tour?.description?.slice(0, 160),
+    description:
+      tour?.metaDescription?.trim() ||
+      tour?.shortDescription ||
+      (tour?.description ? stripHtml(tour.description).slice(0, 160) : undefined),
     image: tour?.heroImage,
     type: "article",
     jsonLd: buildFaqJsonLd(tourFaqs),
@@ -303,9 +309,10 @@ export default function TourDetail() {
                   <div className="w-8 md:w-12 h-px bg-accent"></div>
                   <h2 className="text-xs md:text-sm tracking-[0.2em] md:tracking-[0.3em] uppercase text-accent-text">The Experience</h2>
                 </div>
-                <p className="text-base md:text-xl lg:text-2xl font-serif font-light text-primary leading-relaxed">
-                  {tour.description}
-                </p>
+                <div
+                  className="text-base md:text-xl lg:text-2xl font-serif font-light text-primary leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold [&_em]:italic [&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:bg-muted/50 [&_blockquote]:rounded-r-lg [&_blockquote]:py-3 [&_blockquote]:px-4 [&_blockquote]:my-4 [&_blockquote]:text-lg md:[&_blockquote]:text-xl [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6"
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(legacyTextToHtml(tour.description)) }}
+                />
               </div>
 
               {/* Cinematic Gallery */}

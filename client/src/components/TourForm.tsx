@@ -8,6 +8,7 @@ import { detectPlaceName, detectMeals, suggestDayPhotoAlt, normalizeForMatch } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { WysiwygEditor } from "@/components/ui/wysiwyg-editor";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -594,12 +595,14 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="description">Full Description *</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-tour-description"
-                  {...form.register("description")}
+                <p className="text-sm text-muted-foreground">
+                  Shown as "The Experience" on the tour page. Use paragraph breaks, links, and simple
+                  formatting freely — this is what visitors read.
+                </p>
+                <WysiwygEditor
+                  value={form.watch("description") || ""}
+                  onChange={(value) => form.setValue("description", value, { shouldValidate: true })}
                   placeholder="Detailed tour description..."
-                  rows={6}
                 />
                 {form.formState.errors.description && (
                   <p className="text-sm text-destructive">{String(form.formState.errors.description.message)}</p>

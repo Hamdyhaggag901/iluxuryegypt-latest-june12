@@ -51,8 +51,15 @@ export function WysiwygEditor({ value, onChange, placeholder = "Start writing...
       }),
       Link.configure({
         openOnClick: false,
+        // Tiptap's Link extension defaults to rel="noopener noreferrer
+        // nofollow" on every link it creates — including same-site links an
+        // admin adds on purpose (e.g. linking a place name to another page
+        // on this site), which would silently block search engines from
+        // following them. No other link on this site uses nofollow, so this
+        // matches that convention instead of fighting it by default.
         HTMLAttributes: {
           class: 'text-blue-600 underline hover:text-blue-800',
+          rel: 'noopener noreferrer',
         },
       }),
       TextAlign.configure({
