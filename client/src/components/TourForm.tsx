@@ -149,6 +149,8 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       featured: false,
       published: true,
       brochureUrl: "",
+      seoTitle: "",
+      metaDescription: "",
       ...initialData,
     },
   });
@@ -1235,6 +1237,47 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Overrides</CardTitle>
+              <CardDescription>
+                Optional — leave blank to keep using the tour title/description automatically
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seoTitle">Meta Title</Label>
+                <Input
+                  id="seoTitle"
+                  data-testid="input-tour-seo-title"
+                  {...form.register("seoTitle")}
+                  placeholder={form.watch("title") || "Auto-generated from the tour title"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea
+                  id="metaDescription"
+                  data-testid="input-tour-meta-description"
+                  {...form.register("metaDescription")}
+                  rows={3}
+                  placeholder="Auto-generated from the short description"
+                />
+                {(() => {
+                  const len = (form.watch("metaDescription") || "").length;
+                  if (len === 0) return <p className="text-xs text-muted-foreground">Ideal length: 150–160 characters</p>;
+                  const inRange = len >= 150 && len <= 160;
+                  return (
+                    <p className={`text-xs ${inRange ? "text-green-600" : len > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                      {len} / 160 characters {inRange ? "(ideal length)" : len > 160 ? "(longer than ideal)" : "(ideal: 150–160)"}
+                    </p>
+                  );
+                })()}
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Tour Settings</CardTitle>

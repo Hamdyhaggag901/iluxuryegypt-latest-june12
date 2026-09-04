@@ -179,6 +179,8 @@ export const tours = pgTable("tours", {
   featured: boolean("featured").notNull().default(false),
   published: boolean("published").notNull().default(true),
   brochureUrl: text("brochure_url"),
+  seoTitle: text("seo_title"), // Admin-written <title> override. Falls back to the auto-generated "{title} | iLuxury Egypt" when empty.
+  metaDescription: text("meta_description"), // Admin-written meta description override. Falls back to shortDescription/description when empty.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -726,6 +728,8 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   availabilityStatus: z.enum(["available", "limited", "sold_out"]).default("available"),
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
+  seoTitle: z.string().nullable().optional(), // Overrides the auto-generated <title>/og:title when set
+  metaDescription: z.string().nullable().optional(), // Overrides the auto-generated meta description/og:description when set
 });
 
 export const insertPackageSchema = createInsertSchema(packages).omit({

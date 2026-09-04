@@ -705,7 +705,15 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     if ((match = pathname.match(/^\/([^/]+)\/?$/))) {
       const tour = await storage.getTourBySlug(decodeURIComponent(match[1]));
       if (!tour || tour.published === false) return null;
-      const description = truncate(tour.shortDescription || tour.description || DEFAULT_DESCRIPTION, 160);
+      // Manual admin override takes priority over the auto-generated value,
+      // same priority order already used for image alt text (custom first,
+      // sensible fallback otherwise) — an empty/whitespace-only override is
+      // treated as unset so a blank field never wins over the fallback.
+      const titleBase = tour.seoTitle?.trim() || tour.title;
+      const description = truncate(
+        tour.metaDescription?.trim() || tour.shortDescription || tour.description || DEFAULT_DESCRIPTION,
+        160,
+      );
       const image = tour.heroImage || DEFAULT_IMAGE;
       const gallery = Array.isArray(tour.gallery) ? tour.gallery : [];
       const itineraryDays: TourItineraryDay[] = Array.isArray(tour.itinerary) ? tour.itinerary : [];
@@ -747,7 +755,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           : {}),
       };
       return {
-        title: withSiteName(tour.title),
+        title: withSiteName(titleBase),
         description,
         image,
         type: "website",

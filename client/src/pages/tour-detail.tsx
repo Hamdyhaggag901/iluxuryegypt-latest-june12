@@ -116,8 +116,8 @@ export default function TourDetail() {
   const brochureUrl = tour?.brochureUrl;
 
   useSEO({
-    title: tour?.title,
-    description: tour?.shortDescription || tour?.description?.slice(0, 160),
+    title: tour?.seoTitle?.trim() || tour?.title,
+    description: tour?.metaDescription?.trim() || tour?.shortDescription || tour?.description?.slice(0, 160),
     image: tour?.heroImage,
     type: "article",
     jsonLd: buildFaqJsonLd(tourFaqs),
