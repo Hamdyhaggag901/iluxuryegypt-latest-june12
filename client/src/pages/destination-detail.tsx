@@ -1,26 +1,29 @@
 import { useRoute } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { useSEO } from '@/hooks/use-seo';
 import Navigation from '@/components/navigation';
 import Footer from '@/components/footer';
 import ScrollToTopButton from '@/components/scroll-to-top-button';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'wouter';
-import { MapPin, Clock, Camera, Car, Star, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Calendar, Loader2 } from 'lucide-react';
 import { getResponsiveImageProps } from '@/lib/responsive-image';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { legacyTextToHtml } from '@/lib/legacy-text-to-html';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+import { normalizeForMatch } from '@shared/itinerary-detection';
+import type { Tour, Hotel } from '@shared/schema';
+import AttractionSplitRow from '@/components/attraction-split-row';
+import DestinationToursCarousel from '@/components/destination-tours-carousel';
+import WhereYouWillStaySection from '@/components/where-you-will-stay-section';
+import FaqSection, { buildFaqJsonLd } from '@/components/faq-section';
 
 interface Attraction {
   id: string;
   name: string;
   description: string;
   image: string;
+  imageAlt?: string;
 }
 
 interface FAQ {
@@ -47,6 +50,10 @@ interface Destination {
   published: boolean;
   seoTitle?: string | null;
   metaDescription?: string | null;
+  ogImage?: string | null;
+  canonicalUrl?: string | null;
+  robots?: string | null;
+  schemaType?: string | null;
   schemaMarkup?: string | null;
   faqs?: FAQ[];
 }
@@ -68,21 +75,24 @@ export default function DestinationDetail() {
     enabled: !!slug,
   });
 
+  const { data: toursData } = useQuery<{ success: boolean; tours: Tour[] }>({
+    queryKey: ["/api/public/tours"],
+  });
+
+  const { data: hotelsData } = useQuery<{ success: boolean; hotels: Hotel[] }>({
+    queryKey: ["/api/hotels"],
+    queryFn: async () => {
+      const res = await fetch("/api/hotels");
+      if (!res.ok) throw new Error("Failed to load hotels");
+      return res.json();
+    },
+  });
+
   const validFaqs = (destination?.faqs || []).filter(
     (f) => f && f.question?.trim() && f.answer?.trim()
   );
 
-  const faqJsonLd = validFaqs.length > 0
-    ? {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: validFaqs.map((f) => ({
-          "@type": "Question",
-          name: f.question,
-          acceptedAnswer: { "@type": "Answer", text: f.answer },
-        })),
-      }
-    : null;
+  const faqJsonLd = buildFaqJsonLd(validFaqs.map((f) => ({ question: f.question, answer: f.answer })));
 
   const customSchema = destination?.schemaMarkup?.trim() || null;
   const jsonLd: Array<string | object> = [];
@@ -157,29 +167,6 @@ export default function DestinationDetail() {
     );
   }
 
-  const quickFacts = [
-    {
-      label: "Best Time to Visit",
-      value: destination.bestTimeToVisit || "Year-round",
-      icon: <Clock className="w-5 h-5" />
-    },
-    {
-      label: "Region",
-      value: destination.region,
-      icon: <MapPin className="w-5 h-5" />
-    },
-    {
-      label: "Recommended Duration",
-      value: destination.duration || "2-3 days",
-      icon: <Camera className="w-5 h-5" />
-    },
-    {
-      label: "Difficulty",
-      value: destination.difficulty || "Easy",
-      icon: <Car className="w-5 h-5" />
-    }
-  ];
-
   // Use attractions if available, otherwise fall back to highlights
   const attractions = destination.attractions && destination.attractions.length > 0
     ? destination.attractions
@@ -188,7 +175,17 @@ export default function DestinationDetail() {
         name,
         description: `Experience the wonder of ${name} in ${destination.name}.`,
         image: destination.gallery?.[index] || destination.heroImage,
+        imageAlt: undefined as string | undefined,
       })) || [];
+
+  const cityNeedle = normalizeForMatch(destination.name);
+  const cityTours = (toursData?.tours || [])
+    .filter((t) => t.published)
+    .filter((t) => (t.destinations || []).some((d) => normalizeForMatch(d).includes(cityNeedle) || cityNeedle.includes(normalizeForMatch(d))));
+
+  const cityHotels = (hotelsData?.hotels || [])
+    .filter((h) => h.status === "published")
+    .filter((h) => normalizeForMatch(h.region || "").includes(cityNeedle));
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,94 +221,123 @@ export default function DestinationDetail() {
         </div>
       </section>
 
-      {/* Quick Facts */}
-      <section className="py-10 md:py-16 bg-muted">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-            {quickFacts.map((fact, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex justify-center mb-2 md:mb-4 text-primary [&_svg]:w-4 [&_svg]:h-4 md:[&_svg]:w-5 md:[&_svg]:h-5">
-                    {fact.icon}
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-1 md:mb-2 text-xs md:text-base" data-testid={`fact-label-${index}`}>
-                    {fact.label}
-                  </h3>
-                  <p className="text-muted-foreground text-xs md:text-base" data-testid={`fact-value-${index}`}>
-                    {fact.value}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Description */}
+      {/* Overview */}
       <section className="py-12 md:py-20 bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 md:mb-16">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mb-4 md:mb-6">
+          <div className="text-center mb-8 md:mb-14">
+            <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">Overview</span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mt-4 mb-4 md:mb-6">
               Discover {destination.name}
             </h2>
-            <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
+            <div className="w-16 md:w-24 h-px bg-accent mx-auto"></div>
           </div>
 
-          <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed">
-            <p className="text-sm md:text-lg lg:text-xl mb-6 md:mb-8">
-              {destination.description}
-            </p>
-          </div>
+          <div
+            className="prose prose-lg max-w-none text-muted-foreground leading-relaxed text-sm md:text-lg lg:text-xl [&>p]:mb-4 last:[&>p]:mb-0 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold [&_em]:italic"
+            data-testid="destination-overview"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(legacyTextToHtml(destination.description)) }}
+          />
         </div>
       </section>
 
-      {/* Main Attractions */}
+      {/* Attractions — Alternating Split Cards */}
       {attractions.length > 0 && (
-        <section className="py-12 md:py-20 bg-muted">
+        <section className="py-12 md:py-24 bg-muted overflow-hidden" data-testid="destination-attractions-section">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 md:mb-16">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mb-4 md:mb-6">
+            <div className="text-center mb-12 md:mb-20">
+              <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
+                Not To Be Missed
+              </span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mt-4 mb-4 md:mb-6">
                 {destination.name} Highlights
               </h2>
-              <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-              <p className="text-sm md:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto px-2">
-                Explore the treasures that make {destination.name} one of Egypt's most captivating destinations.
-              </p>
+              <div className="w-16 md:w-24 h-px bg-accent mx-auto"></div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12">
+            <div className="space-y-16 md:space-y-28">
               {attractions.map((attraction, index) => (
-                <Card key={attraction.id} className="overflow-hidden group hover:shadow-xl transition-all duration-500">
-                  <div className="relative">
-                    <img
-                      src={attraction.image}
-                      alt={attraction.name}
-                      className="w-full h-48 md:h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-3 left-3 md:top-4 md:left-4 bg-white/90 backdrop-blur-sm p-2 md:p-3 rounded-full">
-                      <div className="text-primary">
-                        <Star className="w-4 h-4 md:w-6 md:h-6" />
-                      </div>
-                    </div>
-                  </div>
-                  <CardContent className="p-5 md:p-8">
-                    <h3 className="text-lg md:text-2xl font-serif font-bold text-primary mb-2 md:mb-4" data-testid={`attraction-title-${index}`}>
-                      {attraction.name}
-                    </h3>
-                    <p className="text-sm md:text-base text-muted-foreground leading-relaxed" data-testid={`attraction-description-${index}`}>
-                      {attraction.description}
-                    </p>
-                  </CardContent>
-                </Card>
+                <AttractionSplitRow
+                  key={attraction.id}
+                  name={attraction.name}
+                  description={attraction.description}
+                  image={attraction.image}
+                  imageAlt={attraction.imageAlt}
+                  index={index}
+                />
               ))}
             </div>
           </div>
         </section>
       )}
 
+      {/* Tours in [City] */}
+      <DestinationToursCarousel tours={cityTours} eyebrow="Curated Journeys" title={`Tours in ${destination.name}`} />
+
+      {/* Where to Stay */}
+      <WhereYouWillStaySection
+        hotels={cityHotels}
+        eyebrow="Where to Stay"
+        title={`Hand-Selected Stays in ${destination.name}`}
+        subtitle={`Five-star properties in ${destination.name}, chosen for their location, service, and character.`}
+        limit={3}
+      />
+
+      {/* Best Time to Visit */}
+      <section className="py-12 md:py-20 bg-background" data-testid="destination-best-time-section">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
+            Planning Your Visit
+          </span>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-primary mt-4 mb-10 md:mb-14">
+            Best Time to Visit {destination.name}
+          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-10"
+          >
+            <div className="flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                <Clock className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-serif text-lg font-bold text-primary mb-1">Ideal Season</h3>
+              <p className="text-sm text-muted-foreground">{destination.bestTimeToVisit || "Year-round"}</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                <Calendar className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-serif text-lg font-bold text-primary mb-1">Recommended Stay</h3>
+              <p className="text-sm text-muted-foreground">{destination.duration || "2-3 days"}</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+                <MapPin className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="font-serif text-lg font-bold text-primary mb-1">Region</h3>
+              <p className="text-sm text-muted-foreground">{destination.region}</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <FaqSection
+        faqs={validFaqs.map((f) => ({ question: f.question, answer: f.answer }))}
+        description={`Everything you need to know about visiting ${destination.name}.`}
+        testId="destination-faq-section"
+      />
+
       {/* Call to Action */}
-      <section className="py-12 md:py-20 bg-primary text-white">
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+        className="py-12 md:py-20 bg-primary text-white"
+      >
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold mb-4 md:mb-6">
             Ready to Explore {destination.name}?
@@ -329,42 +355,7 @@ export default function DestinationDetail() {
             </Button>
           </div>
         </div>
-      </section>
-
-      {validFaqs.length > 0 && (
-        <section className="py-12 md:py-20 bg-background" data-testid="destination-faq-section">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 md:mb-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-primary mb-4 md:mb-6">
-                Frequently Asked Questions
-              </h2>
-              <div className="w-16 md:w-24 h-px bg-accent mx-auto mb-4 md:mb-8"></div>
-              <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto px-2">
-                Everything you need to know about visiting {destination.name}.
-              </p>
-            </div>
-
-            <Accordion type="single" collapsible className="w-full">
-              {validFaqs.map((faq, index) => (
-                <AccordionItem key={faq.id} value={faq.id} data-testid={`faq-item-${index}`}>
-                  <AccordionTrigger
-                    className="text-left text-base md:text-lg font-medium"
-                    data-testid={`faq-question-${index}`}
-                  >
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent
-                    className="text-sm md:text-base text-muted-foreground leading-relaxed whitespace-pre-line"
-                    data-testid={`faq-answer-${index}`}
-                  >
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
-        </section>
-      )}
+      </motion.section>
 
       <Footer />
       <ScrollToTopButton />

@@ -4,7 +4,28 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Hotel } from "@shared/schema";
 
-export default function WhereYouWillStaySection() {
+interface WhereYouWillStaySectionProps {
+  /** Pre-filtered hotel list (e.g. one city's hotels). When omitted, the
+   *  section fetches and shows the first `limit` published hotels itself —
+   *  the original homepage behavior, unchanged. */
+  hotels?: Hotel[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  limit?: number;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+}
+
+export default function WhereYouWillStaySection({
+  hotels: hotelsProp,
+  eyebrow = "Where You Will Stay",
+  title = "Hand-Selected for the Discerning Traveler",
+  subtitle = "Five-star properties chosen for their location, service, and character — not just a room to sleep in.",
+  limit = 3,
+  viewAllHref = "/stay",
+  viewAllLabel = "View All Stays",
+}: WhereYouWillStaySectionProps) {
   const { data } = useQuery<{ success: boolean; hotels: Hotel[] }>({
     queryKey: ["/api/hotels"],
     queryFn: async () => {
@@ -12,11 +33,10 @@ export default function WhereYouWillStaySection() {
       if (!res.ok) throw new Error("Failed to load hotels");
       return res.json();
     },
+    enabled: !hotelsProp,
   });
 
-  const hotels = (data?.hotels || [])
-    .filter((h) => h.status === "published")
-    .slice(0, 3);
+  const hotels = (hotelsProp ?? (data?.hotels || []).filter((h) => h.status === "published")).slice(0, limit);
 
   if (hotels.length === 0) return null;
 
@@ -25,13 +45,13 @@ export default function WhereYouWillStaySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 md:mb-16">
           <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
-            Where You Will Stay
+            {eyebrow}
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-light text-primary mt-4 mb-4">
-            Hand-Selected for the Discerning Traveler
+            {title}
           </h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Five-star properties chosen for their location, service, and character — not just a room to sleep in.
+            {subtitle}
           </p>
         </div>
 
@@ -85,11 +105,11 @@ export default function WhereYouWillStaySection() {
 
         <div className="text-center mt-12 md:mt-16">
           <Link
-            href="/stay"
+            href={viewAllHref}
             className="inline-flex items-center gap-2 text-primary font-medium hover:text-accent transition-colors duration-300"
             data-testid="link-view-all-stays"
           >
-            View All Stays
+            {viewAllLabel}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

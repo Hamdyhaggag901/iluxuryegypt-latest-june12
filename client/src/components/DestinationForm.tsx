@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { insertDestinationSchema, attractionSchema } from "@shared/schema";
+import { insertDestinationSchema, type Media, type Attraction } from "@shared/schema";
+import { normalizeForMatch, suggestDayPhotoAlt } from "@shared/itinerary-detection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { WysiwygEditor } from "@/components/ui/wysiwyg-editor";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X, Loader2, Trash2 } from "lucide-react";
+import { Plus, X, Loader2, Trash2, Sparkles, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 
 const destinationFormSchema = insertDestinationSchema.extend({
@@ -20,12 +24,27 @@ const destinationFormSchema = insertDestinationSchema.extend({
 
 type DestinationFormData = z.infer<typeof destinationFormSchema>;
 
-interface Attraction {
+// Shared candidate shape across all three stock-photo sources — Unsplash is
+// the only one with a downloadLocation ping its API guidelines require.
+// Mirrors TourForm.tsx's itinerary-day photo pipeline exactly, applied here
+// to per-attraction photos instead of per-day ones.
+interface StockPhotoCandidate {
   id: string;
-  name: string;
-  description: string;
-  image: string;
+  thumbUrl: string;
+  fullUrl: string;
+  downloadLocation?: string;
+  photographerName?: string;
+  photographerUrl?: string;
+  description?: string;
 }
+
+type StockPhotoSource = "pexels" | "pixabay" | "unsplash";
+
+const STOCK_PHOTO_SOURCES: Array<{ source: StockPhotoSource; searchEndpoint: string; importEndpoint: string; label: string }> = [
+  { source: "pexels", searchEndpoint: "/api/cms/pexels-search", importEndpoint: "/api/cms/pexels-import", label: "Pexels" },
+  { source: "pixabay", searchEndpoint: "/api/cms/pixabay-search", importEndpoint: "/api/cms/pixabay-import", label: "Pixabay" },
+  { source: "unsplash", searchEndpoint: "/api/cms/unsplash-search", importEndpoint: "/api/cms/unsplash-import", label: "Unsplash" },
+];
 
 interface DestinationFormProps {
   initialData?: Partial<any>;
@@ -35,6 +54,24 @@ interface DestinationFormProps {
 
 export function DestinationForm({ initialData, onSubmit, isLoading }: DestinationFormProps) {
   const [attractions, setAttractions] = useState<Attraction[]>(initialData?.attractions || []);
+  const [photoPreview, setPhotoPreview] = useState<Record<number, { source: StockPhotoSource; candidates: StockPhotoCandidate[]; currentIndex: number } | null>>({});
+  const [photoImportingIndex, setPhotoImportingIndex] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  // Used for "Suggest Photo" (matching an attraction name against media
+  // filenames/alt text) — last-resort source, tried after the stock APIs.
+  const { data: mediaData } = useQuery<{ success: boolean; media: Media[] }>({
+    queryKey: ["/api/cms/media"],
+    queryFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to fetch media");
+      return response.json();
+    },
+  });
+  const mediaImages = (mediaData?.media || []).filter((m) => m.mimeType.startsWith("image/"));
 
   const form = useForm<DestinationFormData>({
     resolver: zodResolver(destinationFormSchema),
@@ -90,6 +127,7 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       name: "",
       description: "",
       image: "",
+      imageAlt: "",
     };
     setAttractions([...attractions, newAttraction]);
   };
@@ -102,6 +140,157 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
 
   const removeAttraction = (id: string) => {
     setAttractions(attractions.filter(attr => attr.id !== id));
+  };
+
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { ...(token && { Authorization: `Bearer ${token}` }) },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+  });
+
+  const handleAttractionPhotoUpload = (attractionId: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadImageMutation.mutate(file, {
+      onSuccess: (url) => updateAttraction(attractionId, "image", url),
+      onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
+    });
+  };
+
+  // How many other attractions already carry a photo whose name loosely
+  // matches this one — used to vary the alt-text suggestion (via
+  // suggestDayPhotoAlt's variantIndex) so repeated landmark photos never get
+  // identical alt text.
+  const countExistingPhotosForAttraction = (name: string, excludeIndex: number): number => {
+    const needle = normalizeForMatch(name);
+    return attractions.filter(
+      (a, i) => i !== excludeIndex && a.image?.trim() && normalizeForMatch(a.name || "").includes(needle)
+    ).length;
+  };
+
+  const buildAttractionPhotoAlt = (index: number, name: string): string =>
+    suggestDayPhotoAlt({
+      placeName: name,
+      description: attractions[index]?.description,
+      variantIndex: countExistingPhotosForAttraction(name, index),
+    });
+
+  const suggestAttractionPhoto = async (index: number) => {
+    const attraction = attractions[index];
+    const name = attraction?.name?.trim();
+    if (!name) {
+      toast({ title: "Add an attraction name first", description: "Suggest Photo matches against the attraction name.", variant: "destructive" });
+      return;
+    }
+
+    // 1-3) Stock sources, tried in priority order (Pexels, then Pixabay,
+    // then Unsplash). Each just opens a preview the admin has to explicitly
+    // approve — nothing is saved by a search call. A source that isn't
+    // configured (no API key) or returns nothing is skipped silently, moving
+    // straight to the next one.
+    const token = localStorage.getItem("adminToken");
+    for (const { source, searchEndpoint } of STOCK_PHOTO_SOURCES) {
+      try {
+        const response = await fetch(`${searchEndpoint}?q=${encodeURIComponent(name)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const result = await response.json();
+        if (result.success && result.candidates?.length > 0) {
+          setPhotoPreview((prev) => ({ ...prev, [index]: { source, candidates: result.candidates, currentIndex: 0 } }));
+          return;
+        }
+      } catch {
+        // Fall through to the next source — any one of these is a bonus, not a dependency.
+      }
+    }
+
+    // 4) Last resort — the local Media Library. Checked last on purpose: its
+    // existing assets aren't always an accurate match for a given attraction,
+    // so a real stock photo above is preferred whenever one is available.
+    const needle = normalizeForMatch(name);
+    const match = mediaImages.find(
+      (m) => normalizeForMatch(m.originalName).includes(needle) || normalizeForMatch(m.altEn || "").includes(needle)
+    );
+    if (match) {
+      updateAttraction(attraction.id, "image", match.url);
+      let alt = attraction.imageAlt?.trim();
+      if (!alt) {
+        alt = buildAttractionPhotoAlt(index, name);
+        updateAttraction(attraction.id, "imageAlt", alt);
+      }
+      toast({ title: "Photo suggested", description: match.originalName });
+      return;
+    }
+
+    toast({ title: "No matching photo found", description: "Upload one below, or add it to the Media Library first.", variant: "destructive" });
+  };
+
+  const cyclePhotoPreview = (index: number) => {
+    setPhotoPreview((prev) => {
+      const entry = prev[index];
+      if (!entry) return prev;
+      const nextIndex = (entry.currentIndex + 1) % entry.candidates.length;
+      return { ...prev, [index]: { ...entry, currentIndex: nextIndex } };
+    });
+  };
+
+  const cancelPhotoPreview = (index: number) => {
+    setPhotoPreview((prev) => ({ ...prev, [index]: null }));
+  };
+
+  const useStockPhoto = async (index: number) => {
+    const entry = photoPreview[index];
+    const attraction = attractions[index];
+    if (!entry || !attraction) return;
+    const candidate = entry.candidates[entry.currentIndex];
+    const name = attraction.name?.trim() || "";
+    const sourceConfig = STOCK_PHOTO_SOURCES.find((s) => s.source === entry.source)!;
+
+    setPhotoImportingIndex(index);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch(sourceConfig.importEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
+        body: JSON.stringify({
+          fullUrl: candidate.fullUrl,
+          downloadLocation: candidate.downloadLocation,
+          description: candidate.description || name,
+          photographerName: candidate.photographerName,
+          photographerUrl: candidate.photographerUrl,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Failed to import photo");
+      }
+
+      updateAttraction(attraction.id, "image", result.media.url);
+      let alt = attraction.imageAlt?.trim();
+      if (!alt && name) {
+        alt = buildAttractionPhotoAlt(index, name);
+      }
+      if (alt) updateAttraction(attraction.id, "imageAlt", alt);
+      setPhotoPreview((prev) => ({ ...prev, [index]: null }));
+      toast({ title: "Photo imported", description: `Credit: ${candidate.photographerName || sourceConfig.label}` });
+    } catch (error: any) {
+      toast({ title: "Import failed", description: error.message, variant: "destructive" });
+    } finally {
+      setPhotoImportingIndex(null);
+    }
   };
 
   const handleSubmit = (data: DestinationFormData) => {
@@ -239,12 +428,14 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
 
               <div className="space-y-2">
                 <Label htmlFor="description">Full Description *</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-destination-description"
-                  {...form.register("description")}
+                <p className="text-sm text-muted-foreground">
+                  Shown as the city page's Overview section. Use paragraph breaks, links, and simple
+                  formatting freely — this is what visitors read.
+                </p>
+                <WysiwygEditor
+                  value={form.watch("description") || ""}
+                  onChange={(value) => form.setValue("description", value, { shouldValidate: true })}
                   placeholder="Detailed destination description..."
-                  rows={6}
                 />
                 {form.formState.errors.description && (
                   <p className="text-sm text-destructive">{String(form.formState.errors.description.message)}</p>
@@ -327,13 +518,99 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Image URL *</Label>
-                      <Input
-                        value={attraction.image}
-                        onChange={(e) => updateAttraction(attraction.id, "image", e.target.value)}
-                        placeholder="https://example.com/attraction.jpg or /assets/image.jpg"
-                        data-testid={`input-attraction-image-${index}`}
-                      />
+                      <Label>Image</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={attraction.image}
+                          onChange={(e) => updateAttraction(attraction.id, "image", e.target.value)}
+                          placeholder="https://example.com/attraction.jpg or /assets/image.jpg"
+                          data-testid={`input-attraction-image-${index}`}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => suggestAttractionPhoto(index)}
+                          data-testid={`button-suggest-photo-${index}`}
+                        >
+                          <Sparkles className="h-4 w-4" />
+                          <span className="ml-2 hidden sm:inline">Suggest Photo</span>
+                        </Button>
+                        <Button type="button" variant="outline" className="relative" data-testid={`button-upload-attraction-photo-${index}`}>
+                          {uploadImageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAttractionPhotoUpload(attraction.id)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        "Suggest Photo" tries Pexels, then Pixabay, then Unsplash, and the Media Library last — either way you review before it's saved. Uploads are automatically converted to WebP and compressed.
+                      </p>
+
+                      {photoPreview[index] && (() => {
+                        const entry = photoPreview[index]!;
+                        const candidate = entry.candidates[entry.currentIndex];
+                        const sourceLabel = STOCK_PHOTO_SOURCES.find((s) => s.source === entry.source)!.label;
+                        return (
+                          <div className="border rounded-md p-3 flex gap-3 items-start bg-muted/30" data-testid={`photo-preview-${index}`}>
+                            <img
+                              src={candidate.thumbUrl}
+                              alt={`${sourceLabel} suggestion`}
+                              className="w-24 h-24 object-cover rounded-md flex-shrink-0"
+                            />
+                            <div className="flex-1 space-y-2 min-w-0">
+                              <p className="text-xs text-muted-foreground">
+                                Suggested via {sourceLabel} — photo by{" "}
+                                {candidate.photographerUrl ? (
+                                  <a href={candidate.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                                    {candidate.photographerName || sourceLabel}
+                                  </a>
+                                ) : (
+                                  candidate.photographerName || sourceLabel
+                                )}{" "}
+                                ({entry.currentIndex + 1}/{entry.candidates.length})
+                              </p>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => useStockPhoto(index)}
+                                  disabled={photoImportingIndex === index}
+                                  data-testid={`button-use-photo-${index}`}
+                                >
+                                  {photoImportingIndex === index ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                                  Use this photo
+                                </Button>
+                                {entry.candidates.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => cyclePhotoPreview(index)}
+                                    disabled={photoImportingIndex === index}
+                                    data-testid={`button-try-another-photo-${index}`}
+                                  >
+                                    Try another
+                                  </Button>
+                                )}
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => cancelPhotoPreview(index)}
+                                  disabled={photoImportingIndex === index}
+                                  data-testid={`button-cancel-photo-${index}`}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                       {attraction.image && (
                         <div className="mt-2">
                           <img
@@ -346,6 +623,16 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
                           />
                         </div>
                       )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Image Alt Text</Label>
+                      <Input
+                        value={attraction.imageAlt || ""}
+                        onChange={(e) => updateAttraction(attraction.id, "imageAlt", e.target.value)}
+                        placeholder="e.g., Great Pyramids of Giza at golden hour"
+                        data-testid={`input-attraction-image-alt-${index}`}
+                      />
                     </div>
                   </CardContent>
                 </Card>
