@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useRoute } from "wouter";
 import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
@@ -23,15 +24,19 @@ import {
   PawPrint,
   Star,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import type { Facility, Destination } from "@shared/schema";
+import type { Facility, Destination, Tour, Attraction } from "@shared/schema";
 import { getHotelImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 import { normalizeForMatch } from "@shared/itinerary-detection";
 import { Card, CardContent } from "@/components/ui/card";
 import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
+import DestinationToursCarousel from "@/components/destination-tours-carousel";
 
 function getFacilityIcon(iconName: string) {
   const className = "h-6 w-6 text-accent";
@@ -87,6 +92,8 @@ function RelatedHotelCard({ hotel, index = 0 }: { hotel: any; index?: number }) 
 
 export default function HotelDetail() {
   const [match, params] = useRoute("/hotel/:slug");
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   if (!match || !params?.slug) {
     return <div>Hotel not found</div>;
@@ -116,6 +123,12 @@ export default function HotelDetail() {
   // linkedDestination below.
   const { data: destinationsResponse } = useQuery<{ success: boolean; destinations: Destination[] }>({
     queryKey: ["/api/public/destinations"],
+  });
+
+  // All published tours, used for "Tours Featuring This Hotel" — see
+  // relatedTours below.
+  const { data: toursResponse } = useQuery<{ success: boolean; tours: Tour[] }>({
+    queryKey: ["/api/public/tours"],
   });
 
   const seoHotel = hotelResponse?.hotel;
@@ -205,10 +218,23 @@ export default function HotelDetail() {
   const hotel = hotelResponse.hotel;
   const facilities = (hotel.facilities || []) as Facility[];
   const gallery = (hotel.gallery || []) as string[];
+  const allImages = [hotel.image, ...gallery.filter((img) => img !== hotel.image)];
   const hasCruiseDetails = Boolean(hotel.route || hotel.duration);
   const relatedHotels = ((allHotelsResponse?.hotels || []) as any[])
     .filter((h) => h.status === "published" && h.region === hotel.region && h.slug !== hotel.slug)
     .slice(0, 4);
+
+  // Tours whose manually-curated hotelIds include this hotel — the reverse
+  // of the tour page's own "Where You Will Stay" lookup. hotelIds is
+  // admin-curated, so this is exact-id matching only, no fuzzy logic.
+  const relatedTours = (toursResponse?.tours || []).filter(
+    (t) => t.published && (t.hotelIds || []).includes(hotel.id)
+  );
+
+  // Real attractions from the hotel's own linked destination (see
+  // linkedDestination below) — shown as "Nearby Attractions", distinct from
+  // the single "Explore [City]" link in the hero.
+  const nearbyAttractions = ((linkedDestination?.attractions as Attraction[] | undefined) || []).slice(0, 3);
 
   // Intro paragraph fallback — hotel.description/fullDescription are real
   // admin-written content already used on hotel cards elsewhere on the site,
@@ -222,16 +248,42 @@ export default function HotelDetail() {
       <Navigation />
 
       <main>
-        {/* Hero — full-width image, hotel name overlaid, no buttons */}
-        <section className="relative h-[60vh] md:h-[75vh] flex items-end overflow-hidden">
+        {/* Hero Gallery — main image cycles through hotel.image + gallery,
+            with a thumbnail strip and a full-screen lightbox, matching the
+            same interaction pattern already used on the tour detail page. */}
+        <section
+          className="relative h-[60vh] md:h-[75vh] flex items-end overflow-hidden cursor-pointer group"
+          onClick={() => setIsLightboxOpen(true)}
+        >
           <img
-            {...getResponsiveImageProps(hotel.image)}
-            alt={getHotelImageAlt(hotel)}
-            className="absolute inset-0 w-full h-full object-cover"
+            {...getResponsiveImageProps(allImages[selectedImage])}
+            alt={getHotelImageAlt(hotel, selectedImage)}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="eager"
             fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+          {allImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => (prev === 0 ? allImages.length - 1 : prev - 1)); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Previous image"
+                data-testid="button-hero-prev"
+              >
+                <ChevronLeft className="h-6 w-6 text-primary" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => (prev === allImages.length - 1 ? 0 : prev + 1)); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+                aria-label="Next image"
+                data-testid="button-hero-next"
+              >
+                <ChevronRight className="h-6 w-6 text-primary" />
+              </button>
+            </>
+          )}
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 md:pb-14 text-white">
             <div className="flex items-center gap-2 text-sm md:text-base text-white/80 mb-2">
@@ -243,6 +295,7 @@ export default function HotelDetail() {
             {linkedDestination && (
               <Link
                 href={`/destinations/${linkedDestination.slug}`}
+                onClick={(e) => e.stopPropagation()}
                 className="group inline-flex items-center gap-1.5 mt-3 text-sm md:text-base text-white/90 hover:text-white transition-colors duration-300"
                 data-testid="link-explore-hotel-destination"
               >
@@ -265,6 +318,27 @@ export default function HotelDetail() {
                     <span>{hotel.duration}</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {allImages.length > 1 && (
+              <div
+                className="flex gap-2 mt-6 overflow-x-auto pb-1 max-w-full"
+                onClick={(e) => e.stopPropagation()}
+                data-testid="hero-thumbnail-strip"
+              >
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`flex-shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-md overflow-hidden transition-all duration-300 ${
+                      selectedImage === idx ? "ring-2 ring-accent ring-offset-2 ring-offset-black/40 opacity-100" : "opacity-60 hover:opacity-90"
+                    }`}
+                    data-testid={`hero-thumbnail-${idx}`}
+                  >
+                    <img src={img} alt={getHotelImageAlt(hotel, idx)} className="w-full h-full object-cover" loading="lazy" />
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -340,41 +414,58 @@ export default function HotelDetail() {
 
         <FaqSection faqs={hotelFaqs} testId="hotel-faq-section" />
 
-        {/* Gallery — horizontal scroll strip */}
-        {gallery.length > 0 && (
-          <section className="py-14 md:py-20">
+        {/* Nearby Attractions — real attractions from this hotel's own
+            destination page, distinct from the "Explore [City]" hero link. */}
+        {nearbyAttractions.length > 0 && linkedDestination && (
+          <section className="py-14 md:py-20 bg-muted/40" data-testid="hotel-nearby-attractions-section">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <motion.h2
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8"
+                className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8 text-center"
               >
-                Gallery
+                Nearby Attractions in {linkedDestination.name}
               </motion.h2>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-4 px-4 sm:px-6 lg:px-8 snap-x snap-mandatory">
-              {gallery.map((image, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
-                  className="group relative shrink-0 w-[75vw] sm:w-[380px] h-64 sm:h-80 rounded-xl overflow-hidden shadow-lg snap-start"
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {nearbyAttractions.map((attraction, index) => (
+                  <motion.div
+                    key={attraction.id}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
+                    className="group"
+                  >
+                    <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-3">
+                      <img
+                        src={attraction.image}
+                        alt={attraction.imageAlt || attraction.name}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <h3 className="font-serif text-lg font-bold text-primary leading-snug">{attraction.name}</h3>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="text-center mt-10">
+                <Link
+                  href={`/destinations/${linkedDestination.slug}`}
+                  className="group inline-flex items-center gap-2 text-primary font-medium hover:text-accent transition-colors duration-300"
+                  data-testid="link-nearby-attractions-view-more"
                 >
-                  <img
-                    src={image}
-                    alt={getHotelImageAlt(hotel, index)}
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                    loading="lazy"
-                  />
-                </motion.div>
-              ))}
+                  Explore all of {linkedDestination.name}
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Link>
+              </div>
             </div>
           </section>
         )}
+
+        {/* Tours Featuring This Hotel */}
+        <DestinationToursCarousel tours={relatedTours} eyebrow="Curated Journeys" title="Tours Featuring This Hotel" />
 
         {/* Why We Chose This Hotel — full-width brand-color focal point */}
         {hotel.whyWeChoseQuote && (
@@ -441,6 +532,61 @@ export default function HotelDetail() {
           </div>
         </motion.section>
       </main>
+
+      {/* Lightbox */}
+      {isLightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onClick={() => setIsLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+            aria-label="Close lightbox"
+          >
+            <X className="h-6 w-6 text-white" />
+          </button>
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => (prev === 0 ? allImages.length - 1 : prev - 1)); }}
+              className="absolute left-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-7 w-7 text-white" />
+            </button>
+          )}
+          <img
+            src={allImages[selectedImage]}
+            alt={getHotelImageAlt(hotel, selectedImage)}
+            className="max-w-[90vw] max-h-[85vh] object-contain"
+            loading="eager"
+            onClick={(e) => e.stopPropagation()}
+          />
+          {allImages.length > 1 && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedImage((prev) => (prev === allImages.length - 1 ? 0 : prev + 1)); }}
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-7 w-7 text-white" />
+            </button>
+          )}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              {allImages.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => { e.stopPropagation(); setSelectedImage(idx); }}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    selectedImage === idx ? "bg-accent w-6" : "bg-white/40 hover:bg-white/60"
+                  }`}
+                  aria-label={`Go to image ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <Footer />
       <ScrollToTopButton />

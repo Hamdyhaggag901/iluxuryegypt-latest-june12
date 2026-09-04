@@ -10,6 +10,7 @@ import WhyUseSection from "../components/why-use-section";
 import HighlightsSection from "../components/highlights-section";
 import LuxuryPackagesSection from "../components/destination-blocks";
 import InteractiveMapSection from "../components/interactive-map-section";
+import PersonalAdvisorSection from "../components/personal-advisor-section";
 import TestimonialSection from "../components/testimonial-section";
 import CallToActionSection from "../components/call-to-action-section";
 import HomeFAQSection from "../components/home-faq-section";
@@ -44,6 +45,7 @@ export default function Home() {
         />
         <InteractiveMapSection />
         <HighlightsSection />
+        <PersonalAdvisorSection />
         <TestimonialSection />
         <CallToActionSection />
         <HomeFAQSection />

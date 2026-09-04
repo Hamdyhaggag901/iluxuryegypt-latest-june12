@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Wifi, Car, Utensils, Waves, Sparkles, Shield, Search, Filter, X } from "lucide-react";
+import { Star, Wifi, Car, Utensils, Waves, Sparkles, Shield, Search, Filter, X, ShieldCheck, Compass, HeartHandshake } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery } from "@tanstack/react-query";
 import type { Hotel } from "@shared/schema";
+import HotelShowcaseCard from "@/components/hotel-showcase-card";
 
 // Import luxury Egyptian images
 import suiteNileImage from "@assets/suite-nile_1757457083796.jpg";
@@ -179,7 +180,7 @@ export default function Stay() {
 
   // Hero section data
   const heroData = stayPageData?.hero || {
-    title: "Luxury Accommodations",
+    title: "Where Luxury Meets the Nile",
     subtitle: "Every hotel in this collection is handpicked by our Egypt specialists, from Nile-view suites to Red Sea resorts and historic palaces. Filter by region, property type, and star rating below to find the stay that matches your trip.",
     backgroundImage: luxuryHallImage,
     primaryButtonText: "Book Your Stay",
@@ -209,110 +210,6 @@ export default function Stay() {
     primaryButtonLink: "/contact",
     secondaryButtonText: "View All Destinations",
     secondaryButtonLink: "/destinations",
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-accent fill-accent' : 'text-muted-foreground'}`}
-      />
-    ));
-  };
-
-  // Compact Hotel Card Component
-  const HotelCard = ({ hotel, isSpotlight = false, index = 0 }: { hotel: Hotel; isSpotlight?: boolean; index?: number }) => {
-    const cardClasses = isSpotlight
-      ? "group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2"
-      : "group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent/30";
-
-    const imageHeight = isSpotlight ? "h-80" : "h-48";
-    const contentPadding = isSpotlight ? "p-6" : "p-4";
-
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
-      >
-      <Card className={cardClasses} data-testid={`hotel-card-${hotel.id}`}>
-        <div className={`relative ${imageHeight} overflow-hidden`}>
-          <img
-            src={hotel.image}
-            alt={`${hotel.name} luxury hotel in ${hotel.location}, Egypt`}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-            style={{ aspectRatio: '3/2' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-          {/* Rating overlay */}
-          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1">
-            <div className="flex items-center space-x-1">
-              {renderStars(hotel.rating)}
-              <span className="ml-1 text-primary font-semibold text-xs">{hotel.rating}</span>
-            </div>
-          </div>
-
-          {/* Featured badge */}
-          {hotel.featured && (
-            <div className="absolute top-3 left-3">
-              <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                Featured
-              </Badge>
-            </div>
-          )}
-        </div>
-
-        <CardContent className={contentPadding}>
-          <div className="flex items-start justify-between mb-2">
-            <h3 className={`font-serif font-bold text-primary leading-tight ${isSpotlight ? 'text-xl' : 'text-lg'}`}>
-              {hotel.name}
-            </h3>
-            <div className="text-right ml-2">
-              <div className="text-accent font-bold text-sm">{hotel.priceTier}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center text-muted-foreground mb-3">
-            <MapPin className="w-4 h-4 mr-1 text-accent" />
-            <span className="text-sm font-medium">{hotel.location}</span>
-            <span className="mx-2 text-xs">•</span>
-            <span className="text-xs">{hotel.type}</span>
-          </div>
-
-          {isSpotlight && (
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2">
-              {hotel.description}
-            </p>
-          )}
-
-          <div className="flex flex-wrap gap-1 mb-4">
-            {hotel.amenities.slice(0, isSpotlight ? 4 : 3).map((amenity, idx) => (
-              <Badge
-                key={idx}
-                variant="secondary"
-                className="text-xs bg-accent/10 text-accent hover:bg-accent/20 border-0"
-              >
-                {amenity}
-              </Badge>
-            ))}
-          </div>
-
-          <Link href={`/hotel/${hotel.slug}`}>
-            <Button
-              className="w-full"
-              size={isSpotlight ? "default" : "sm"}
-              data-testid={`button-read-more-${hotel.slug}`}
-            >
-              Read More
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-      </motion.div>
-    );
   };
 
   return (
@@ -423,7 +320,7 @@ export default function Stay() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredHotels.map((hotel: Hotel, index: number) => (
-                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={true} index={index} />
+                <HotelShowcaseCard key={hotel.id} hotel={hotel} isSpotlight={true} index={index} />
               ))}
             </div>
           </div>
@@ -443,7 +340,11 @@ export default function Stay() {
             </div>
 
             {/* Filter Bar */}
-            <div className="bg-card rounded-lg p-6 shadow-lg border border-accent/10 mb-12">
+            <div className="bg-card rounded-lg p-6 md:p-8 shadow-lg border-t-2 border-accent border-x border-b border-accent/10 mb-12">
+              <div className="flex items-center gap-2 mb-6 text-xs md:text-sm tracking-[0.2em] uppercase text-accent font-medium">
+                <Filter className="w-3.5 h-3.5" />
+                Refine Your Search
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
                 {/* Search */}
                 <div className="lg:col-span-2">
@@ -626,7 +527,7 @@ export default function Stay() {
             {/* Hotels Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               {displayedHotels.map((hotel: Hotel, index: number) => (
-                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={false} index={index} />
+                <HotelShowcaseCard key={hotel.id} hotel={hotel} isSpotlight={false} index={index} />
               ))}
             </div>
 
@@ -667,6 +568,66 @@ export default function Stay() {
             )}
           </div>
         </section>
+
+        {/* Why Our Hotels — trust section: every property is personally vetted, not a generic booking listing */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="py-20 bg-muted"
+          data-testid="why-our-hotels-section"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-14">
+              <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
+                Why Our Hotels
+              </span>
+              <h2 className="text-3xl md:text-5xl font-serif font-bold text-primary mt-4 mb-6">
+                Chosen, Not Just Listed
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                This isn't a booking engine's full inventory. Every property here has been visited and
+                personally vetted by our Egypt specialists — the rest never make the collection.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {[
+                {
+                  icon: <ShieldCheck className="w-7 h-7 text-accent" />,
+                  title: "Personally Vetted",
+                  description: "Our specialists stay at and inspect every hotel in this collection before it earns a place here.",
+                },
+                {
+                  icon: <Compass className="w-7 h-7 text-accent" />,
+                  title: "Matched to Your Journey",
+                  description: "Location, service style, and character are weighed against your itinerary, not just star ratings.",
+                },
+                {
+                  icon: <HeartHandshake className="w-7 h-7 text-accent" />,
+                  title: "A Relationship, Not a Booking",
+                  description: "Established relationships with each property mean your stay is looked after long before you arrive.",
+                },
+              ].map((item, index) => (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
+                  className="text-center"
+                >
+                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-5">
+                    {item.icon}
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-primary mb-3">{item.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
 
         {/* Luxury Features Section */}
         <section className="py-20 bg-background">
