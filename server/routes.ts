@@ -2621,6 +2621,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: "tours.gallery_alt",
         sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS gallery_alt jsonb NOT NULL DEFAULT '{}'::jsonb`,
       },
+      {
+        name: "hotels.seo_title",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS seo_title text`,
+      },
+      {
+        name: "hotels.meta_description",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS meta_description text`,
+      },
+      {
+        name: "hotels.canonical_url",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS canonical_url text`,
+      },
+      {
+        name: "hotels.robots",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS robots text`,
+      },
+      {
+        name: "hotels.schema_type",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS schema_type text`,
+      },
+      {
+        name: "hotels.og_image",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS og_image text`,
+      },
+      {
+        name: "categories.seo_title",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS seo_title text`,
+      },
+      {
+        name: "categories.meta_description",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS meta_description text`,
+      },
+      {
+        name: "categories.focus_keyword",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS focus_keyword text`,
+      },
+      {
+        name: "categories.canonical_url",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS canonical_url text`,
+      },
+      {
+        name: "categories.robots",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS robots text`,
+      },
+      {
+        name: "categories.schema_type",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS schema_type text`,
+      },
+      {
+        name: "categories.og_image",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_image text`,
+      },
     ];
 
     const applied: string[] = [];

@@ -210,6 +210,12 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
       duration: "",
       status: "published",
       focusKeyword: "",
+      seoTitle: "",
+      metaDescription: "",
+      canonicalUrl: "",
+      robots: "",
+      schemaType: "",
+      ogImage: "",
       featured: false,
       isPartner: false,
       partnerLogoUrl: "",
@@ -917,6 +923,119 @@ export function HotelForm({ initialData, onSubmit, isLoading }: HotelFormProps) 
                   <span>This keyword doesn't appear in the hotel name or article yet — consider weaving it in naturally.</span>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Overrides</CardTitle>
+              <CardDescription>
+                Optional — leave blank to keep using the automatic defaults built from this hotel's own name,
+                location, and description.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seoTitle">Meta Title</Label>
+                <Input
+                  id="seoTitle"
+                  data-testid="input-hotel-seo-title"
+                  {...form.register("seoTitle")}
+                  placeholder={form.watch("name") && form.watch("location") ? `${form.watch("name")} - ${form.watch("location")}` : "Auto-generated from the hotel name and location"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea
+                  id="metaDescription"
+                  data-testid="input-hotel-meta-description"
+                  {...form.register("metaDescription")}
+                  rows={3}
+                  placeholder="Auto-generated from the description"
+                />
+                {(() => {
+                  const len = (form.watch("metaDescription") || "").length;
+                  if (len === 0) return <p className="text-xs text-muted-foreground">Ideal length: 150–160 characters</p>;
+                  const inRange = len >= 150 && len <= 160;
+                  return (
+                    <p className={`text-xs ${inRange ? "text-green-600" : len > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                      {len} / 160 characters {inRange ? "(ideal length)" : len > 160 ? "(longer than ideal)" : "(ideal: 150–160)"}
+                    </p>
+                  );
+                })()}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canonicalUrl">Canonical URL</Label>
+                <Input
+                  id="canonicalUrl"
+                  data-testid="input-hotel-canonical-url"
+                  {...form.register("canonicalUrl")}
+                  placeholder="Leave blank to use this page's own URL"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="robots">Robots</Label>
+                  <Select
+                    value={form.watch("robots") || "__default__"}
+                    onValueChange={(value) => form.setValue("robots", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="robots" data-testid="select-hotel-robots">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (index, follow)</SelectItem>
+                      <SelectItem value="index, follow">index, follow</SelectItem>
+                      <SelectItem value="noindex, follow">noindex, follow</SelectItem>
+                      <SelectItem value="index, nofollow">index, nofollow</SelectItem>
+                      <SelectItem value="noindex, nofollow">noindex, nofollow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schemaType">Schema Type</Label>
+                  <Select
+                    value={form.watch("schemaType") || "__default__"}
+                    onValueChange={(value) => form.setValue("schemaType", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="schemaType" data-testid="select-hotel-schema-type">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (Hotel)</SelectItem>
+                      <SelectItem value="Hotel">Hotel</SelectItem>
+                      <SelectItem value="LodgingBusiness">LodgingBusiness</SelectItem>
+                      <SelectItem value="Resort">Resort</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ogImage">Social Share Image (OG Image)</Label>
+                <Input
+                  id="ogImage"
+                  data-testid="input-hotel-og-image"
+                  {...form.register("ogImage")}
+                  placeholder="Leave blank to use the Hero Image"
+                />
+                {form.watch("ogImage") && (
+                  <div className="mt-2">
+                    <img
+                      src={form.watch("ogImage") || ""}
+                      alt="OG image preview"
+                      className="w-full max-w-md h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

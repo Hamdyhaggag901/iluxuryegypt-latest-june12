@@ -115,6 +115,12 @@ export const hotels = pgTable("hotels", {
   status: text("status").notNull().default("published"), // published | draft
   sortOrder: integer("sort_order").notNull().default(0), // Manual grid ordering
   focusKeyword: text("focus_keyword"), // Optional SEO focus keyword
+  seoTitle: text("seo_title"), // Admin-written <title> override. Falls back to the auto-generated "{name} - {location}" when empty.
+  metaDescription: text("meta_description"), // Admin-written meta description override. Falls back to `description` when empty.
+  canonicalUrl: text("canonical_url"), // Optional canonical URL override. Falls back to this page's own URL when empty.
+  robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
+  schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD. Falls back to "Hotel" when empty.
+  ogImage: text("og_image"), // Optional social-share image override. Falls back to `image` when empty.
   featured: boolean("featured").notNull().default(false), // Deprecated: featured hotel is now chosen via stayListingSettings.featuredHotelId
   isPartner: boolean("is_partner").notNull().default(false), // Shows a "Trusted Partner" badge on the homepage's Where You Will Stay cards
   partnerLogoUrl: text("partner_logo_url"), // Optional; badge falls back to text-only when empty
@@ -238,6 +244,13 @@ export const categories = pgTable("categories", {
   image: text("image").notNull(),
   sortOrder: integer("sort_order").notNull().default(0),
   featured: boolean("featured").notNull().default(false),
+  seoTitle: text("seo_title"), // Admin-written <title> override. Falls back to the category name when empty.
+  metaDescription: text("meta_description"), // Admin-written meta description override. Falls back to shortDescription/description when empty.
+  focusKeyword: text("focus_keyword"), // Optional SEO focus keyword
+  canonicalUrl: text("canonical_url"), // Optional canonical URL override. Falls back to this page's own URL when empty.
+  robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
+  schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD.
+  ogImage: text("og_image"), // Optional social-share image override. Falls back to `image` when empty.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -657,6 +670,12 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   status: z.enum(["published", "draft"]).default("published"),
   sortOrder: z.number().default(0),
   focusKeyword: z.string().nullable().optional(), // Nullable column; existing rows created before this field existed have NULL
+  seoTitle: z.string().max(60, "SEO title must be 60 characters or less").nullable().optional(),
+  metaDescription: z.string().max(160, "Meta description must be 160 characters or less").nullable().optional(),
+  canonicalUrl: z.string().nullable().optional(),
+  robots: z.string().nullable().optional(),
+  schemaType: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional(),
   featured: z.boolean().default(false),
   isPartner: z.boolean().default(false),
   partnerLogoUrl: z.string().nullable().optional(),
@@ -767,6 +786,13 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   sortOrder: z.number().default(0),
   featured: z.boolean().default(false),
   categoryType: z.enum(["packages", "day-tours", "nile-cruise"]).default("packages"),
+  seoTitle: z.string().max(60, "SEO title must be 60 characters or less").nullable().optional(),
+  metaDescription: z.string().max(160, "Meta description must be 160 characters or less").nullable().optional(),
+  focusKeyword: z.string().nullable().optional(),
+  canonicalUrl: z.string().nullable().optional(),
+  robots: z.string().nullable().optional(),
+  schemaType: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional(),
 });
 
 export const insertSeasonSchema = createInsertSchema(seasons).omit({

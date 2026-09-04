@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Search, ArrowLeft, Grid3x3 } from "lucide-react";
+import { Plus, Edit, Trash2, Search, ArrowLeft, Grid3x3, AlertTriangle } from "lucide-react";
 import { insertCategorySchema, type InsertCategory, type Category } from "@shared/schema";
 
 export default function AdminCategories() {
@@ -34,6 +34,13 @@ export default function AdminCategories() {
       sortOrder: 0,
       featured: false,
       categoryType: "packages",
+      seoTitle: "",
+      metaDescription: "",
+      focusKeyword: "",
+      canonicalUrl: "",
+      robots: "",
+      schemaType: "",
+      ogImage: "",
     },
   });
 
@@ -159,6 +166,13 @@ export default function AdminCategories() {
       sortOrder: category.sortOrder,
       featured: category.featured,
       categoryType: category.categoryType || "packages",
+      seoTitle: category.seoTitle || "",
+      metaDescription: category.metaDescription || "",
+      focusKeyword: category.focusKeyword || "",
+      canonicalUrl: category.canonicalUrl || "",
+      robots: category.robots || "",
+      schemaType: category.schemaType || "",
+      ogImage: category.ogImage || "",
     });
     setIsDialogOpen(true);
   };
@@ -174,6 +188,13 @@ export default function AdminCategories() {
       sortOrder: 0,
       featured: false,
       categoryType: "packages",
+      seoTitle: "",
+      metaDescription: "",
+      focusKeyword: "",
+      canonicalUrl: "",
+      robots: "",
+      schemaType: "",
+      ogImage: "",
     });
     setIsDialogOpen(true);
   };
@@ -449,6 +470,163 @@ export default function AdminCategories() {
                   </FormItem>
                 )}
               />
+
+              <div className="pt-4 border-t">
+                <h3 className="text-sm font-semibold mb-1">SEO Overrides</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Optional — leave blank to keep using the automatic defaults built from this category's own name and description.
+                </p>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="seoTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Auto-generated from the category name" {...field} value={field.value || ""} data-testid="input-category-seo-title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="metaDescription"
+                render={({ field }) => {
+                  const len = (field.value || "").length;
+                  const inRange = len >= 150 && len <= 160;
+                  return (
+                    <FormItem>
+                      <FormLabel>Meta Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Auto-generated from the short description" rows={3} {...field} value={field.value || ""} data-testid="input-category-meta-description" />
+                      </FormControl>
+                      {len === 0 ? (
+                        <p className="text-xs text-muted-foreground">Ideal length: 150–160 characters</p>
+                      ) : (
+                        <p className={`text-xs ${inRange ? "text-green-600" : len > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                          {len} / 160 characters {inRange ? "(ideal length)" : len > 160 ? "(longer than ideal)" : "(ideal: 150–160)"}
+                        </p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="focusKeyword"
+                render={({ field }) => {
+                  const keyword = (field.value || "").trim();
+                  const name = form.watch("name") || "";
+                  const description = form.watch("description") || "";
+                  const showHint =
+                    keyword.length > 0 &&
+                    !name.toLowerCase().includes(keyword.toLowerCase()) &&
+                    !description.toLowerCase().includes(keyword.toLowerCase());
+                  return (
+                    <FormItem>
+                      <FormLabel>Focus Keyword</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., luxury family tours egypt" {...field} value={field.value || ""} data-testid="input-category-focus-keyword" />
+                      </FormControl>
+                      {showHint && (
+                        <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <span>This keyword doesn't appear in the name or description yet — consider weaving it in naturally.</span>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="canonicalUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Canonical URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Leave blank to use this page's own URL" {...field} value={field.value || ""} data-testid="input-category-canonical-url" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="robots"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Robots</FormLabel>
+                      <Select value={field.value || "__default__"} onValueChange={(v) => field.onChange(v === "__default__" ? "" : v)}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-category-robots">
+                            <SelectValue placeholder="Default" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="__default__">Default (index, follow)</SelectItem>
+                          <SelectItem value="index, follow">index, follow</SelectItem>
+                          <SelectItem value="noindex, follow">noindex, follow</SelectItem>
+                          <SelectItem value="index, nofollow">index, nofollow</SelectItem>
+                          <SelectItem value="noindex, nofollow">noindex, nofollow</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="schemaType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Schema Type</FormLabel>
+                      <Select value={field.value || "__default__"} onValueChange={(v) => field.onChange(v === "__default__" ? "" : v)}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-category-schema-type">
+                            <SelectValue placeholder="None" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="__default__">None</SelectItem>
+                          <SelectItem value="CollectionPage">CollectionPage</SelectItem>
+                          <SelectItem value="Service">Service</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="ogImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Social Share Image (OG Image)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Leave blank to use the Image URL above" {...field} value={field.value || ""} data-testid="input-category-og-image" />
+                    </FormControl>
+                    {field.value && (
+                      <img
+                        src={field.value}
+                        alt="OG image preview"
+                        className="mt-2 h-24 w-auto rounded border object-cover"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        onLoad={(e) => { e.currentTarget.style.display = "block"; }}
+                      />
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <DialogFooter>
                 <Button 
                   type="button" 

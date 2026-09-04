@@ -15,6 +15,10 @@ export interface PageMeta {
   image: string;
   type: string;
   jsonLd?: object | object[];
+  /** Canonical URL override. Falls back to this page's own URL when unset. */
+  canonical?: string;
+  /** Robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when unset. */
+  robots?: string;
 }
 
 function truncate(text: string, max: number): string {
@@ -474,6 +478,83 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     }
   }
 
+  // Destinations landing page — ItemList of published destinations, built
+  // from live DB data on top of the otherwise-static title/description.
+  if (normalized === "/destinations") {
+    const meta = STATIC_PAGE_META["/destinations"];
+    try {
+      const allDestinations = await storage.getDestinations();
+      const published = allDestinations.filter((d) => d.published);
+      const jsonLd =
+        published.length > 0
+          ? {
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              itemListElement: published.map((d, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: d.name,
+                url: `${SITE_URL}/destinations/${d.slug}`,
+              })),
+            }
+          : undefined;
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/destinations"]),
+      };
+    } catch (err) {
+      console.error("[seo-meta] Failed to resolve destinations ItemList:", err);
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/destinations"]),
+      };
+    }
+  }
+
+  // /stay listing page — ItemList of published hotels, same convention.
+  if (normalized === "/stay") {
+    const meta = STATIC_PAGE_META["/stay"];
+    try {
+      const allHotels = await storage.getHotels();
+      const published = allHotels.filter((h) => h.status === "published");
+      const jsonLd =
+        published.length > 0
+          ? {
+              "@context": "https://schema.org",
+              "@type": "ItemList",
+              itemListElement: published.map((h, index) => ({
+                "@type": "ListItem",
+                position: index + 1,
+                name: h.name,
+                url: `${SITE_URL}/hotel/${h.slug}`,
+              })),
+            }
+          : undefined;
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/stay"]),
+      };
+    } catch (err) {
+      console.error("[seo-meta] Failed to resolve stay ItemList:", err);
+      return {
+        title: meta.title,
+        description: truncate(meta.description, 160),
+        image: DEFAULT_IMAGE,
+        type: "website",
+        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/stay"]),
+      };
+    }
+  }
+
   const staticMeta = STATIC_PAGE_META[normalized];
   if (staticMeta) {
     const breadcrumbSegments = STATIC_BREADCRUMBS[normalized];
@@ -561,6 +642,8 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         ),
         image: destination.ogImage || destination.heroImage || DEFAULT_IMAGE,
         type: "website",
+        canonical: destination.canonicalUrl?.trim() || undefined,
+        robots: destination.robots?.trim() || undefined,
         jsonLd: buildBreadcrumbJsonLd([
           { name: "Destinations", url: "/destinations" },
           { name: destination.name, url: `/destinations/${destination.slug}` },
@@ -573,13 +656,17 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       if (!hotel) return null;
       const keyword = hotel.focusKeyword?.trim();
       const baseTitle = `${hotel.name} - ${hotel.location}`;
-      const title = keyword && !baseTitle.toLowerCase().includes(keyword.toLowerCase())
+      const autoTitle = keyword && !baseTitle.toLowerCase().includes(keyword.toLowerCase())
         ? `${hotel.name} - ${keyword}`
         : baseTitle;
       const baseDescription = hotel.description || DEFAULT_DESCRIPTION;
-      const description = keyword && !baseDescription.toLowerCase().includes(keyword.toLowerCase())
+      const autoDescription = keyword && !baseDescription.toLowerCase().includes(keyword.toLowerCase())
         ? `${keyword} — ${baseDescription}`
         : baseDescription;
+      // Manual admin override (SEO tab) takes priority over the
+      // focusKeyword-aware auto-generated title/description above.
+      const title = hotel.seoTitle?.trim() || autoTitle;
+      const description = hotel.metaDescription?.trim() || autoDescription;
       // Facilities (not the dormant `amenities` column — that field is
       // captured in the admin form but never rendered on the public hotel
       // page, so it would produce a schema that describes content visitors
@@ -600,7 +687,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       });
       const jsonLd = {
         "@context": "https://schema.org",
-        "@type": "Hotel",
+        "@type": hotel.schemaType?.trim() || "Hotel",
         name: hotel.name,
         description: hotel.description,
         image: [heroImage, ...galleryImages].filter(Boolean),
@@ -628,8 +715,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       return {
         title: withSiteName(title),
         description: truncate(description, 160),
-        image: hotel.image || DEFAULT_IMAGE,
+        image: hotel.ogImage?.trim() || hotel.image || DEFAULT_IMAGE,
         type: "website",
+        canonical: hotel.canonicalUrl?.trim() || undefined,
+        robots: hotel.robots?.trim() || undefined,
         jsonLd: withBreadcrumbs(jsonLd, [
           { name: "Stay", url: "/stay" },
           { name: hotel.name, url: `/hotel/${hotel.slug}` },
@@ -674,6 +763,19 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const category = await storage.getCategoryBySlug(slug);
       if (!category) return null;
       const override = CATEGORY_META_OVERRIDES[slug];
+      // Priority: admin-editable DB fields (SEO tab) first, then the
+      // legacy hardcoded CATEGORY_META_OVERRIDES (kept for the handful of
+      // categories that already had one before the SEO tab existed), then
+      // the auto-generated fallback. Hardcoded overrides already include
+      // the " | iLuxury Egypt" suffix inline, so only the DB/auto paths
+      // need withSiteName().
+      const title = category.seoTitle?.trim()
+        ? withSiteName(category.seoTitle.trim())
+        : override?.title || withSiteName(category.name);
+      const description = truncate(
+        category.metaDescription?.trim() || override?.description || category.shortDescription || category.description || DEFAULT_DESCRIPTION,
+        160,
+      );
       // /categories/:slug has no standalone listing page to link a parent
       // crumb to (App.tsx only registers the three real group pages), so it
       // stays a 2-level trail; the other three prefixes get their listing
@@ -685,15 +787,26 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           : pathname.startsWith("/categories/")
             ? null
             : { name: "Egypt Tour Packages", url: "/egypt-tour-packages" };
+      // Auto-generated structured data from the schemaType dropdown, same
+      // convention as destinations — only emitted when an admin actually
+      // set one, categories have no custom-JSON-LD override field.
+      const categoryJsonLd: object | undefined = category.schemaType?.trim()
+        ? {
+            "@context": "https://schema.org",
+            "@type": category.schemaType.trim(),
+            name: category.name,
+            description,
+            ...(category.image ? { image: category.image } : {}),
+          }
+        : undefined;
       return {
-        title: override?.title || withSiteName(category.name),
-        description: truncate(
-          override?.description || category.shortDescription || category.description || DEFAULT_DESCRIPTION,
-          160,
-        ),
-        image: category.image || DEFAULT_IMAGE,
+        title,
+        description,
+        image: category.ogImage?.trim() || category.image || DEFAULT_IMAGE,
         type: "website",
-        jsonLd: buildBreadcrumbJsonLd([
+        canonical: category.canonicalUrl?.trim() || undefined,
+        robots: category.robots?.trim() || undefined,
+        jsonLd: withBreadcrumbs(categoryJsonLd, [
           ...(categoryParent ? [categoryParent] : []),
           { name: category.name, url: pathname },
         ]),
@@ -793,11 +906,12 @@ function escapeAttr(str: string): string {
  * on every request. Safe against HTML/attribute injection via escaping.
  */
 export function injectMetaTags(html: string, url: string, meta: PageMeta): string {
-  const canonicalUrl = `${SITE_URL}${url.split("?")[0]}`;
+  const canonicalUrl = meta.canonical?.trim() || `${SITE_URL}${url.split("?")[0]}`;
   const safeTitle = escapeHtml(meta.title);
   const safeDescription = escapeAttr(meta.description);
   const safeImage = escapeAttr(meta.image);
   const safeUrl = escapeAttr(canonicalUrl);
+  const safeRobots = escapeAttr(meta.robots?.trim() || "index, follow");
 
   let result = html;
 
@@ -832,6 +946,16 @@ export function injectMetaTags(html: string, url: string, meta: PageMeta): strin
     result = result.replace(/<link rel="canonical" href="[^"]*"\s*\/?>/, `<link rel="canonical" href="${safeUrl}" />`);
   } else {
     result = result.replace("</head>", `    <link rel="canonical" href="${safeUrl}" />\n  </head>`);
+  }
+
+  // Robots meta — the template never has one, so this always appends. Every
+  // response gets an explicit tag (defaulting to "index, follow") rather
+  // than relying on a browser/crawler's implicit default, and — unlike the
+  // client-side useSEO() hook — this is what a non-JS crawler actually sees.
+  if (/<meta name="robots"/.test(result)) {
+    result = result.replace(/<meta name="robots" content="[^"]*"\s*\/?>/, `<meta name="robots" content="${safeRobots}" />`);
+  } else {
+    result = result.replace("</head>", `    <meta name="robots" content="${safeRobots}" />\n  </head>`);
   }
 
   // JSON-LD structured data — one <script> per schema object. `<` is escaped
