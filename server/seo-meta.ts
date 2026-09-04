@@ -837,7 +837,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       const uniquenessProperties = await buildTourUniquenessSignals(tour);
       const jsonLd = {
         "@context": "https://schema.org",
-        "@type": "TouristTrip",
+        "@type": tour.schemaType?.trim() || "TouristTrip",
         name: tour.title,
         description,
         image: [tour.heroImage, ...gallery].filter(Boolean),
@@ -874,8 +874,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       return {
         title: withSiteName(titleBase),
         description,
-        image,
+        image: tour.ogImage?.trim() || image,
         type: "website",
+        canonical: tour.canonicalUrl?.trim() || undefined,
+        robots: tour.robots?.trim() || undefined,
         jsonLd: withBreadcrumbs(jsonLd, [{ name: tour.title, url: `/${tour.slug}` }]),
       };
     }

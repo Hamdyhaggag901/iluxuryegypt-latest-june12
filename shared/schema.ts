@@ -187,6 +187,11 @@ export const tours = pgTable("tours", {
   brochureUrl: text("brochure_url"),
   seoTitle: text("seo_title"), // Admin-written <title> override. Falls back to the auto-generated "{title} | iLuxury Egypt" when empty.
   metaDescription: text("meta_description"), // Admin-written meta description override. Falls back to shortDescription/description when empty.
+  focusKeyword: text("focus_keyword"), // Optional SEO focus keyword
+  canonicalUrl: text("canonical_url"), // Optional canonical URL override. Falls back to this page's own URL when empty.
+  robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
+  schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD. Falls back to "TouristTrip" when empty.
+  ogImage: text("og_image"), // Optional social-share image override. Falls back to `heroImage` when empty.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -749,6 +754,11 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   published: z.boolean().default(true),
   seoTitle: z.string().nullable().optional(), // Overrides the auto-generated <title>/og:title when set
   metaDescription: z.string().nullable().optional(), // Overrides the auto-generated meta description/og:description when set
+  focusKeyword: z.string().nullable().optional(),
+  canonicalUrl: z.string().nullable().optional(),
+  robots: z.string().nullable().optional(),
+  schemaType: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional(),
 });
 
 export const insertPackageSchema = createInsertSchema(packages).omit({

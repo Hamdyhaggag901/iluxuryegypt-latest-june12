@@ -2673,6 +2673,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: "categories.og_image",
         sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_image text`,
       },
+      {
+        name: "tours.focus_keyword",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS focus_keyword text`,
+      },
+      {
+        name: "tours.canonical_url",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS canonical_url text`,
+      },
+      {
+        name: "tours.robots",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS robots text`,
+      },
+      {
+        name: "tours.schema_type",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS schema_type text`,
+      },
+      {
+        name: "tours.og_image",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS og_image text`,
+      },
     ];
 
     const applied: string[] = [];

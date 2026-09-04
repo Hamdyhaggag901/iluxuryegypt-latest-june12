@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Loader2, MapPin, Sparkles, Upload } from "lucide-react";
+import { Plus, X, Loader2, MapPin, Sparkles, Upload, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const tourFormSchema = insertTourSchema.extend({
@@ -45,6 +45,10 @@ const tourFormSchema = insertTourSchema.extend({
 });
 
 type TourFormData = z.infer<typeof tourFormSchema>;
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
 
 // Shared candidate shape across all three stock-photo sources — Unsplash is
 // the only one with a downloadLocation ping its API guidelines require.
@@ -152,6 +156,11 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
       brochureUrl: "",
       seoTitle: "",
       metaDescription: "",
+      focusKeyword: "",
+      canonicalUrl: "",
+      robots: "",
+      schemaType: "",
+      ogImage: "",
       ...initialData,
     },
   });
@@ -518,6 +527,14 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
     };
     onSubmit(transformedData);
   };
+
+  const focusKeyword = form.watch("focusKeyword") || "";
+  const tourTitle = form.watch("title") || "";
+  const tourDescription = form.watch("description") || "";
+  const showKeywordHint =
+    focusKeyword.trim().length > 0 &&
+    !tourTitle.toLowerCase().includes(focusKeyword.toLowerCase()) &&
+    !stripHtml(tourDescription).toLowerCase().includes(focusKeyword.toLowerCase());
 
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -1256,6 +1273,26 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
         <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
+              <CardTitle>Focus Keyword</CardTitle>
+              <CardDescription>Optional SEO target phrase for this tour's page title, description, and alt text</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Input
+                data-testid="input-tour-focus-keyword"
+                {...form.register("focusKeyword")}
+                placeholder="e.g., Pyramids Day Tour from Cairo"
+              />
+              {showKeywordHint && (
+                <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>This keyword doesn't appear in the tour title or description yet — consider weaving it in naturally.</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>SEO Overrides</CardTitle>
               <CardDescription>
                 Optional — leave blank to keep using the tour title/description automatically
@@ -1291,6 +1328,77 @@ export function TourForm({ initialData, onSubmit, isLoading }: TourFormProps) {
                     </p>
                   );
                 })()}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canonicalUrl">Canonical URL</Label>
+                <Input
+                  id="canonicalUrl"
+                  data-testid="input-tour-canonical-url"
+                  {...form.register("canonicalUrl")}
+                  placeholder="Leave blank to use this page's own URL"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="robots">Robots</Label>
+                  <Select
+                    value={form.watch("robots") || "__default__"}
+                    onValueChange={(value) => form.setValue("robots", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="robots" data-testid="select-tour-robots">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (index, follow)</SelectItem>
+                      <SelectItem value="index, follow">index, follow</SelectItem>
+                      <SelectItem value="noindex, follow">noindex, follow</SelectItem>
+                      <SelectItem value="index, nofollow">index, nofollow</SelectItem>
+                      <SelectItem value="noindex, nofollow">noindex, nofollow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schemaType">Schema Type</Label>
+                  <Select
+                    value={form.watch("schemaType") || "__default__"}
+                    onValueChange={(value) => form.setValue("schemaType", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="schemaType" data-testid="select-tour-schema-type">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (TouristTrip)</SelectItem>
+                      <SelectItem value="TouristTrip">TouristTrip</SelectItem>
+                      <SelectItem value="Product">Product</SelectItem>
+                      <SelectItem value="Event">Event</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ogImage">Social Share Image (OG Image)</Label>
+                <Input
+                  id="ogImage"
+                  data-testid="input-tour-og-image"
+                  {...form.register("ogImage")}
+                  placeholder="Leave blank to use the Hero Image"
+                />
+                {form.watch("ogImage") && (
+                  <div className="mt-2">
+                    <img
+                      src={form.watch("ogImage") || ""}
+                      alt="OG image preview"
+                      className="w-full max-w-md h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
