@@ -14,9 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, X, Loader2, Trash2, Sparkles, Upload } from "lucide-react";
+import { Plus, X, Loader2, Trash2, Sparkles, Upload, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
+import { stripHtml } from "@shared/strip-html";
 
 const destinationFormSchema = insertDestinationSchema.extend({
   heroImage: z.string().min(1, "Hero image is required"),
@@ -46,6 +47,12 @@ const STOCK_PHOTO_SOURCES: Array<{ source: StockPhotoSource; searchEndpoint: str
   { source: "unsplash", searchEndpoint: "/api/cms/unsplash-search", importEndpoint: "/api/cms/unsplash-import", label: "Unsplash" },
 ];
 
+interface FAQ {
+  id: string;
+  question: string;
+  answer: string;
+}
+
 interface DestinationFormProps {
   initialData?: Partial<any>;
   onSubmit: (data: any) => void;
@@ -54,6 +61,7 @@ interface DestinationFormProps {
 
 export function DestinationForm({ initialData, onSubmit, isLoading }: DestinationFormProps) {
   const [attractions, setAttractions] = useState<Attraction[]>(initialData?.attractions || []);
+  const [faqs, setFaqs] = useState<FAQ[]>(initialData?.faqs || []);
   const [photoPreview, setPhotoPreview] = useState<Record<number, { source: StockPhotoSource; candidates: StockPhotoCandidate[]; currentIndex: number } | null>>({});
   const [photoImportingIndex, setPhotoImportingIndex] = useState<number | null>(null);
   const { toast } = useToast();
@@ -102,6 +110,9 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       if (initialData.attractions) {
         setAttractions(initialData.attractions);
       }
+      if (initialData.faqs) {
+        setFaqs(initialData.faqs);
+      }
     }
   }, [initialData, form]);
 
@@ -140,6 +151,24 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
 
   const removeAttraction = (id: string) => {
     setAttractions(attractions.filter(attr => attr.id !== id));
+  };
+
+  // FAQ management — mirrors the Attractions repeater above (same pattern:
+  // local state array, add/update/remove by id) since there's no other
+  // per-entity FAQ form elsewhere in the codebase to follow instead (tour
+  // FAQs are auto-generated from tour data, and the sitewide /admin/faq
+  // page is a separate flat CRUD list, not a repeater embedded in a form).
+  const addFaq = () => {
+    const newFaq: FAQ = { id: uuidv4(), question: "", answer: "" };
+    setFaqs([...faqs, newFaq]);
+  };
+
+  const updateFaq = (id: string, field: keyof FAQ, value: string) => {
+    setFaqs(faqs.map(faq => (faq.id === id ? { ...faq, [field]: value } : faq)));
+  };
+
+  const removeFaq = (id: string) => {
+    setFaqs(faqs.filter(faq => faq.id !== id));
   };
 
   const uploadImageMutation = useMutation({
@@ -299,16 +328,27 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       attractions: attractions.filter(attr => attr.name.trim().length > 0),
       highlights: attractions.filter(attr => attr.name.trim().length > 0).map(attr => attr.name),
       gallery: attractions.filter(attr => attr.image.trim().length > 0).map(attr => attr.image),
+      faqs: faqs.filter(faq => faq.question.trim().length > 0 && faq.answer.trim().length > 0),
     };
     onSubmit(transformedData);
   };
 
+  const focusKeyword = form.watch("focusKeyword") || "";
+  const destinationName = form.watch("name") || "";
+  const description = form.watch("description") || "";
+  const showKeywordHint =
+    focusKeyword.trim().length > 0 &&
+    !destinationName.toLowerCase().includes(focusKeyword.toLowerCase()) &&
+    !stripHtml(description).toLowerCase().includes(focusKeyword.toLowerCase());
+
   return (
     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-3" data-testid="tabs-destination-form">
+        <TabsList className="grid w-full grid-cols-5" data-testid="tabs-destination-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
           <TabsTrigger value="attractions" data-testid="tab-attractions">Attractions</TabsTrigger>
+          <TabsTrigger value="faqs" data-testid="tab-faqs">FAQs</TabsTrigger>
+          <TabsTrigger value="seo" data-testid="tab-seo">SEO</TabsTrigger>
           <TabsTrigger value="settings" data-testid="tab-settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -655,6 +695,213 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
                   <p className="text-sm">Click the button above to add attractions for this destination.</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FAQs Tab */}
+        <TabsContent value="faqs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Destination FAQs</CardTitle>
+              <CardDescription>
+                Shown in the "Frequently Asked Questions" section on this destination's page, and included in its
+                FAQPage structured data for search engines.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {faqs.map((faq, index) => (
+                <Card key={faq.id} className="border-2">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">FAQ {index + 1}</CardTitle>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFaq(faq.id)}
+                        className="text-destructive hover:text-destructive"
+                        data-testid={`button-remove-faq-${index}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Question *</Label>
+                      <Input
+                        value={faq.question}
+                        onChange={(e) => updateFaq(faq.id, "question", e.target.value)}
+                        placeholder="e.g., How many days do I need in Cairo?"
+                        data-testid={`input-faq-question-${index}`}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Answer *</Label>
+                      <Textarea
+                        value={faq.answer}
+                        onChange={(e) => updateFaq(faq.id, "answer", e.target.value)}
+                        placeholder="Give a clear, specific answer..."
+                        rows={3}
+                        data-testid={`input-faq-answer-${index}`}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addFaq}
+                className="w-full"
+                data-testid="button-add-faq"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add FAQ
+              </Button>
+
+              {faqs.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No FAQs added yet.</p>
+                  <p className="text-sm">Click the button above to add questions for this destination.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* SEO Tab */}
+        <TabsContent value="seo" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Overrides</CardTitle>
+              <CardDescription>
+                Optional — leave blank to keep using the automatic defaults built from this destination's own name,
+                description, and hero image.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="seoTitle">Meta Title</Label>
+                <Input
+                  id="seoTitle"
+                  data-testid="input-destination-seo-title"
+                  {...form.register("seoTitle")}
+                  placeholder={form.watch("name") ? `${form.watch("name")} - Luxury Travel Guide` : "Auto-generated from the destination name"}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="metaDescription">Meta Description</Label>
+                <Textarea
+                  id="metaDescription"
+                  data-testid="input-destination-meta-description"
+                  {...form.register("metaDescription")}
+                  rows={3}
+                  placeholder="Auto-generated from the short description"
+                />
+                {(() => {
+                  const len = (form.watch("metaDescription") || "").length;
+                  if (len === 0) return <p className="text-xs text-muted-foreground">Ideal length: 150–160 characters</p>;
+                  const inRange = len >= 150 && len <= 160;
+                  return (
+                    <p className={`text-xs ${inRange ? "text-green-600" : len > 160 ? "text-destructive" : "text-muted-foreground"}`}>
+                      {len} / 160 characters {inRange ? "(ideal length)" : len > 160 ? "(longer than ideal)" : "(ideal: 150–160)"}
+                    </p>
+                  );
+                })()}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="focusKeyword">Focus Keyword</Label>
+                <Input
+                  id="focusKeyword"
+                  data-testid="input-destination-focus-keyword"
+                  {...form.register("focusKeyword")}
+                  placeholder="e.g., luxury Cairo tours"
+                />
+                {showKeywordHint && (
+                  <div className="flex items-start gap-2 text-sm text-amber-600 dark:text-amber-500">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>This keyword doesn't appear in the destination name or description yet — consider weaving it in naturally.</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="canonicalUrl">Canonical URL</Label>
+                <Input
+                  id="canonicalUrl"
+                  data-testid="input-destination-canonical-url"
+                  {...form.register("canonicalUrl")}
+                  placeholder="Leave blank to use this page's own URL"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="robots">Robots</Label>
+                  <Select
+                    value={form.watch("robots") || "__default__"}
+                    onValueChange={(value) => form.setValue("robots", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="robots" data-testid="select-destination-robots">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (index, follow)</SelectItem>
+                      <SelectItem value="index, follow">index, follow</SelectItem>
+                      <SelectItem value="noindex, follow">noindex, follow</SelectItem>
+                      <SelectItem value="index, nofollow">index, nofollow</SelectItem>
+                      <SelectItem value="noindex, nofollow">noindex, nofollow</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="schemaType">Schema Type</Label>
+                  <Select
+                    value={form.watch("schemaType") || "__default__"}
+                    onValueChange={(value) => form.setValue("schemaType", value === "__default__" ? "" : value)}
+                  >
+                    <SelectTrigger id="schemaType" data-testid="select-destination-schema-type">
+                      <SelectValue placeholder="Default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__default__">Default (TouristDestination)</SelectItem>
+                      <SelectItem value="TouristDestination">TouristDestination</SelectItem>
+                      <SelectItem value="TouristAttraction">TouristAttraction</SelectItem>
+                      <SelectItem value="City">City</SelectItem>
+                      <SelectItem value="Place">Place</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ogImage">Social Share Image (OG Image)</Label>
+                <Input
+                  id="ogImage"
+                  data-testid="input-destination-og-image"
+                  {...form.register("ogImage")}
+                  placeholder="Leave blank to use the Hero Image"
+                />
+                {form.watch("ogImage") && (
+                  <div className="mt-2">
+                    <img
+                      src={form.watch("ogImage") || ""}
+                      alt="OG image preview"
+                      className="w-full max-w-md h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
