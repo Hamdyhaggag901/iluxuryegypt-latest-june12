@@ -229,14 +229,19 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
     // then Unsplash). Each just opens a preview the admin has to explicitly
     // approve — nothing is saved by a search call. A source that isn't
     // configured (no API key) or returns nothing is skipped silently, moving
-    // straight to the next one.
+    // straight to the next one. Tracked separately from "returned zero
+    // results" so the final fallback message can tell an admin the real
+    // reason nothing came back, instead of implying their search terms are
+    // just too obscure to match anything.
     const token = localStorage.getItem("adminToken");
+    let anySourceConfigured = false;
     for (const { source, searchEndpoint } of STOCK_PHOTO_SOURCES) {
       try {
         const response = await fetch(`${searchEndpoint}?q=${encodeURIComponent(name)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const result = await response.json();
+        if (result.configured) anySourceConfigured = true;
         if (result.success && result.candidates?.length > 0) {
           setPhotoPreview((prev) => ({ ...prev, [index]: { source, candidates: result.candidates, currentIndex: 0 } }));
           return;
@@ -261,6 +266,15 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
         updateAttraction(attraction.id, "imageAlt", alt);
       }
       toast({ title: "Photo suggested", description: match.originalName });
+      return;
+    }
+
+    if (!anySourceConfigured) {
+      toast({
+        title: "Stock photo sources aren't configured",
+        description: "Pexels, Pixabay, and Unsplash all have no API key set on this server — ask an admin to configure one, or upload a photo below.",
+        variant: "destructive",
+      });
       return;
     }
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -190,8 +191,15 @@ export default function Blog() {
             </div>
           ) : (
             <div className="grid lg:grid-cols-2 gap-8 mb-16">
-              {filteredPosts.map((post: any) => (
-                <Card key={post.id} className="group overflow-hidden hover:shadow-2xl transition-all duration-500 ease-out hover:scale-[1.02]" data-testid={`blog-post-${post.slug}`}>
+              {filteredPosts.map((post: any, index: number) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.55, delay: (index % 4) * 0.1, ease: "easeOut" }}
+                >
+                <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-500 ease-out hover:scale-[1.02]" data-testid={`blog-post-${post.slug}`}>
                   <div className="relative h-64 overflow-hidden">
                     <img
                       src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
@@ -240,6 +248,7 @@ export default function Blog() {
                     </div>
                   </CardContent>
                 </Card>
+                </motion.div>
               ))}
             </div>
           )}
@@ -271,7 +280,13 @@ export default function Blog() {
       </section>
 
       {/* Newsletter Signup */}
-      <section className="py-20 bg-muted">
+      <motion.section
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="py-20 bg-muted"
+      >
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-6">
             Stay Inspired
@@ -294,7 +309,7 @@ export default function Blog() {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <Footer />
     </div>

@@ -16,9 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  ArrowRight,
 } from "lucide-react";
 import { Link } from "wouter";
-import type { Tour, Hotel, Season, ItineraryDay } from "@shared/schema";
+import type { Tour, Hotel, Season, ItineraryDay, Destination } from "@shared/schema";
 import { getTourImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 import ItineraryMap from "@/components/tour-detail/ItineraryMap";
@@ -38,6 +39,7 @@ import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 import { legacyTextToHtml } from "@/lib/legacy-text-to-html";
 import { sanitizeHtml } from "@/lib/sanitize-html";
 import { stripHtml } from "@shared/strip-html";
+import { normalizeForMatch } from "@shared/itinerary-detection";
 
 const blockedSlugs = new Set(["aswan-city-tour-philae-temple-high-dam"]);
 
@@ -114,6 +116,31 @@ export default function TourDetail() {
     },
     enabled: Boolean(tour),
   });
+
+  // Published destinations, used to link this tour to its city page — see
+  // linkedDestination below. Only fetched once a tour has loaded.
+  const { data: destinationsData } = useQuery<{ success: boolean; destinations: Destination[] }>({
+    queryKey: ["/api/public/destinations"],
+    enabled: Boolean(tour),
+  });
+
+  // The first of this tour's destinations (tour.destinations, a free-text
+  // city/place list) that matches a real, published destination record —
+  // powers the "Explore [City]" link near the itinerary. Matched via the
+  // same normalizeForMatch helper used for tours<->destinations matching on
+  // the destinations pages, so "Luxor" matches "Luxor" but not "Luxor &
+  // Aswan Explorer". No match (an unpublished or not-yet-created city page)
+  // simply hides the link rather than risking a dead one.
+  const linkedDestination = useMemo(() => {
+    if (!tour || !destinationsData?.destinations) return null;
+    const published = destinationsData.destinations.filter((d) => d.published);
+    for (const name of tour.destinations || []) {
+      const needle = normalizeForMatch(name);
+      const match = published.find((d) => normalizeForMatch(d.name) === needle);
+      if (match) return match;
+    }
+    return null;
+  }, [tour, destinationsData]);
 
   // Use tour's brochure URL if available
   const brochureUrl = tour?.brochureUrl;
@@ -384,6 +411,21 @@ export default function TourDetail() {
         duration={tour.duration}
         groupSize={tour.groupSize}
       />
+
+      {/* Links this tour to its city's own destination page, when one exists
+          for a name in tour.destinations — internal-linking for SEO. */}
+      {linkedDestination && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-10 mb-6 md:mb-10 text-center">
+          <Link
+            href={`/destinations/${linkedDestination.slug}`}
+            className="group inline-flex items-center gap-2 text-sm md:text-base font-medium text-primary hover:text-accent transition-colors duration-300"
+            data-testid="link-explore-tour-destination"
+          >
+            Explore {linkedDestination.name}
+            <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
+        </div>
+      )}
 
       <WhyYoullLoveJourneySection tourTitle={tour.title} highlights={tourHighlights} />
 

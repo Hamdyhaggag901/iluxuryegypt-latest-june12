@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import Footer from "../components/footer";
@@ -21,12 +22,14 @@ import {
   ParkingCircle,
   PawPrint,
   Star,
+  ArrowRight,
 } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import type { Facility } from "@shared/schema";
+import type { Facility, Destination } from "@shared/schema";
 import { getHotelImageAlt } from "@/lib/seo-alt-text";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
+import { normalizeForMatch } from "@shared/itinerary-detection";
 import { Card, CardContent } from "@/components/ui/card";
 import FaqSection, { buildFaqJsonLd } from "@/components/faq-section";
 
@@ -48,30 +51,37 @@ function getFacilityIcon(iconName: string) {
   return icons[iconName] || <Star className={className} />;
 }
 
-function RelatedHotelCard({ hotel }: { hotel: any }) {
+function RelatedHotelCard({ hotel, index = 0 }: { hotel: any; index?: number }) {
   return (
-    <Card
-      className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-      data-testid={`related-hotel-card-${hotel.slug}`}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.1, ease: "easeOut" }}
     >
-      <Link href={`/hotel/${hotel.slug}`}>
-        <div className="relative h-44 overflow-hidden">
-          <img
-            src={hotel.image}
-            alt={getHotelImageAlt(hotel)}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
-        </div>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-            <MapPin className="w-3 h-3 text-accent" />
-            <span>{hotel.location}</span>
+      <Card
+        className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        data-testid={`related-hotel-card-${hotel.slug}`}
+      >
+        <Link href={`/hotel/${hotel.slug}`}>
+          <div className="relative h-44 overflow-hidden">
+            <img
+              src={hotel.image}
+              alt={getHotelImageAlt(hotel)}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
           </div>
-          <h3 className="font-serif font-bold text-base text-primary leading-tight">{hotel.name}</h3>
-        </CardContent>
-      </Link>
-    </Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+              <MapPin className="w-3 h-3 text-accent" />
+              <span>{hotel.location}</span>
+            </div>
+            <h3 className="font-serif font-bold text-base text-primary leading-tight">{hotel.name}</h3>
+          </CardContent>
+        </Link>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -102,7 +112,24 @@ export default function HotelDetail() {
     },
   });
 
+  // Published destinations, used to link this hotel to its city page — see
+  // linkedDestination below.
+  const { data: destinationsResponse } = useQuery<{ success: boolean; destinations: Destination[] }>({
+    queryKey: ["/api/public/destinations"],
+  });
+
   const seoHotel = hotelResponse?.hotel;
+
+  // The destination whose name is contained in this hotel's region (e.g.
+  // region "Cairo & Giza" matches destination name "Cairo") — same matching
+  // convention already used to filter city-page "Where to Stay" hotels, just
+  // applied in reverse. No match (region doesn't correspond to a published
+  // city page) hides the link rather than risking a dead one.
+  const linkedDestination = seoHotel?.region && destinationsResponse?.destinations
+    ? destinationsResponse.destinations.find(
+        (d) => d.published && normalizeForMatch(seoHotel.region).includes(normalizeForMatch(d.name))
+      ) || null
+    : null;
 
   // Generic questions that apply to any hotel — grounded only in data that
   // actually exists (facilities list); booking-policy questions with no
@@ -213,6 +240,17 @@ export default function HotelDetail() {
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-serif font-bold">{hotel.name}</h1>
 
+            {linkedDestination && (
+              <Link
+                href={`/destinations/${linkedDestination.slug}`}
+                className="group inline-flex items-center gap-1.5 mt-3 text-sm md:text-base text-white/90 hover:text-white transition-colors duration-300"
+                data-testid="link-explore-hotel-destination"
+              >
+                Explore {linkedDestination.name}
+                <ArrowRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            )}
+
             {hasCruiseDetails && (
               <div className="flex flex-wrap gap-6 mt-4 text-sm md:text-base text-white/90">
                 {hotel.route && (
@@ -234,40 +272,66 @@ export default function HotelDetail() {
 
         {/* Intro — direct-answer fallback when there's no free-form article */}
         {introText && (
-          <section className="py-14 md:py-20">
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="py-14 md:py-20"
+          >
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
               <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">{introText}</p>
             </div>
-          </section>
+          </motion.section>
         )}
 
         {/* Article — free-form rich text */}
         {hotel.article && (
-          <section className="py-14 md:py-20">
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="py-14 md:py-20"
+          >
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
               <div
                 className="prose prose-xl max-w-none prose-primary"
                 dangerouslySetInnerHTML={{ __html: hotel.article }}
               />
             </div>
-          </section>
+          </motion.section>
         )}
 
         {/* Facilities & Amenities */}
         {facilities.length > 0 && (
           <section className="py-14 md:py-20 bg-muted/40">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-10 text-center">
+              <motion.h2
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl md:text-3xl font-serif font-bold text-primary mb-10 text-center"
+              >
                 Facilities &amp; Amenities
-              </h2>
+              </motion.h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
                 {facilities.map((facility, index) => (
-                  <div key={`${facility.label}-${index}`} className="flex flex-col items-center text-center gap-3">
-                    <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center">
+                  <motion.div
+                    key={`${facility.label}-${index}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.4, delay: (index % 8) * 0.06, ease: "easeOut" }}
+                    whileHover={{ y: -4 }}
+                    className="flex flex-col items-center text-center gap-3"
+                  >
+                    <div className="w-14 h-14 bg-accent/10 rounded-full flex items-center justify-center transition-colors duration-300 hover:bg-accent/20">
                       {getFacilityIcon(facility.icon)}
                     </div>
                     <span className="text-sm font-medium text-primary">{facility.label}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -280,21 +344,33 @@ export default function HotelDetail() {
         {gallery.length > 0 && (
           <section className="py-14 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8">Gallery</h2>
+              <motion.h2
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8"
+              >
+                Gallery
+              </motion.h2>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-4 px-4 sm:px-6 lg:px-8 snap-x snap-mandatory">
               {gallery.map((image, index) => (
-                <div
+                <motion.div
                   key={index}
-                  className="relative shrink-0 w-[75vw] sm:w-[380px] h-64 sm:h-80 rounded-xl overflow-hidden shadow-lg snap-start"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
+                  className="group relative shrink-0 w-[75vw] sm:w-[380px] h-64 sm:h-80 rounded-xl overflow-hidden shadow-lg snap-start"
                 >
                   <img
                     src={image}
                     alt={getHotelImageAlt(hotel, index)}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                     loading="lazy"
                   />
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
@@ -302,7 +378,13 @@ export default function HotelDetail() {
 
         {/* Why We Chose This Hotel — full-width brand-color focal point */}
         {hotel.whyWeChoseQuote && (
-          <section className="py-20 md:py-28 bg-primary">
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="py-20 md:py-28 bg-primary"
+          >
             <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
               <Quote className="w-8 h-8 text-accent mx-auto mb-6" />
               <p className="text-2xl md:text-4xl font-serif italic text-primary-foreground leading-relaxed">
@@ -313,19 +395,25 @@ export default function HotelDetail() {
                 — iLuxury Egypt Team
               </p>
             </div>
-          </section>
+          </motion.section>
         )}
 
         {/* You Might Also Like — other hotels in the same region */}
         {relatedHotels.length > 0 && (
           <section className="py-14 md:py-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8 text-center">
+              <motion.h2
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-2xl md:text-3xl font-serif font-bold text-primary mb-8 text-center"
+              >
                 You Might Also Like
-              </h2>
+              </motion.h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {relatedHotels.map((related) => (
-                  <RelatedHotelCard key={related.id} hotel={related} />
+                {relatedHotels.map((related, index) => (
+                  <RelatedHotelCard key={related.id} hotel={related} index={index} />
                 ))}
               </div>
             </div>
@@ -333,7 +421,13 @@ export default function HotelDetail() {
         )}
 
         {/* Call to Action */}
-        <section className="py-14 md:py-20 bg-muted/40">
+        <motion.section
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="py-14 md:py-20 bg-muted/40"
+        >
           <div className="max-w-3xl mx-auto text-center px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl md:text-4xl font-serif font-bold text-primary mb-4">
               Discover More Luxury Accommodations
@@ -345,7 +439,7 @@ export default function HotelDetail() {
               </Button>
             </Link>
           </div>
-        </section>
+        </motion.section>
       </main>
 
       <Footer />

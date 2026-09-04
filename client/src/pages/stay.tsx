@@ -1,4 +1,5 @@
 import Navigation from "../components/navigation";
+import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
@@ -220,7 +221,7 @@ export default function Stay() {
   };
 
   // Compact Hotel Card Component
-  const HotelCard = ({ hotel, isSpotlight = false }: { hotel: Hotel; isSpotlight?: boolean }) => {
+  const HotelCard = ({ hotel, isSpotlight = false, index = 0 }: { hotel: Hotel; isSpotlight?: boolean; index?: number }) => {
     const cardClasses = isSpotlight
       ? "group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2"
       : "group cursor-pointer overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent/30";
@@ -229,6 +230,12 @@ export default function Stay() {
     const contentPadding = isSpotlight ? "p-6" : "p-4";
 
     return (
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
+      >
       <Card className={cardClasses} data-testid={`hotel-card-${hotel.id}`}>
         <div className={`relative ${imageHeight} overflow-hidden`}>
           <img
@@ -304,6 +311,7 @@ export default function Stay() {
           </Link>
         </CardContent>
       </Card>
+      </motion.div>
     );
   };
 
@@ -371,18 +379,27 @@ export default function Stay() {
 
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-8">
               {accommodationTypes.map((type, index) => (
-                <Card key={type.id || index} className="text-center shadow-lg hover:shadow-xl transition-all duration-300 hover-elevate">
-                  <CardContent className="p-3 md:p-6">
-                    <div className="flex justify-center mb-2 md:mb-4">
-                      <div className="w-10 h-10 md:w-16 md:h-16 bg-accent/10 rounded-full flex items-center justify-center [&_svg]:h-5 [&_svg]:w-5 md:[&_svg]:h-8 md:[&_svg]:w-8">
-                        {getIconComponent(type.icon, "large")}
+                <motion.div
+                  key={type.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: (index % 4) * 0.1, ease: "easeOut" }}
+                  whileHover={{ y: -4 }}
+                >
+                  <Card className="text-center shadow-lg hover:shadow-xl transition-all duration-300 hover-elevate">
+                    <CardContent className="p-3 md:p-6">
+                      <div className="flex justify-center mb-2 md:mb-4">
+                        <div className="w-10 h-10 md:w-16 md:h-16 bg-accent/10 rounded-full flex items-center justify-center [&_svg]:h-5 [&_svg]:w-5 md:[&_svg]:h-8 md:[&_svg]:w-8">
+                          {getIconComponent(type.icon, "large")}
+                        </div>
                       </div>
-                    </div>
-                    <h3 className="text-sm md:text-xl font-semibold text-primary mb-1 md:mb-3">{type.title}</h3>
-                    <p className="text-xs md:text-base text-muted-foreground mb-2 md:mb-4 hidden sm:block">{type.description}</p>
-                    <div className="text-accent font-medium text-xs md:text-sm">{type.count}</div>
-                  </CardContent>
-                </Card>
+                      <h3 className="text-sm md:text-xl font-semibold text-primary mb-1 md:mb-3">{type.title}</h3>
+                      <p className="text-xs md:text-base text-muted-foreground mb-2 md:mb-4 hidden sm:block">{type.description}</p>
+                      <div className="text-accent font-medium text-xs md:text-sm">{type.count}</div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -405,8 +422,8 @@ export default function Stay() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredHotels.map((hotel) => (
-                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={true} />
+              {featuredHotels.map((hotel: Hotel, index: number) => (
+                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={true} index={index} />
               ))}
             </div>
           </div>
@@ -608,8 +625,8 @@ export default function Stay() {
 
             {/* Hotels Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {displayedHotels.map((hotel) => (
-                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={false} />
+              {displayedHotels.map((hotel: Hotel, index: number) => (
+                <HotelCard key={hotel.id} hotel={hotel} isSpotlight={false} index={index} />
               ))}
             </div>
 
@@ -666,7 +683,14 @@ export default function Stay() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {luxuryFeatures.map((feature, index) => (
-                <div key={feature.id || index} className="text-center">
+                <motion.div
+                  key={feature.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
+                  className="text-center"
+                >
                   <div className="flex justify-center mb-4">
                     <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center">
                       {getIconComponent(feature.icon, "small")}
@@ -674,7 +698,7 @@ export default function Stay() {
                   </div>
                   <h3 className="text-xl font-semibold text-primary mb-3">{feature.title}</h3>
                   <p className="text-muted-foreground">{feature.description}</p>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -684,7 +708,12 @@ export default function Stay() {
         <section className="py-20 bg-primary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <div>
+              <motion.div
+                initial={{ opacity: 0, x: -40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+              >
                 <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary-foreground mb-8">
                   {nileData.title}
                 </h2>
@@ -707,39 +736,51 @@ export default function Stay() {
                     </Link>
                   </div>
                 )}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="grid grid-cols-2 gap-4"
+              >
                 <div className="space-y-4">
                   <img
                     src={nileData.images?.[0] || suiteNileImage}
                     alt="Luxury Nile suite interior"
-                    className="w-full h-48 object-cover rounded-lg shadow-lg"
+                    className="w-full h-48 object-cover rounded-lg shadow-lg transition-transform duration-500 hover:scale-105"
                   />
                   <img
                     src={nileData.images?.[1] || poolsideDrinkImage}
                     alt="Poolside luxury service"
-                    className="w-full h-32 object-cover rounded-lg shadow-lg"
+                    className="w-full h-32 object-cover rounded-lg shadow-lg transition-transform duration-500 hover:scale-105"
                   />
                 </div>
                 <div className="space-y-4 mt-8">
                   <img
                     src={nileData.images?.[2] || poolRiverImage}
                     alt="Pool with Nile views"
-                    className="w-full h-32 object-cover rounded-lg shadow-lg"
+                    className="w-full h-32 object-cover rounded-lg shadow-lg transition-transform duration-500 hover:scale-105"
                   />
                   <img
                     src={nileData.images?.[3] || redSeaImage}
                     alt="Red Sea resort views"
-                    className="w-full h-48 object-cover rounded-lg shadow-lg"
+                    className="w-full h-48 object-cover rounded-lg shadow-lg transition-transform duration-500 hover:scale-105"
                   />
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </section>
 
         {/* Call to Action */}
-        <section className="py-20 bg-background relative overflow-hidden">
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="py-20 bg-background relative overflow-hidden"
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-background to-primary/5"></div>
           <div className="relative max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
             <div className="bg-background/80 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-2xl border border-accent/20">
@@ -777,7 +818,7 @@ export default function Stay() {
               </div>
             </div>
           </div>
-        </section>
+        </motion.section>
       </main>
 
       <Footer />

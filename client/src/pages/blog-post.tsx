@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "@/components/navigation";
@@ -418,29 +419,36 @@ const sampleBlogPosts = [
   }
 ];
 
-function RelatedPostCard({ post }: { post: any }) {
+function RelatedPostCard({ post, index = 0 }: { post: any; index?: number }) {
   return (
-    <Card
-      className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-      data-testid={`related-post-card-${post.slug}`}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay: (index % 4) * 0.1, ease: "easeOut" }}
     >
-      <Link href={`/blog/${post.slug}`}>
-        <div className="relative h-40 overflow-hidden">
-          <img
-            src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
-            alt={getPostImageAlt(post)}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            loading="lazy"
-          />
-        </div>
-        <CardContent className="p-4">
-          {post.category && (
-            <p className="text-xs text-accent-text font-medium mb-1">{post.category}</p>
-          )}
-          <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{post.titleEn}</h3>
-        </CardContent>
-      </Link>
-    </Card>
+      <Card
+        className="group overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        data-testid={`related-post-card-${post.slug}`}
+      >
+        <Link href={`/blog/${post.slug}`}>
+          <div className="relative h-40 overflow-hidden">
+            <img
+              src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
+              alt={getPostImageAlt(post)}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              loading="lazy"
+            />
+          </div>
+          <CardContent className="p-4">
+            {post.category && (
+              <p className="text-xs text-accent-text font-medium mb-1">{post.category}</p>
+            )}
+            <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{post.titleEn}</h3>
+          </CardContent>
+        </Link>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -734,8 +742,8 @@ export default function BlogPost() {
               Related Articles
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedPosts.map((related: any) => (
-                <RelatedPostCard key={related.id} post={related} />
+              {relatedPosts.map((related: any, index: number) => (
+                <RelatedPostCard key={related.id} post={related} index={index} />
               ))}
             </div>
           </div>
@@ -743,7 +751,13 @@ export default function BlogPost() {
       )}
 
       {/* Call to Action */}
-      <section className="py-20 bg-muted">
+      <motion.section
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="py-20 bg-muted"
+      >
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-6">
             Ready for Your Egyptian Adventure?
@@ -765,7 +779,7 @@ export default function BlogPost() {
             </Link>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <Footer />
     </div>

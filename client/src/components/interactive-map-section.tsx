@@ -1,4 +1,4 @@
-import { MapPin, Compass, Navigation } from "lucide-react";
+import { MapPin, Compass, Navigation, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { Link } from 'wouter';
 
@@ -182,12 +182,13 @@ export default function InteractiveMapSection() {
 
         </div>
 
-        {/* Legend and Instructions */}
+        {/* Explore All Destinations — clear CTA to the full destinations landing page */}
         <div className="mt-20 flex justify-center items-center">
-          <Link href="/destinations">
-            <div className="inline-flex items-center space-x-2 px-6 py-3 bg-muted rounded-full cursor-pointer">
-              <MapPin className="h-4 w-4 text-accent" />
-              <span className="text-sm text-muted-foreground">Click destinations to explore details</span>
+          <Link href="/destinations" data-testid="link-explore-all-destinations">
+            <div className="group inline-flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+              <MapPin className="h-5 w-5 text-accent" />
+              <span className="text-sm md:text-base font-medium tracking-wide">Explore All Egypt Destinations</span>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </div>
           </Link>
         </div>
