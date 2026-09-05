@@ -55,31 +55,31 @@ const fallbackTestimonials: TestimonialData[] = [
 function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
   return (
     <div
-      className="relative bg-white rounded-2xl shadow-2xl px-6 py-10 md:px-8 md:py-10 h-full flex flex-col text-center overflow-hidden"
+      className="relative bg-white rounded-2xl shadow-2xl px-5 py-6 md:px-6 md:py-7 h-full flex flex-col text-center overflow-hidden"
       data-testid="testimonial-content"
     >
       {/* Decorative gold quote mark */}
-      <Quote className="absolute -top-4 -right-4 h-28 w-28 text-accent/10 rotate-180" strokeWidth={1} />
+      <Quote className="absolute -top-3 -right-3 h-20 w-20 text-accent/10 rotate-180" strokeWidth={1} />
 
       {/* Stars */}
-      <div className="relative flex justify-center mb-6">
+      <div className="relative flex justify-center mb-3">
         <div className="flex text-accent">
           {[...Array(testimonial.rating)].map((_, i) => (
-            <Star key={i} className="h-5 w-5 fill-current" />
+            <Star key={i} className="h-4 w-4 fill-current" />
           ))}
         </div>
       </div>
 
       {/* Quote */}
-      <blockquote className="relative flex-1 text-base md:text-lg font-serif text-primary italic leading-relaxed mb-8">
+      <blockquote className="relative flex-1 text-sm md:text-base font-serif text-primary italic leading-relaxed mb-4 line-clamp-2">
         "{testimonial.quote}"
       </blockquote>
 
       {/* Author */}
-      <div className="relative mb-6">
-        <p className="font-semibold text-primary">{testimonial.author}</p>
+      <div className="relative mb-4">
+        <p className="font-semibold text-primary text-sm">{testimonial.author}</p>
         {testimonial.location && (
-          <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+          <p className="text-xs text-muted-foreground">{testimonial.location}</p>
         )}
       </div>
 
@@ -88,13 +88,13 @@ function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
         href="https://www.tripadvisor.com/Attraction_Review-g294201-d34077128-Reviews-I_Luxury_Egypt-Cairo_Cairo_Governorate.html"
         target="_blank"
         rel="noopener noreferrer"
-        className="relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#00aa6c] hover:bg-[#00995f] text-white text-sm font-semibold rounded-full transition-all duration-300 mx-auto"
+        className="relative inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00aa6c] hover:bg-[#00995f] text-white text-xs font-semibold rounded-full transition-all duration-300 mx-auto"
       >
-        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
         Read More on TripAdvisor
-        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+        <ExternalLink className="w-3 h-3 shrink-0" />
       </a>
     </div>
   );
