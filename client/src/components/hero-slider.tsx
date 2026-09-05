@@ -225,7 +225,7 @@ export default function HeroSlider() {
       ))}
 
       {/* Content */}
-      <div className="relative z-20 h-full flex flex-col justify-end pb-32 md:pb-40">
+      <div className="relative z-20 h-full flex flex-col justify-end pb-16 sm:pb-24 md:pb-32 lg:pb-40">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 w-full">
           {slides.map((slide, index) => (
             <div
@@ -239,20 +239,20 @@ export default function HeroSlider() {
               {index === currentSlide && (
                 <div className="max-w-3xl">
                   {/* Subtitle */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-px bg-accent" />
-                    <span className="text-accent-text text-xs md:text-sm tracking-[0.3em] uppercase font-light">
+                  <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-3 md:mb-4">
+                    <div className="w-8 sm:w-12 h-px bg-accent" />
+                    <span className="text-accent-text text-[10px] sm:text-xs md:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase font-light">
                       {slide.subtitle}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-6 leading-tight">
+                  <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-2 sm:mb-4 md:mb-6 leading-tight">
                     {slide.title}
                   </h1>
 
                   {/* Description */}
-                  <p className="text-lg md:text-xl text-white/80 mb-8 max-w-2xl leading-relaxed">
+                  <p className="text-sm sm:text-lg md:text-xl text-white/80 mb-4 sm:mb-6 md:mb-8 max-w-2xl leading-relaxed">
                     {slide.description}
                   </p>
 
@@ -260,24 +260,24 @@ export default function HeroSlider() {
                   <Link href={slide.cta.link}>
                     <Button
                       size="lg"
-                      className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base tracking-wide group"
+                      className="bg-accent hover:bg-accent/90 text-white px-4 py-3 text-sm sm:px-6 sm:py-4 sm:text-base md:px-8 md:py-6 tracking-wide group h-auto"
                     >
                       {slide.cta.text}
-                      <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
 
                   {/* Popular Search */}
-                  <div className="mt-8">
-                    <span className="block text-white/60 text-xs tracking-[0.2em] uppercase font-light mb-3">
+                  <div className="mt-4 sm:mt-6 md:mt-8">
+                    <span className="block text-white/60 text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase font-light mb-2 sm:mb-3">
                       Popular search
                     </span>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2 sm:gap-3">
                       {POPULAR_SEARCHES.map(({ label, slug }) => (
                         <Link
                           key={slug}
                           href={`/egypt-tour-packages/${slug}`}
-                          className="px-5 py-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium text-white transition-all duration-300 hover:bg-white/20 hover:border-accent"
+                          className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-xs sm:text-sm font-medium text-white transition-all duration-300 hover:bg-white/20 hover:border-accent"
                           data-testid={`link-popular-search-${slug}`}
                         >
                           {label}
