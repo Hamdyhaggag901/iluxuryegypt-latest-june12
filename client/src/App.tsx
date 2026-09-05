@@ -29,6 +29,7 @@ const TourDetail = lazy(() => import("@/pages/tour-detail"));
 const CategoryDetail = lazy(() => import("@/pages/category-detail"));
 const FAQPage = lazy(() => import("@/pages/faq"));
 const TailorMade = lazy(() => import("@/pages/tailor-made"));
+const PlanYourTrip = lazy(() => import("@/pages/plan-your-trip"));
 
 // Lazy loaded - About pages
 const WhoWeAre = lazy(() => import("@/pages/about/who-we-are"));
@@ -66,6 +67,7 @@ const AdminDestinationsEdit = lazy(() => import("@/pages/admin-destinations-edit
 const AdminPackages = lazy(() => import("@/pages/admin-packages"));
 const AdminPackageForm = lazy(() => import("@/pages/admin-package-form"));
 const AdminCategories = lazy(() => import("@/pages/admin-categories"));
+const AdminPartners = lazy(() => import("@/pages/admin-partners"));
 const AdminSeasons = lazy(() => import("@/pages/admin-seasons"));
 const AdminPosts = lazy(() => import("@/pages/admin-posts"));
 const AdminPages = lazy(() => import("@/pages/admin-pages"));
@@ -163,6 +165,7 @@ function Router() {
 
             {/* Tailor Made */}
             <Route path="/tailor-made" component={TailorMade} />
+            <Route path="/plan-your-trip" component={PlanYourTrip} />
 
             {/* Legal pages — the 5 original slugs keep their exact fixed URLs (indexed by
                 Google, linked from the footer and booking forms) for zero SEO impact.
@@ -196,6 +199,7 @@ function Router() {
             <Route path="/admin/packages/new" component={AdminPackageForm} />
             <Route path="/admin/packages/edit/:id" component={AdminPackageForm} />
             <Route path="/admin/categories" component={AdminCategories} />
+            <Route path="/admin/partners" component={AdminPartners} />
             <Route path="/admin/seasons" component={AdminSeasons} />
             <Route path="/admin/posts" component={AdminPosts} />
             <Route path="/admin/pages" component={AdminPages} />

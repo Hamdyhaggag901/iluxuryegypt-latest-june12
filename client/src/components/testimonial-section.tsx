@@ -1,7 +1,8 @@
 import { Star, ChevronLeft, ChevronRight, ExternalLink, Quote } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import pyramidFromMenaHouseImage from "@assets/the-pyramid-from-mena-house_1757459228638.jpeg";
 
 interface TestimonialData {
@@ -52,14 +53,52 @@ const fallbackTestimonials: TestimonialData[] = [
   }
 ];
 
-function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
+function TripAdvisorBadge({ className }: { className?: string }) {
+  return (
+    <a
+      href="https://www.tripadvisor.com/Attraction_Review-g294201-d34077128-Reviews-I_Luxury_Egypt-Cairo_Cairo_Governorate.html"
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      // framer-motion's onTap (used on mobile) is driven by pointer events,
+      // which bubble ahead of click — stop it here too so tapping the badge
+      // never also opens the expand-review modal on the wrapping card.
+      onPointerDown={(e) => e.stopPropagation()}
+      onPointerUp={(e) => e.stopPropagation()}
+      className={className}
+    >
+      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+      </svg>
+      Read More on TripAdvisor
+      <ExternalLink className="w-3 h-3 shrink-0" />
+    </a>
+  );
+}
+
+function TestimonialCard({
+  testimonial,
+  expanded = false,
+  onExpand,
+  testId = "testimonial-content",
+}: {
+  testimonial: TestimonialData;
+  expanded?: boolean;
+  onExpand?: () => void;
+  testId?: string;
+}) {
   return (
     <div
-      className="relative bg-white rounded-2xl shadow-2xl px-5 py-6 md:px-6 md:py-7 h-full flex flex-col text-center overflow-hidden"
-      data-testid="testimonial-content"
+      className={`relative bg-white rounded-2xl shadow-2xl px-5 py-6 md:px-6 md:py-7 h-full flex flex-col text-center overflow-hidden ${
+        onExpand ? "cursor-pointer" : ""
+      }`}
+      onClick={onExpand}
+      role={onExpand ? "button" : undefined}
+      tabIndex={onExpand ? 0 : undefined}
+      data-testid={testId}
     >
       {/* Decorative gold quote mark */}
-      <Quote className="absolute -top-3 -right-3 h-20 w-20 text-accent/10 rotate-180" strokeWidth={1} />
+      <Quote className={`absolute -top-3 -right-3 text-accent/10 rotate-180 ${expanded ? "h-28 w-28" : "h-20 w-20"}`} strokeWidth={1} />
 
       {/* Stars */}
       <div className="relative flex justify-center mb-3">
@@ -71,7 +110,11 @@ function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
       </div>
 
       {/* Quote */}
-      <blockquote className="relative flex-1 text-sm md:text-base font-serif text-primary italic leading-relaxed mb-4 line-clamp-2">
+      <blockquote
+        className={`relative flex-1 font-serif text-primary italic leading-relaxed mb-4 ${
+          expanded ? "text-base md:text-lg" : "text-sm md:text-base line-clamp-2"
+        }`}
+      >
         "{testimonial.quote}"
       </blockquote>
 
@@ -83,19 +126,7 @@ function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
         )}
       </div>
 
-      {/* TripAdvisor Badge */}
-      <a
-        href="https://www.tripadvisor.com/Attraction_Review-g294201-d34077128-Reviews-I_Luxury_Egypt-Cairo_Cairo_Governorate.html"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="relative inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00aa6c] hover:bg-[#00995f] text-white text-xs font-semibold rounded-full transition-all duration-300 mx-auto"
-      >
-        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-        </svg>
-        Read More on TripAdvisor
-        <ExternalLink className="w-3 h-3 shrink-0" />
-      </a>
+      <TripAdvisorBadge className="relative inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00aa6c] hover:bg-[#00995f] text-white text-xs font-semibold rounded-full transition-all duration-300 mx-auto" />
     </div>
   );
 }
@@ -138,15 +169,21 @@ export default function TestimonialSection() {
     : fallbackTestimonials;
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [expandedTestimonial, setExpandedTestimonial] = useState<TestimonialData | null>(null);
+  // framer-motion's onTap can still fire right after a real drag ends (the
+  // drag is constrained to its start position, so the gesture recognizer
+  // doesn't always see it as a drag) — this ref suppresses that.
+  const isDraggingRef = useRef(false);
 
-  // Auto-rotate testimonials
+  // Auto-rotate testimonials — paused while a card is expanded in the modal
   useEffect(() => {
+    if (expandedTestimonial) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [testimonials.length]);
+  }, [testimonials.length, expandedTestimonial]);
 
   const handleNext = () => setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
@@ -208,7 +245,7 @@ export default function TestimonialSection() {
             </button>
           </div>
 
-          {/* Desktop: 4 cards side by side */}
+          {/* Desktop: 4 cards side by side — click any card to read it in full */}
           <div className="hidden lg:grid grid-cols-4 gap-6">
             {desktopTestimonials.map((testimonial) => (
               <motion.div
@@ -218,21 +255,35 @@ export default function TestimonialSection() {
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 whileHover={{ y: -4 }}
               >
-                <TestimonialCard testimonial={testimonial} />
+                <TestimonialCard testimonial={testimonial} onExpand={() => setExpandedTestimonial(testimonial)} />
               </motion.div>
             ))}
           </div>
 
-          {/* Mobile/Tablet: single card, swipeable */}
+          {/* Mobile/Tablet: single card, swipeable — tap (not drag) opens the full review */}
           <div className="lg:hidden px-2 sm:px-8">
             <motion.div
               key={currentTestimonial.id}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
+              onDragStart={() => {
+                isDraggingRef.current = true;
+              }}
               onDragEnd={(_e, info) => {
                 if (info.offset.x < -60) handleNext();
                 else if (info.offset.x > 60) handlePrev();
+                // Cleared on the next tick, so onTap (which can fire right
+                // after dragend in the same gesture) still sees it as true.
+                setTimeout(() => {
+                  isDraggingRef.current = false;
+                }, 0);
+              }}
+              // onTap (not onClick) so a tap-to-expand plays nicely with the
+              // drag gesture above; guarded by isDraggingRef because a
+              // constrained drag can still register as a tap otherwise.
+              onTap={() => {
+                if (!isDraggingRef.current) setExpandedTestimonial(currentTestimonial);
               }}
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
@@ -261,6 +312,18 @@ export default function TestimonialSection() {
           </div>
         </div>
       </div>
+
+      {/* Full-review modal — same card, no line-clamp, opened by tap/click on any card */}
+      <Dialog open={!!expandedTestimonial} onOpenChange={(open) => !open && setExpandedTestimonial(null)}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden border-none bg-transparent shadow-none" aria-describedby={undefined}>
+          <DialogTitle className="sr-only">
+            {expandedTestimonial ? `Review by ${expandedTestimonial.author}` : "Guest review"}
+          </DialogTitle>
+          {expandedTestimonial && (
+            <TestimonialCard testimonial={expandedTestimonial} expanded testId="testimonial-modal-content" />
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

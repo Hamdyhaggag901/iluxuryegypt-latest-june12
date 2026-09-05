@@ -30,7 +30,8 @@ import {
   ExternalLink,
   Bed,
   Download,
-  Scale
+  Scale,
+  Handshake
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -141,6 +142,12 @@ export default function AdminLayout({ children, title, description }: AdminLayou
       label: "Categories",
       icon: Grid3x3,
       href: "/admin/categories",
+    },
+    {
+      id: "partners",
+      label: "Partners",
+      icon: Handshake,
+      href: "/admin/partners",
     },
     {
       id: "posts",

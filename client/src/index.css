@@ -424,6 +424,21 @@
     animation: scroll 40s linear infinite;
   }
 
+  /* Partners logo marquee — content is duplicated exactly once in the DOM,
+     so -50% lands precisely on the start of the second copy for a seamless loop. */
+  @keyframes partners-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-partners-marquee {
+    animation: partners-marquee 35s linear infinite;
+  }
+
   @keyframes shimmer {
     0% {
       transform: translateX(-100%);

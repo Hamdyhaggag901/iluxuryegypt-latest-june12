@@ -452,6 +452,20 @@ export const testimonialsSection = pgTable("testimonials_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Partner logos shown in the homepage's scrolling marquee (hotels, airlines,
+// cruise lines, restaurants, etc.) — admin-managed so new categories/logos
+// can be added later without touching code.
+export const partners = pgTable("partners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  logoUrl: text("logo_url").notNull(),
+  category: text("category").notNull().default("hotels"), // hotels | airlines | cruises | restaurants
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Stay Page Content Tables
 export const stayPageHero = pgTable("stay_page_hero", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1006,6 +1020,18 @@ export const insertTestimonialsSectionSchema = createInsertSchema(testimonialsSe
   backgroundImage: z.string().min(1, "Background image is required"),
 });
 
+export const insertPartnerSchema = createInsertSchema(partners).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).extend({
+  name: z.string().min(1, "Name is required"),
+  logoUrl: z.string().min(1, "Logo is required"),
+  category: z.enum(["hotels", "airlines", "cruises", "restaurants"]).default("hotels"),
+  displayOrder: z.number().default(0),
+  isActive: z.boolean().default(true),
+});
+
 export const insertTourBookingSchema = createInsertSchema(tourBookings).omit({
   id: true,
   createdAt: true,
@@ -1245,6 +1271,8 @@ export type InsertContactCtaSection = z.infer<typeof insertContactCtaSectionSche
 export type ContactCtaSection = typeof contactCtaSection.$inferSelect;
 export type InsertTestimonialsSection = z.infer<typeof insertTestimonialsSectionSchema>;
 export type TestimonialsSection = typeof testimonialsSection.$inferSelect;
+export type InsertPartner = z.infer<typeof insertPartnerSchema>;
+export type Partner = typeof partners.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type ChangeUsernameRequest = z.infer<typeof changeUsernameSchema>;
 export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;

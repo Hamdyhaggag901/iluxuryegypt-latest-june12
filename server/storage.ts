@@ -20,6 +20,7 @@ import {
   type Testimonial, type InsertTestimonial,
   type ContactCtaSection, type InsertContactCtaSection,
   type TestimonialsSection, type InsertTestimonialsSection,
+  type Partner, type InsertPartner,
   type StayPageHero, type InsertStayPageHero,
   type StayAccommodationType, type InsertStayAccommodationType,
   type StayLuxuryFeature, type InsertStayLuxuryFeature,
@@ -29,7 +30,7 @@ import {
   type LegalPage, type InsertLegalPage,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings, seasons,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
-  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection, testimonialsSection,
+  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection, testimonialsSection, partners,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
   legalPages, getLegalPageHref,
   brochureDownloads
@@ -1157,6 +1158,35 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(testimonialsSection).values(data).returning();
       return created;
     }
+  }
+
+  // Partners methods (homepage marquee)
+  async getPartners(): Promise<Partner[]> {
+    return await db.select().from(partners).orderBy(partners.displayOrder);
+  }
+
+  async getPartner(id: string): Promise<Partner | undefined> {
+    const [partner] = await db.select().from(partners).where(eq(partners.id, id));
+    return partner;
+  }
+
+  async createPartner(data: InsertPartner): Promise<Partner> {
+    const [partner] = await db.insert(partners).values(data).returning();
+    return partner;
+  }
+
+  async updatePartner(id: string, data: Partial<InsertPartner>): Promise<Partner | undefined> {
+    const [partner] = await db
+      .update(partners)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(partners.id, id))
+      .returning();
+    return partner;
+  }
+
+  async deletePartner(id: string): Promise<boolean> {
+    const result = await db.delete(partners).where(eq(partners.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Stay Page Hero methods

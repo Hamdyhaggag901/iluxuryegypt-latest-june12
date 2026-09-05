@@ -29,6 +29,7 @@ import {
   insertGuestExperienceSectionSchema,
   insertOurStorySectionSchema,
   insertTestimonialsSectionSchema,
+  insertPartnerSchema,
   insertWhyChooseSectionSchema,
   insertWhyChooseCardSchema,
   insertStayListingSettingsSchema,
@@ -4119,6 +4120,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error('Error updating testimonials section:', error);
       res.status(500).json({ message: 'Error updating testimonials section' });
+    }
+  });
+
+  // ====================
+  // PARTNERS ROUTES (homepage logo marquee)
+  // ====================
+
+  // Public: Get active partners
+  app.get("/api/public/partners", async (req, res) => {
+    try {
+      const allPartners = await storage.getPartners();
+      res.json({ partners: allPartners.filter((p) => p.isActive) });
+    } catch (error) {
+      console.error('Error fetching partners:', error);
+      res.status(500).json({ message: 'Error fetching partners' });
+    }
+  });
+
+  // CMS: Get all partners
+  app.get("/api/cms/partners", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const allPartners = await storage.getPartners();
+      res.json({ success: true, partners: allPartners });
+    } catch (error) {
+      console.error('Error fetching partners:', error);
+      res.status(500).json({ message: 'Error fetching partners' });
+    }
+  });
+
+  // CMS: Create partner
+  app.post("/api/cms/partners", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertPartnerSchema.parse(req.body);
+      const partner = await storage.createPartner(data);
+      res.status(201).json({ success: true, partner });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+      }
+      console.error('Error creating partner:', error);
+      res.status(500).json({ message: 'Error creating partner' });
+    }
+  });
+
+  // CMS: Update partner
+  app.put("/api/cms/partners/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertPartnerSchema.partial().parse(req.body);
+      const partner = await storage.updatePartner(req.params.id, data);
+      if (!partner) {
+        return res.status(404).json({ message: 'Partner not found' });
+      }
+      res.json({ success: true, partner });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+      }
+      console.error('Error updating partner:', error);
+      res.status(500).json({ message: 'Error updating partner' });
+    }
+  });
+
+  // CMS: Delete partner
+  app.delete("/api/cms/partners/:id", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const deleted = await storage.deletePartner(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Partner not found' });
+      }
+      res.json({ success: true, message: 'Partner deleted' });
+    } catch (error) {
+      console.error('Error deleting partner:', error);
+      res.status(500).json({ message: 'Error deleting partner' });
     }
   });
 
