@@ -1,6 +1,7 @@
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
+import PopularSearchSection from "../components/popular-search-section";
 import OurStorySection from "../components/our-story-section";
 import CategoriesCarouselSection from "../components/categories-carousel-section";
 import WhereYouWillStaySection from "../components/where-you-will-stay-section";
@@ -13,7 +14,6 @@ import InteractiveMapSection from "../components/interactive-map-section";
 import PersonalAdvisorSection from "../components/personal-advisor-section";
 import TestimonialSection from "../components/testimonial-section";
 import CallToActionSection from "../components/call-to-action-section";
-import PopularSearchSection from "../components/popular-search-section";
 import HomeFAQSection from "../components/home-faq-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
@@ -31,6 +31,7 @@ export default function Home() {
       <Navigation />
       <main>
         <HeroSlider />
+        <PopularSearchSection />
         <OurStorySection />
         <CategoriesCarouselSection />
         <WhereYouWillStaySection />
@@ -49,7 +50,6 @@ export default function Home() {
         <PersonalAdvisorSection />
         <TestimonialSection />
         <CallToActionSection />
-        <PopularSearchSection />
         <HomeFAQSection />
         <NewsletterSection />
       </main>
