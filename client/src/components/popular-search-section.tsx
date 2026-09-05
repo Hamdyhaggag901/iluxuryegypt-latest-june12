@@ -2,11 +2,8 @@ import { Link } from "wouter";
 
 const POPULAR_SEARCHES = [
   { label: "Small Group Tours Egypt", slug: "small-group-tours-egypt" },
-  { label: "Luxury Family Egypt", slug: "family-luxury" },
-  { label: "Luxury Solo Egypt", slug: "egypt-solo-travel" },
-  { label: "Spiritual Journeys Egypt", slug: "spiritual-journeys" },
-  { label: "Luxury Honeymoon Egypt", slug: "luxury-honeymoon-egypt" },
   { label: "Solar Eclipse Egypt", slug: "solar-eclipse-egypt" },
+  { label: "Luxury Honeymoon Egypt", slug: "luxury-honeymoon-egypt" },
 ];
 
 export default function PopularSearchSection() {
