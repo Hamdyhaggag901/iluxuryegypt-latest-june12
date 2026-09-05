@@ -5,6 +5,12 @@ import { Link } from "wouter";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 
+const POPULAR_SEARCHES = [
+  { label: "Small Group Tours Egypt", slug: "small-group-tours-egypt" },
+  { label: "Solar Eclipse Egypt", slug: "solar-eclipse-egypt" },
+  { label: "Luxury Honeymoon Egypt", slug: "luxury-honeymoon-egypt" },
+];
+
 interface Slide {
   id: string;
   type: "video" | "image";
@@ -260,6 +266,25 @@ export default function HeroSlider() {
                       <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
+
+                  {/* Popular Search */}
+                  <div className="mt-8">
+                    <span className="block text-white/60 text-xs tracking-[0.2em] uppercase font-light mb-3">
+                      Popular search
+                    </span>
+                    <div className="flex flex-wrap gap-3">
+                      {POPULAR_SEARCHES.map(({ label, slug }) => (
+                        <Link
+                          key={slug}
+                          href={`/egypt-tour-packages/${slug}`}
+                          className="px-5 py-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-sm font-medium text-white transition-all duration-300 hover:bg-white/20 hover:border-accent"
+                          data-testid={`link-popular-search-${slug}`}
+                        >
+                          {label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

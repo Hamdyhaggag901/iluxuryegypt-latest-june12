@@ -1,7 +1,6 @@
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
-import PopularSearchSection from "../components/popular-search-section";
 import OurStorySection from "../components/our-story-section";
 import CategoriesCarouselSection from "../components/categories-carousel-section";
 import WhereYouWillStaySection from "../components/where-you-will-stay-section";
@@ -31,7 +30,6 @@ export default function Home() {
       <Navigation />
       <main>
         <HeroSlider />
-        <PopularSearchSection />
         <OurStorySection />
         <CategoriesCarouselSection />
         <WhereYouWillStaySection />
