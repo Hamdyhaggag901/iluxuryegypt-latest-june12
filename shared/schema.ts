@@ -444,6 +444,14 @@ export const contactCtaSection = pgTable("contact_cta_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Testimonials Section settings (homepage) — background image behind the
+// testimonial cards. Individual reviews live in the `testimonials` table above.
+export const testimonialsSection = pgTable("testimonials_section", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  backgroundImage: text("background_image").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Stay Page Content Tables
 export const stayPageHero = pgTable("stay_page_hero", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -991,6 +999,13 @@ export const insertContactCtaSectionSchema = createInsertSchema(contactCtaSectio
   email: z.string().email("Valid email required"),
 });
 
+export const insertTestimonialsSectionSchema = createInsertSchema(testimonialsSection).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  backgroundImage: z.string().min(1, "Background image is required"),
+});
+
 export const insertTourBookingSchema = createInsertSchema(tourBookings).omit({
   id: true,
   createdAt: true,
@@ -1228,6 +1243,8 @@ export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
 export type Testimonial = typeof testimonials.$inferSelect;
 export type InsertContactCtaSection = z.infer<typeof insertContactCtaSectionSchema>;
 export type ContactCtaSection = typeof contactCtaSection.$inferSelect;
+export type InsertTestimonialsSection = z.infer<typeof insertTestimonialsSectionSchema>;
+export type TestimonialsSection = typeof testimonialsSection.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type ChangeUsernameRequest = z.infer<typeof changeUsernameSchema>;
 export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;

@@ -19,6 +19,7 @@ import {
   type WhyChooseCard, type InsertWhyChooseCard,
   type Testimonial, type InsertTestimonial,
   type ContactCtaSection, type InsertContactCtaSection,
+  type TestimonialsSection, type InsertTestimonialsSection,
   type StayPageHero, type InsertStayPageHero,
   type StayAccommodationType, type InsertStayAccommodationType,
   type StayLuxuryFeature, type InsertStayLuxuryFeature,
@@ -28,7 +29,7 @@ import {
   type LegalPage, type InsertLegalPage,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings, seasons,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
-  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection,
+  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection, testimonialsSection,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
   legalPages, getLegalPageHref,
   brochureDownloads
@@ -1133,6 +1134,27 @@ export class DatabaseStorage implements IStorage {
       return updated;
     } else {
       const [created] = await db.insert(contactCtaSection).values(data).returning();
+      return created;
+    }
+  }
+
+  // Testimonials Section methods (homepage background image)
+  async getTestimonialsSection(): Promise<TestimonialsSection | undefined> {
+    const [section] = await db.select().from(testimonialsSection).limit(1);
+    return section;
+  }
+
+  async upsertTestimonialsSection(data: InsertTestimonialsSection): Promise<TestimonialsSection> {
+    const existing = await this.getTestimonialsSection();
+    if (existing) {
+      const [updated] = await db
+        .update(testimonialsSection)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(testimonialsSection.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(testimonialsSection).values(data).returning();
       return created;
     }
   }

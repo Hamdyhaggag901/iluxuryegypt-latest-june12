@@ -1,7 +1,7 @@
-import { Star, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight, ExternalLink, Quote } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import pyramidFromMenaHouseImage from "@assets/the-pyramid-from-mena-house_1757459228638.jpeg";
 
 interface TestimonialData {
@@ -52,8 +52,56 @@ const fallbackTestimonials: TestimonialData[] = [
   }
 ];
 
+function TestimonialCard({ testimonial }: { testimonial: TestimonialData }) {
+  return (
+    <div
+      className="relative bg-white rounded-2xl shadow-2xl px-6 py-10 md:px-8 md:py-10 h-full flex flex-col text-center overflow-hidden"
+      data-testid="testimonial-content"
+    >
+      {/* Decorative gold quote mark */}
+      <Quote className="absolute -top-4 -right-4 h-28 w-28 text-accent/10 rotate-180" strokeWidth={1} />
+
+      {/* Stars */}
+      <div className="relative flex justify-center mb-6">
+        <div className="flex text-accent">
+          {[...Array(testimonial.rating)].map((_, i) => (
+            <Star key={i} className="h-5 w-5 fill-current" />
+          ))}
+        </div>
+      </div>
+
+      {/* Quote */}
+      <blockquote className="relative flex-1 text-base md:text-lg font-serif text-primary italic leading-relaxed mb-8">
+        "{testimonial.quote}"
+      </blockquote>
+
+      {/* Author */}
+      <div className="relative mb-6">
+        <p className="font-semibold text-primary">{testimonial.author}</p>
+        {testimonial.location && (
+          <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+        )}
+      </div>
+
+      {/* TripAdvisor Badge */}
+      <a
+        href="https://www.tripadvisor.com/Attraction_Review-g294201-d34077128-Reviews-I_Luxury_Egypt-Cairo_Cairo_Governorate.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#00aa6c] hover:bg-[#00995f] text-white text-sm font-semibold rounded-full transition-all duration-300 mx-auto"
+      >
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+        Read More on TripAdvisor
+        <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+      </a>
+    </div>
+  );
+}
+
 export default function TestimonialSection() {
-  // Fetch from database
+  // Fetch testimonials from database
   const { data } = useQuery({
     queryKey: ["publicTestimonials"],
     queryFn: async () => {
@@ -63,6 +111,20 @@ export default function TestimonialSection() {
     },
     staleTime: 1000 * 60 * 5,
   });
+
+  // Fetch the section's background image (admin-editable; falls back to the
+  // bundled default when nothing has been set yet)
+  const { data: sectionData } = useQuery({
+    queryKey: ["publicTestimonialsSection"],
+    queryFn: async () => {
+      const response = await fetch("/api/public/testimonials-section");
+      if (!response.ok) throw new Error("Failed to fetch");
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const backgroundImage = sectionData?.section?.backgroundImage || pyramidFromMenaHouseImage;
 
   // Use database testimonials if available, otherwise fallback
   const testimonials: TestimonialData[] = data?.testimonials?.length > 0
@@ -81,7 +143,7 @@ export default function TestimonialSection() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [testimonials.length]);
@@ -89,15 +151,21 @@ export default function TestimonialSection() {
   const handleNext = () => setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
 
-  const currentTestimonial = testimonials[currentIndex];
+  if (testimonials.length === 0) return null;
 
-  if (!currentTestimonial) return null;
+  // Desktop: a sliding window of up to 4 consecutive cards starting at
+  // currentIndex, wrapping around — always shows 4 filled cards (or fewer
+  // if there simply aren't 4 testimonials yet) instead of leaving empty
+  // grid slots on a "last page".
+  const visibleCount = Math.min(4, testimonials.length);
+  const desktopTestimonials = Array.from({ length: visibleCount }, (_, i) => testimonials[(currentIndex + i) % testimonials.length]);
+  const currentTestimonial = testimonials[currentIndex];
 
   return (
     <section className="relative py-20 overflow-hidden" data-testid="testimonial-section">
       <div className="absolute inset-0">
         <img
-          src={pyramidFromMenaHouseImage}
+          src={backgroundImage}
           alt="The Great Pyramid of Giza at dusk — iLuxury Egypt"
           className="w-full h-full object-cover"
           loading="lazy"
@@ -105,7 +173,7 @@ export default function TestimonialSection() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/45 to-black/40" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
             What Our Guests Say
@@ -119,11 +187,11 @@ export default function TestimonialSection() {
         </div>
 
         <div className="relative w-full">
-          {/* Flex Overlay for Navigation Buttons */}
-          <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4 md:px-8 lg:px-16 z-10">
+          {/* Navigation Arrows — desktop only; mobile uses swipe + dots */}
+          <div className="absolute inset-0 hidden lg:flex items-center justify-between pointer-events-none px-0 xl:-px-4 z-10">
             <button
               onClick={handlePrev}
-              className="pointer-events-auto w-12 h-12 rounded-full border border-white/40 text-white flex items-center justify-center backdrop-blur-sm hover:bg-white hover:text-primary transition-all duration-300 hidden lg:flex"
+              className="pointer-events-auto -translate-x-6 w-12 h-12 rounded-full border border-white/40 text-white flex items-center justify-center backdrop-blur-sm hover:bg-white hover:text-primary transition-all duration-300"
               data-testid="testimonial-prev"
               aria-label="Previous testimonial"
             >
@@ -132,7 +200,7 @@ export default function TestimonialSection() {
 
             <button
               onClick={handleNext}
-              className="pointer-events-auto w-12 h-12 rounded-full border border-white/40 text-white flex items-center justify-center backdrop-blur-sm hover:bg-white hover:text-primary transition-all duration-300 hidden lg:flex"
+              className="pointer-events-auto translate-x-6 w-12 h-12 rounded-full border border-white/40 text-white flex items-center justify-center backdrop-blur-sm hover:bg-white hover:text-primary transition-all duration-300"
               data-testid="testimonial-next"
               aria-label="Next testimonial"
             >
@@ -140,56 +208,39 @@ export default function TestimonialSection() {
             </button>
           </div>
 
-          {/* Testimonial Card */}
-          <div className="px-4 md:px-16">
-            <AnimatePresence mode="wait">
+          {/* Desktop: 4 cards side by side */}
+          <div className="hidden lg:grid grid-cols-4 gap-6">
+            {desktopTestimonials.map((testimonial) => (
               <motion.div
-                key={currentTestimonial.id}
-                initial={{ opacity: 0, y: 24 }}
+                key={testimonial.id}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 whileHover={{ y: -4 }}
-                className="bg-white rounded-2xl shadow-2xl px-6 py-10 md:px-14 md:py-14 max-w-3xl mx-auto text-center"
-                data-testid="testimonial-content"
               >
-                {/* Stars */}
-                <div className="flex justify-center mb-6">
-                  <div className="flex text-accent">
-                    {[...Array(currentTestimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-6 w-6 fill-current" />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quote */}
-                <blockquote className="text-lg md:text-xl font-serif text-primary italic leading-relaxed mb-8">
-                  "{currentTestimonial.quote}"
-                </blockquote>
-
-                {/* Author */}
-                <div className="mb-6">
-                  <p className="font-semibold text-primary">{currentTestimonial.author}</p>
-                  {currentTestimonial.location && (
-                    <p className="text-sm text-muted-foreground">{currentTestimonial.location}</p>
-                  )}
-                </div>
-
-                {/* TripAdvisor Badge */}
-                <a
-                  href="https://www.tripadvisor.com/Attraction_Review-g294201-d34077128-Reviews-I_Luxury_Egypt-Cairo_Cairo_Governorate.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#00aa6c] hover:bg-[#00995f] text-white text-sm font-semibold rounded-full transition-all duration-300"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-                  </svg>
-                  Read More on TripAdvisor
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                <TestimonialCard testimonial={testimonial} />
               </motion.div>
-            </AnimatePresence>
+            ))}
+          </div>
+
+          {/* Mobile/Tablet: single card, swipeable */}
+          <div className="lg:hidden px-2 sm:px-8">
+            <motion.div
+              key={currentTestimonial.id}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_e, info) => {
+                if (info.offset.x < -60) handleNext();
+                else if (info.offset.x > 60) handlePrev();
+              }}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="max-w-xl mx-auto cursor-grab active:cursor-grabbing"
+            >
+              <TestimonialCard testimonial={currentTestimonial} />
+            </motion.div>
           </div>
 
           {/* Dots Indicator */}

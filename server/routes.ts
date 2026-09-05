@@ -28,6 +28,7 @@ import {
   insertSiwaSectionSchema,
   insertGuestExperienceSectionSchema,
   insertOurStorySectionSchema,
+  insertTestimonialsSectionSchema,
   insertWhyChooseSectionSchema,
   insertWhyChooseCardSchema,
   insertStayListingSettingsSchema,
@@ -4077,6 +4078,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating contact CTA section:', error);
       res.status(500).json({ message: 'Error updating contact CTA section' });
+    }
+  });
+
+  // ====================
+  // TESTIMONIALS SECTION ROUTES (homepage background image)
+  // ====================
+
+  // Public: Get testimonials section
+  app.get("/api/public/testimonials-section", async (req, res) => {
+    try {
+      const section = await storage.getTestimonialsSection();
+      res.json({ section });
+    } catch (error) {
+      console.error('Error fetching testimonials section:', error);
+      res.status(500).json({ message: 'Error fetching testimonials section' });
+    }
+  });
+
+  // CMS: Get testimonials section
+  app.get("/api/cms/testimonials-section", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const section = await storage.getTestimonialsSection();
+      res.json({ section });
+    } catch (error) {
+      console.error('Error fetching testimonials section:', error);
+      res.status(500).json({ message: 'Error fetching testimonials section' });
+    }
+  });
+
+  // CMS: Update/Create testimonials section
+  app.post("/api/cms/testimonials-section", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertTestimonialsSectionSchema.parse(req.body);
+      const section = await storage.upsertTestimonialsSection(data);
+      res.json({ section });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+      }
+      console.error('Error updating testimonials section:', error);
+      res.status(500).json({ message: 'Error updating testimonials section' });
     }
   });
 

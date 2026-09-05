@@ -298,6 +298,11 @@ export default function AdminPageEdits() {
     isActive: true,
   });
 
+  // Testimonials Section state (homepage — background image behind the testimonial cards)
+  const [testimonialsSectionForm, setTestimonialsSectionForm] = useState({
+    backgroundImage: "",
+  });
+
   // Why Choose Section state
   const [whyChooseForm, setWhyChooseForm] = useState({
     title: "",
@@ -808,6 +813,25 @@ export default function AdminPageEdits() {
     enabled: currentView === "home",
   });
 
+  // Fetch testimonials section (background image)
+  const { data: testimonialsSectionData, isLoading: testimonialsSectionLoading } = useQuery({
+    queryKey: ["testimonialsSection"],
+    queryFn: async () => {
+      const response = await fetch("/api/cms/testimonials-section", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to fetch testimonials section");
+      const data = await response.json();
+      if (data.section) {
+        setTestimonialsSectionForm({
+          backgroundImage: data.section.backgroundImage || "",
+        });
+      }
+      return data;
+    },
+    enabled: currentView === "home",
+  });
+
   // Fetch contact CTA section
   const { data: contactCtaData, isLoading: contactCtaLoading } = useQuery({
     queryKey: ["contactCtaSection"],
@@ -1032,6 +1056,50 @@ export default function AdminPageEdits() {
       toast({ title: "Success", description: "Our Story section updated" });
     },
     onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to update our story section", variant: "destructive" }),
+  });
+
+  // Testimonials section mutation
+  const updateTestimonialsSectionMutation = useMutation({
+    mutationFn: async (data: typeof testimonialsSectionForm) => {
+      const response = await fetch("/api/cms/testimonials-section", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok) {
+        const zodDetail = body?.errors?.[0]
+          ? `${body.errors[0].path?.join(".")}: ${body.errors[0].message}`
+          : undefined;
+        throw new Error(zodDetail || body?.message || "Failed to update testimonials section");
+      }
+      return body;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["testimonialsSection"] });
+      toast({ title: "Success", description: "Testimonials background updated" });
+    },
+    onError: (error: any) => toast({ title: "Error", description: error.message || "Failed to update testimonials section", variant: "destructive" }),
+  });
+
+  const uploadTestimonialsBackgroundMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+    onSuccess: (url) => setTestimonialsSectionForm({ backgroundImage: url }),
+    onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
   });
 
   // Our story image upload — uploads to the Media Library and fills the
@@ -3206,6 +3274,61 @@ export default function AdminPageEdits() {
                   </div>
                 ))}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Testimonials Section Background */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Testimonials Section Background</CardTitle>
+            <CardDescription>Background image behind the "What Our Guests Say" cards</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {testimonialsSectionLoading ? (
+              <div className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  updateTestimonialsSectionMutation.mutate(testimonialsSectionForm);
+                }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  <Label>Background Image</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={testimonialsSectionForm.backgroundImage}
+                      onChange={(e) => setTestimonialsSectionForm({ backgroundImage: e.target.value })}
+                      placeholder="https://... or upload from the Media Library"
+                      required
+                      data-testid="input-testimonials-background-image"
+                    />
+                    <Button type="button" variant="outline" className="relative shrink-0" data-testid="button-upload-testimonials-background">
+                      {uploadTestimonialsBackgroundMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadTestimonialsBackgroundMutation.mutate(file);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </Button>
+                  </div>
+                  {testimonialsSectionForm.backgroundImage && (
+                    <img src={testimonialsSectionForm.backgroundImage} alt="Preview" className="mt-2 h-24 w-40 object-cover rounded-md border" />
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={updateTestimonialsSectionMutation.isPending} data-testid="button-save-testimonials-background">
+                    {updateTestimonialsSectionMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Save
+                  </Button>
+                </div>
+              </form>
             )}
           </CardContent>
         </Card>
