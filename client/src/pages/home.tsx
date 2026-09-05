@@ -13,6 +13,7 @@ import InteractiveMapSection from "../components/interactive-map-section";
 import PersonalAdvisorSection from "../components/personal-advisor-section";
 import TestimonialSection from "../components/testimonial-section";
 import CallToActionSection from "../components/call-to-action-section";
+import PopularSearchSection from "../components/popular-search-section";
 import HomeFAQSection from "../components/home-faq-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
@@ -48,6 +49,7 @@ export default function Home() {
         <PersonalAdvisorSection />
         <TestimonialSection />
         <CallToActionSection />
+        <PopularSearchSection />
         <HomeFAQSection />
         <NewsletterSection />
       </main>
