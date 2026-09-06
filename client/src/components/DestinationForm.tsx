@@ -131,7 +131,11 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
     }
   };
 
-  // Attraction management
+  // Attraction management. All three use the functional setState form (not
+  // `attractions.map(...)` against the closure-captured array) so that
+  // back-to-back calls in the same tick each build on the other's result
+  // instead of one clobbering the other — this matters for useStockPhoto
+  // below, which updates "image" and then "imageAlt" in immediate succession.
   const addAttraction = () => {
     const newAttraction: Attraction = {
       id: uuidv4(),
@@ -140,17 +144,17 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       image: "",
       imageAlt: "",
     };
-    setAttractions([...attractions, newAttraction]);
+    setAttractions((prev) => [...prev, newAttraction]);
   };
 
   const updateAttraction = (id: string, field: keyof Attraction, value: string) => {
-    setAttractions(attractions.map(attr =>
+    setAttractions((prev) => prev.map(attr =>
       attr.id === id ? { ...attr, [field]: value } : attr
     ));
   };
 
   const removeAttraction = (id: string) => {
-    setAttractions(attractions.filter(attr => attr.id !== id));
+    setAttractions((prev) => prev.filter(attr => attr.id !== id));
   };
 
   // FAQ management — mirrors the Attractions repeater above (same pattern:
@@ -160,15 +164,15 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
   // page is a separate flat CRUD list, not a repeater embedded in a form).
   const addFaq = () => {
     const newFaq: FAQ = { id: uuidv4(), question: "", answer: "" };
-    setFaqs([...faqs, newFaq]);
+    setFaqs((prev) => [...prev, newFaq]);
   };
 
   const updateFaq = (id: string, field: keyof FAQ, value: string) => {
-    setFaqs(faqs.map(faq => (faq.id === id ? { ...faq, [field]: value } : faq)));
+    setFaqs((prev) => prev.map(faq => (faq.id === id ? { ...faq, [field]: value } : faq)));
   };
 
   const removeFaq = (id: string) => {
-    setFaqs(faqs.filter(faq => faq.id !== id));
+    setFaqs((prev) => prev.filter(faq => faq.id !== id));
   };
 
   const uploadImageMutation = useMutation({
