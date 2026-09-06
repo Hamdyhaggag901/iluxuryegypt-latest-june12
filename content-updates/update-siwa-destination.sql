@@ -1,4 +1,4 @@
--- Full content refresh for the Siwa Oasis destination (slug: siwa):
+-- Full content refresh for the Siwa Oasis destination (slug: siwa-oasis):
 -- description, SEO fields, a new 7-question faqs array, and a full
 -- 7-entry attractions array.
 --
@@ -43,7 +43,7 @@ UPDATE destinations SET
     {"id": "a05cbb57-a7b1-4cdb-b826-67d5b359558a", "question": "Is the Siwa House Museum worth a visit?", "answer": "Yes, it offers insight into traditional Siwan domestic life through handwoven textiles, silver jewelry, and palm wood furnishings inside a beautifully restored historic residence in the heart of the oasis."}
   ]$faqs$::jsonb,
   updated_at = now()
-WHERE slug = 'siwa';
+WHERE slug = 'siwa-oasis';
 
 -- Review the output above (row count, any 0-row UPDATE means a slug
 -- mismatch) before committing.
