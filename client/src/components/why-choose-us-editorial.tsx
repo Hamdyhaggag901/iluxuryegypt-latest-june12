@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
 
+const CHAPTER_COUNT = 4;
+const PIN_MODE_QUERY = "(min-width: 768px)";
+
 export default function WhyChooseUsEditorial() {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -7,76 +10,237 @@ export default function WhyChooseUsEditorial() {
     const container = containerRef.current;
     if (!container) return;
 
-    const sections = Array.from(container.querySelectorAll<HTMLElement>("[data-section]"));
     const links = Array.from(container.querySelectorAll<HTMLAnchorElement>(".wce-progress-rail a"));
     const rail = container.querySelector<HTMLElement>(".wce-progress-rail");
-    const parallaxItems = Array.from(container.querySelectorAll<HTMLElement>("[data-parallax]"));
-    const revealElements = Array.from(container.querySelectorAll<HTMLElement>(".wce-reveal"));
+    const coverSection = container.querySelector<HTMLElement>(".wce-cover");
+    const closingSection = container.querySelector<HTMLElement>(".wce-closing");
+    const track = container.querySelector<HTMLElement>(".wce-chapters-track");
+    const panels = Array.from(container.querySelectorAll<HTMLElement>(".wce-chapter.wce-panel"));
 
-    const revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("wce-is-visible");
-            revealObserver.unobserve(entry.target);
-          }
+    const shouldPin = () =>
+      window.matchMedia(PIN_MODE_QUERY).matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let teardown = () => {};
+
+    const setupStackedMode = () => {
+      container.dataset.wceMode = "stacked";
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const sections = [coverSection, ...panels, closingSection].filter(
+        (el): el is HTMLElement => !!el
+      );
+      const revealElements = Array.from(container.querySelectorAll<HTMLElement>(".wce-reveal"));
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("wce-is-visible");
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.16 }
+      );
+      revealElements.forEach((element) => revealObserver.observe(element));
+
+      const railSections = [coverSection, ...panels].filter((el): el is HTMLElement => !!el);
+      const activeObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const index = railSections.indexOf(entry.target as HTMLElement);
+            if (index === -1) return;
+            links.forEach((link, linkIndex) => link.classList.toggle("wce-active", linkIndex === index));
+            const dark =
+              entry.target.classList.contains("wce-chapter-2") ||
+              entry.target.classList.contains("wce-chapter-4");
+            rail?.classList.toggle("wce-on-dark", dark);
+          });
+        },
+        { rootMargin: "-42% 0px -48% 0px" }
+      );
+      railSections.forEach((section) => activeObserver.observe(section));
+
+      if (prefersReducedMotion) {
+        teardown = () => {
+          revealObserver.disconnect();
+          activeObserver.disconnect();
+        };
+        return;
+      }
+
+      const parallaxItems = Array.from(container.querySelectorAll<HTMLElement>("[data-parallax]"));
+      let ticking = false;
+      const renderParallax = () => {
+        parallaxItems.forEach((item) => {
+          const rect =
+            item.closest(".wce-cover, .wce-chapter, .wce-hotel-main, .wce-hotel-secondary")?.getBoundingClientRect() ||
+            item.getBoundingClientRect();
+          const distance =
+            (window.innerHeight / 2 - (rect.top + rect.height / 2)) * Number(item.dataset.parallax || 0.05);
+          item.style.transform = `translate3d(0, ${distance.toFixed(2)}px, 0) scale(1.04)`;
         });
-      },
-      { threshold: 0.16 }
-    );
-    revealElements.forEach((element) => revealObserver.observe(element));
+        ticking = false;
+      };
+      const handleScroll = () => {
+        if (!ticking) {
+          window.requestAnimationFrame(renderParallax);
+          ticking = true;
+        }
+      };
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      renderParallax();
 
-    const activeObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const index = sections.indexOf(entry.target as HTMLElement);
-          links.forEach((link, linkIndex) => link.classList.toggle("wce-active", linkIndex === index));
-          const dark =
-            entry.target.classList.contains("wce-chapter-2") ||
-            entry.target.classList.contains("wce-chapter-4");
-          rail?.classList.toggle("wce-on-dark", dark);
-        });
-      },
-      { rootMargin: "-42% 0px -48% 0px" }
-    );
-    sections.forEach((section) => activeObserver.observe(section));
-
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
-      return () => {
+      teardown = () => {
         revealObserver.disconnect();
         activeObserver.disconnect();
+        window.removeEventListener("scroll", handleScroll);
       };
-    }
-
-    let ticking = false;
-    const renderParallax = () => {
-      parallaxItems.forEach((item) => {
-        const rect =
-          item.closest(".wce-cover, .wce-chapter, .wce-hotel-main, .wce-hotel-secondary")?.getBoundingClientRect() ||
-          item.getBoundingClientRect();
-        const distance =
-          (window.innerHeight / 2 - (rect.top + rect.height / 2)) * Number(item.dataset.parallax || 0.05);
-        item.style.transform = `translate3d(0, ${distance.toFixed(2)}px, 0) scale(1.04)`;
-      });
-      ticking = false;
     };
 
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(renderParallax);
-        ticking = true;
+    const setupPinnedMode = () => {
+      container.dataset.wceMode = "pinned";
+      if (!track) return;
+
+      const coverRevealEls = coverSection
+        ? Array.from(coverSection.querySelectorAll<HTMLElement>(".wce-reveal"))
+        : [];
+      const closingRevealEls = closingSection
+        ? Array.from(closingSection.querySelectorAll<HTMLElement>(".wce-reveal"))
+        : [];
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("wce-is-visible");
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.16 }
+      );
+      [...coverRevealEls, ...closingRevealEls].forEach((el) => revealObserver.observe(el));
+
+      const coverObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            links.forEach((link, linkIndex) => link.classList.toggle("wce-active", linkIndex === 0));
+            rail?.classList.remove("wce-on-dark");
+          });
+        },
+        { rootMargin: "-42% 0px -48% 0px" }
+      );
+      if (coverSection) coverObserver.observe(coverSection);
+
+      const panelParallaxItems = panels.map((panel) =>
+        Array.from(panel.querySelectorAll<HTMLElement>("[data-parallax]"))
+      );
+      const panelRevealItems = panels.map((panel) =>
+        Array.from(panel.querySelectorAll<HTMLElement>(".wce-reveal"))
+      );
+
+      const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+      let lastActiveIndex = -1;
+
+      const scrollToChapter = (index: number) => {
+        const trackRect = track.getBoundingClientRect();
+        const viewportH = window.innerHeight;
+        const scrollable = Math.max(1, track.offsetHeight - viewportH);
+        const targetProgress = (index + 0.5) / CHAPTER_COUNT;
+        const currentAbsoluteTrackTop = window.scrollY + trackRect.top;
+        const targetY = currentAbsoluteTrackTop + targetProgress * scrollable;
+        window.scrollTo({ top: targetY, behavior: "smooth" });
+      };
+
+      const chapterLinkHandlers: Array<{ link: HTMLAnchorElement; handler: (e: MouseEvent) => void }> = [];
+      links.slice(1, 1 + CHAPTER_COUNT).forEach((link, i) => {
+        const handler = (e: MouseEvent) => {
+          e.preventDefault();
+          scrollToChapter(i);
+        };
+        link.addEventListener("click", handler);
+        chapterLinkHandlers.push({ link, handler });
+      });
+
+      let ticking = false;
+      const update = () => {
+        const trackRect = track.getBoundingClientRect();
+        const viewportH = window.innerHeight;
+        const scrollable = Math.max(1, track.offsetHeight - viewportH);
+        const totalProgress = clamp01(-trackRect.top / scrollable);
+        const isPinned = trackRect.top <= 0 && trackRect.bottom > viewportH;
+
+        const scaledProgress = totalProgress * CHAPTER_COUNT;
+        const activeIndex = Math.min(CHAPTER_COUNT - 1, Math.floor(scaledProgress));
+        const localProgress = clamp01(scaledProgress - activeIndex);
+
+        if (activeIndex !== lastActiveIndex) {
+          panels.forEach((panel, i) => {
+            const isActive = i === activeIndex;
+            panel.classList.toggle("wce-panel-active", isActive);
+            panelRevealItems[i].forEach((el) => el.classList.toggle("wce-is-visible", isActive));
+          });
+          lastActiveIndex = activeIndex;
+        }
+
+        if (isPinned) {
+          links.forEach((link, linkIndex) => link.classList.toggle("wce-active", linkIndex === activeIndex + 1));
+          rail?.classList.toggle("wce-on-dark", activeIndex === 1 || activeIndex === 3);
+
+          panelParallaxItems[activeIndex].forEach((item) => {
+            const factor = Number(item.dataset.parallax || 0.05);
+            const distance = (localProgress - 0.5) * factor * viewportH * 2;
+            item.style.transform = `translate3d(0, ${distance.toFixed(2)}px, 0) scale(1.04)`;
+          });
+        }
+
+        ticking = false;
+      };
+
+      const handleScroll = () => {
+        if (!ticking) {
+          window.requestAnimationFrame(update);
+          ticking = true;
+        }
+      };
+
+      window.addEventListener("scroll", handleScroll, { passive: true });
+      window.addEventListener("resize", handleScroll, { passive: true });
+      update();
+
+      teardown = () => {
+        revealObserver.disconnect();
+        coverObserver.disconnect();
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", handleScroll);
+        chapterLinkHandlers.forEach(({ link, handler }) => link.removeEventListener("click", handler));
+      };
+    };
+
+    const setup = () => {
+      teardown();
+      if (shouldPin()) {
+        setupPinnedMode();
+      } else {
+        setupStackedMode();
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    renderParallax();
+    setup();
+
+    const desktopQuery = window.matchMedia(PIN_MODE_QUERY);
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onModeChange = () => setup();
+    desktopQuery.addEventListener("change", onModeChange);
+    motionQuery.addEventListener("change", onModeChange);
 
     return () => {
-      revealObserver.disconnect();
-      activeObserver.disconnect();
-      window.removeEventListener("scroll", handleScroll);
+      desktopQuery.removeEventListener("change", onModeChange);
+      motionQuery.removeEventListener("change", onModeChange);
+      teardown();
     };
   }, []);
 
@@ -632,6 +796,39 @@ export default function WhyChooseUsEditorial() {
         .wce-reveal-delay-2 {
           transition-delay: 230ms;
         }
+        .wce-chapters-track {
+          position: relative;
+        }
+        [data-wce-mode="pinned"] .wce-chapters-track {
+          height: 400vh;
+        }
+        [data-wce-mode="pinned"] .wce-chapters-sticky {
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          height: 100svh;
+          overflow: hidden;
+        }
+        [data-wce-mode="stacked"] .wce-chapters-sticky {
+          display: contents;
+        }
+        [data-wce-mode="pinned"] .wce-chapter.wce-panel {
+          position: absolute;
+          inset: 0;
+          height: 100%;
+          min-height: 0;
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          overflow-y: auto;
+          padding: clamp(1.5rem, 4vw, 3.5rem) var(--wce-gutter);
+          transition: opacity 700ms ease;
+        }
+        [data-wce-mode="pinned"] .wce-chapter.wce-panel.wce-panel-active {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+        }
         @media (max-width: 900px) {
           .wce-progress-rail a span {
             display: none;
@@ -798,7 +995,13 @@ export default function WhyChooseUsEditorial() {
           }
         }
       `}</style>
-      <div className="wce-editorial" id="wce-top" ref={containerRef} data-testid="why-choose-us-editorial-section">
+      <div
+        className="wce-editorial"
+        id="wce-top"
+        ref={containerRef}
+        data-testid="why-choose-us-editorial-section"
+        data-wce-mode="stacked"
+      >
         <nav className="wce-progress-rail" aria-label="Editorial chapters">
           <a className="wce-active" href="#wce-cover" aria-label="Cover"><span>Cover</span></a>
           <a href="#wce-private-access" aria-label="Private Access"><span>01</span></a>
@@ -830,8 +1033,10 @@ export default function WhyChooseUsEditorial() {
           <div className="wce-cover-scroll wce-microcopy" aria-hidden="true">Enter the story</div>
         </section>
 
+        <div className="wce-chapters-track">
+        <div className="wce-chapters-sticky">
         <section
-          className="wce-chapter wce-chapter-1"
+          className="wce-chapter wce-chapter-1 wce-panel"
           id="wce-private-access"
           data-section="private-access"
           aria-labelledby="wce-private-access-title"
@@ -865,7 +1070,7 @@ export default function WhyChooseUsEditorial() {
         </section>
 
         <section
-          className="wce-chapter wce-chapter-2"
+          className="wce-chapter wce-chapter-2 wce-panel"
           id="wce-vip-service"
           data-section="vip-service"
           aria-labelledby="wce-vip-service-title"
@@ -917,7 +1122,7 @@ export default function WhyChooseUsEditorial() {
         </section>
 
         <section
-          className="wce-chapter wce-chapter-3"
+          className="wce-chapter wce-chapter-3 wce-panel"
           id="wce-accommodation"
           data-section="accommodation"
           aria-labelledby="wce-accommodation-title"
@@ -961,7 +1166,7 @@ export default function WhyChooseUsEditorial() {
         </section>
 
         <section
-          className="wce-chapter wce-chapter-4"
+          className="wce-chapter wce-chapter-4 wce-panel"
           id="wce-itineraries"
           data-section="itineraries"
           aria-labelledby="wce-itineraries-title"
@@ -988,6 +1193,8 @@ export default function WhyChooseUsEditorial() {
             </div>
           </div>
         </section>
+        </div>
+        </div>
 
         <section className="wce-closing" aria-labelledby="wce-closing-title">
           <div className="wce-closing-inner">
