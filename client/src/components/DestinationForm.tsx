@@ -107,14 +107,37 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
       Object.keys(initialData).forEach((key) => {
         form.setValue(key as any, initialData[key]);
       });
+      // Both schemas require a string `id` on every entry (attractionSchema,
+      // faqSchema). Content written directly via SQL/migrations has
+      // sometimes omitted it, which fails validation with no visible error
+      // anywhere in this form (see onInvalidSubmit below) — the Update
+      // button just silently does nothing. Backfilling a fresh id here
+      // means a single re-save repairs the stored data going forward.
       if (initialData.attractions) {
-        setAttractions(initialData.attractions);
+        setAttractions(initialData.attractions.map((a: Attraction) => ({ ...a, id: a.id || uuidv4() })));
       }
       if (initialData.faqs) {
-        setFaqs(initialData.faqs);
+        setFaqs(initialData.faqs.map((f: FAQ) => ({ ...f, id: f.id || uuidv4() })));
       }
     }
   }, [initialData, form]);
+
+  // The Attractions/FAQs tabs edit `attractions`/`faqs` local state directly
+  // (see addAttraction/updateAttraction/etc. below) and are never wired to
+  // `form` via register/Controller. But zodResolver validates form's OWN
+  // tracked values, which the mount effect above only ever set once from
+  // raw initialData. Without this sync, an admin's edits (and the id
+  // backfill above) never reach what validation actually checks, so a stale
+  // or malformed initial value (e.g. a FAQ missing its required `id`) blocks
+  // every future submit with no visible error — the Update button just does
+  // nothing. Keeping form's copy mirrored to local state fixes that.
+  useEffect(() => {
+    form.setValue("attractions" as any, attractions, { shouldValidate: false });
+  }, [attractions, form]);
+
+  useEffect(() => {
+    form.setValue("faqs" as any, faqs, { shouldValidate: false });
+  }, [faqs, form]);
 
   const generateSlug = (name: string) => {
     return name
@@ -351,6 +374,34 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
     onSubmit(transformedData);
   };
 
+  // Radix Tabs unmounts/hides inactive tab content, so a validation error on
+  // a field the admin isn't currently looking at (e.g. they're on Overview
+  // but heroImage or an attraction is invalid) would otherwise fail totally
+  // silently — the exact symptom originally reported for the Update button.
+  // Map failing field names to which tab holds them so the toast is actually
+  // actionable.
+  const FIELD_TO_TAB: Record<string, string> = {
+    name: "Overview", slug: "Overview", description: "Overview",
+    shortDescription: "Overview", heroImage: "Overview", region: "Overview",
+    duration: "Overview", bestTimeToVisit: "Overview",
+    attractions: "Attractions",
+    faqs: "FAQs",
+    seoTitle: "SEO", metaDescription: "SEO", focusKeyword: "SEO",
+    canonicalUrl: "SEO", ogImage: "SEO",
+  };
+
+  const onInvalidSubmit = (errors: any) => {
+    const fieldNames = Object.keys(errors);
+    const tabs = Array.from(new Set(fieldNames.map((f) => FIELD_TO_TAB[f] || "Settings")));
+    toast({
+      title: "Cannot save — please fix the highlighted fields",
+      description: tabs.length > 0
+        ? `Check the ${tabs.join(", ")} tab${tabs.length > 1 ? "s" : ""} for errors.`
+        : "Some fields are invalid.",
+      variant: "destructive",
+    });
+  };
+
   const focusKeyword = form.watch("focusKeyword") || "";
   const destinationName = form.watch("name") || "";
   const description = form.watch("description") || "";
@@ -360,7 +411,7 @@ export function DestinationForm({ initialData, onSubmit, isLoading }: Destinatio
     !stripHtml(description).toLowerCase().includes(focusKeyword.toLowerCase());
 
   return (
-    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <form onSubmit={form.handleSubmit(handleSubmit, onInvalidSubmit)} className="space-y-6">
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-5" data-testid="tabs-destination-form">
           <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
