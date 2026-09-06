@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const MENA_HOUSE = "https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp";
 const NILE_RITZ = "https://iluxuryegypt.com/api/assets/uploads/1baf9cb1-334b-4688-9b0e-e3dda1d2d13e.webp";
+const FAIRMONT_NILE_CITY = "https://iluxuryegypt.com/api/assets/uploads/31bb173b-480a-4a0d-afb7-7f76245df3c6.webp";
 
 function ZigzagDivider({ reverse = false }: { reverse?: boolean }) {
   const patternId = reverse ? "accommodation-zigzag-reverse" : "accommodation-zigzag";
@@ -108,8 +109,8 @@ export default function Accommodation() {
                 </div>
                 <div className="rounded-2xl overflow-hidden aspect-square -mt-4">
                   <img
-                    src={NILE_RITZ}
-                    alt="Nile Ritz-Carlton suite interior"
+                    src={FAIRMONT_NILE_CITY}
+                    alt="Fairmont Nile City hotel exterior on the Nile"
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
