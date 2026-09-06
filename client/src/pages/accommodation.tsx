@@ -4,29 +4,11 @@ import Navigation from "../components/navigation";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
 import { Button } from "@/components/ui/button";
+import ZigzagDivider from "../components/zigzag-divider";
 
 const MENA_HOUSE = "https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp";
 const NILE_RITZ = "https://iluxuryegypt.com/api/assets/uploads/1baf9cb1-334b-4688-9b0e-e3dda1d2d13e.webp";
 const FAIRMONT_NILE_CITY = "https://iluxuryegypt.com/api/assets/uploads/31bb173b-480a-4a0d-afb7-7f76245df3c6.webp";
-
-function ZigzagDivider({ reverse = false }: { reverse?: boolean }) {
-  const patternId = reverse ? "accommodation-zigzag-reverse" : "accommodation-zigzag";
-  const triangleColor = reverse ? "#1F2B44" : "#C8A76C";
-  const backgroundColor = reverse ? "#C8A76C" : "#1F2B44";
-  return (
-    <div className="w-full h-6 md:h-9" aria-hidden="true" data-testid={`zigzag-divider-${reverse ? "reverse" : "default"}`}>
-      <svg viewBox="0 0 40 10" preserveAspectRatio="none" className="w-full h-full block">
-        <defs>
-          <pattern id={patternId} width="10" height="10" patternUnits="userSpaceOnUse">
-            <polygon points="0,10 5,0 10,10" fill={triangleColor} />
-          </pattern>
-        </defs>
-        <rect width="40" height="10" fill={backgroundColor} />
-        <rect width="40" height="10" fill={`url(#${patternId})`} />
-      </svg>
-    </div>
-  );
-}
 
 export default function Accommodation() {
   useSEO({
