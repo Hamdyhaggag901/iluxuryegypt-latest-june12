@@ -30,6 +30,9 @@ const CategoryDetail = lazy(() => import("@/pages/category-detail"));
 const FAQPage = lazy(() => import("@/pages/faq"));
 const TailorMade = lazy(() => import("@/pages/tailor-made"));
 const PlanYourTrip = lazy(() => import("@/pages/plan-your-trip"));
+const Accommodation = lazy(() => import("@/pages/accommodation"));
+const PrivateAccess = lazy(() => import("@/pages/private-access"));
+const VipService = lazy(() => import("@/pages/vip-service"));
 
 // Lazy loaded - About pages
 const WhoWeAre = lazy(() => import("@/pages/about/who-we-are"));
@@ -166,6 +169,11 @@ function Router() {
             {/* Tailor Made */}
             <Route path="/tailor-made" component={TailorMade} />
             <Route path="/plan-your-trip" component={PlanYourTrip} />
+
+            {/* Why Choose Us detail pages */}
+            <Route path="/accommodation" component={Accommodation} />
+            <Route path="/private-access" component={PrivateAccess} />
+            <Route path="/vip-service" component={VipService} />
 
             {/* Legal pages — the 5 original slugs keep their exact fixed URLs (indexed by
                 Google, linked from the footer and booking forms) for zero SEO impact.

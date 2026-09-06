@@ -2,6 +2,7 @@ import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
 import OurStorySection from "../components/our-story-section";
+import WhyChooseUsSection from "../components/why-choose-us-section";
 import CategoriesCarouselSection from "../components/categories-carousel-section";
 import WhereYouWillStaySection from "../components/where-you-will-stay-section";
 import PartnersMarqueeSection from "../components/partners-marquee-section";
@@ -32,6 +33,7 @@ export default function Home() {
       <main>
         <HeroSlider />
         <OurStorySection />
+        <WhyChooseUsSection />
         <CategoriesCarouselSection />
         <WhereYouWillStaySection />
         <PartnersMarqueeSection />
