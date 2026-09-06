@@ -442,15 +442,12 @@ export default function WhyChooseUsEditorial() {
           content: "";
           background: var(--wce-line);
         }
-        .wce-chapter h2,
         .wce-chapter h3 {
           margin: 0;
           font-family: var(--wce-serif);
           font-weight: 500;
           letter-spacing: -0.045em;
           line-height: 0.91;
-        }
-        .wce-chapter h2 {
           max-width: 8ch;
           font-size: clamp(4.25rem, 8.2vw, 8.8rem);
         }
@@ -699,7 +696,7 @@ export default function WhyChooseUsEditorial() {
         .wce-closing-inner {
           width: min(100%, 47rem);
         }
-        .wce-closing h2 {
+        .wce-closing h3 {
           margin: 0.7rem 0 1.7rem;
           font-family: var(--wce-serif);
           font-size: clamp(4.5rem, 10vw, 9.5rem);
@@ -707,7 +704,7 @@ export default function WhyChooseUsEditorial() {
           letter-spacing: -0.07em;
           line-height: 0.78;
         }
-        .wce-closing h2 span {
+        .wce-closing h3 span {
           display: block;
           margin-left: 0.9em;
         }
@@ -909,7 +906,7 @@ export default function WhyChooseUsEditorial() {
             padding-top: 0;
             padding-bottom: 0;
           }
-          .wce-chapter h2 {
+          .wce-chapter h3 {
             font-size: clamp(4.1rem, 20vw, 7rem);
           }
           .wce-chapter-title {
@@ -970,7 +967,7 @@ export default function WhyChooseUsEditorial() {
           .wce-closing {
             min-height: 65svh;
           }
-          .wce-closing h2 {
+          .wce-closing h3 {
             font-size: clamp(4.6rem, 20vw, 7rem);
           }
         }
@@ -1027,7 +1024,7 @@ export default function WhyChooseUsEditorial() {
               </h2>
             </div>
             <p className="wce-cover-note wce-reveal wce-reveal-delay-2">
-              Luxury Egypt,<br />personally curated.
+              Luxury Egypt tours,<br />personally curated.
             </p>
           </div>
           <div className="wce-cover-scroll wce-microcopy" aria-hidden="true">Enter the story</div>
@@ -1044,24 +1041,24 @@ export default function WhyChooseUsEditorial() {
           <div className="wce-chapter-inner">
             <div className="wce-chapter-copy">
               <div className="wce-chapter-index wce-reveal">Chapter 01</div>
-              <div className="wce-chapter-kicker wce-reveal">Private access</div>
-              <h2 id="wce-private-access-title" className="wce-reveal wce-reveal-delay-1">
+              <div className="wce-chapter-kicker wce-reveal">Private Access in Egypt</div>
+              <h3 id="wce-private-access-title" className="wce-reveal wce-reveal-delay-1">
                 Where History Opens Only for You
-              </h2>
+              </h3>
               <p className="wce-chapter-title wce-reveal wce-reveal-delay-2">
                 A quieter way to meet the ancient world.
               </p>
               <p className="wce-chapter-body wce-reveal wce-reveal-delay-2">
-                Through carefully secured permits and an unmatched portfolio of storied properties, we grant access
-                few will ever witness — private hours at Egypt&rsquo;s ancient wonders, paired with residences that
-                have hosted kings.
+                Our luxury Egypt tours open doors most travelers never see. Through carefully secured permits and an
+                unmatched portfolio of storied properties, we grant access few will ever witness — private hours at
+                Egypt&rsquo;s ancient wonders, paired with residences that have hosted kings.
               </p>
             </div>
             <figure className="wce-chapter-image wce-reveal wce-reveal-delay-1">
               <img
                 data-parallax="0.11"
-                src="https://images.unsplash.com/photo-1568322445389-f64a2c7b9f2e?auto=format&fit=crop&w=1500&q=88&fm=webp"
-                alt="Sunlit stone columns at an ancient Egyptian temple"
+                src="https://iluxuryegypt.com/api/assets/uploads/b586bad2-3ba5-4c70-b6a7-109f222a4e92.webp"
+                alt="An ancient Egyptian landmark bathed in golden light — private access Egypt tours"
                 loading="lazy"
               />
               <figcaption className="wce-image-caption">A private hour / Luxor</figcaption>
@@ -1079,9 +1076,9 @@ export default function WhyChooseUsEditorial() {
             <div className="wce-chapter-copy">
               <div className="wce-chapter-index wce-reveal">Chapter 02</div>
               <div className="wce-chapter-kicker wce-reveal">Luxury VIP service</div>
-              <h2 id="wce-vip-service-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
+              <h3 id="wce-vip-service-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
                 An Escort Worthy of Royalty
-              </h2>
+              </h3>
               <p className="wce-chapter-body wce-reveal wce-reveal-delay-2">
                 Every transfer is arranged through our trusted network of premier private transportation partners,
                 vetted for comfort, discretion, and reliability. Your journey through Egypt unfolds with nothing left
@@ -1130,10 +1127,10 @@ export default function WhyChooseUsEditorial() {
           <div className="wce-chapter-inner">
             <div className="wce-chapter-copy">
               <div className="wce-chapter-index wce-reveal">Chapter 03</div>
-              <div className="wce-chapter-kicker wce-reveal">5-star accommodation</div>
-              <h2 id="wce-accommodation-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
+              <div className="wce-chapter-kicker wce-reveal">5-Star Egypt Hotels</div>
+              <h3 id="wce-accommodation-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
                 Palaces Along the Nile
-              </h2>
+              </h3>
               <p className="wce-chapter-body wce-reveal wce-reveal-delay-2">
                 From the storied halls of Mena House to the modern grandeur of the Nile Ritz-Carlton, our thirteen
                 handpicked residences are not simply places to rest — they are chapters of your journey in their own
@@ -1141,20 +1138,19 @@ export default function WhyChooseUsEditorial() {
               </p>
             </div>
             <div className="wce-hotel-spread">
-              {/* TODO: replace with real hotel images */}
               <figure className="wce-hotel-main wce-reveal">
                 <img
                   data-parallax="0.085"
-                  src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=88&fm=webp"
-                  alt="Quiet luxury hotel architecture lit by late afternoon sun"
+                  src="https://iluxuryegypt.com/api/assets/uploads/32ef96ad-7c53-4204-bda3-06a9865b332b.webp"
+                  alt="Mena House hotel exterior — luxury Egypt tours accommodation"
                   loading="lazy"
                 />
               </figure>
               <figure className="wce-hotel-secondary wce-reveal wce-reveal-delay-1">
                 <img
                   data-parallax="0.12"
-                  src="https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=88&fm=webp"
-                  alt="A calm hotel interior with a view toward the water"
+                  src="https://iluxuryegypt.com/api/assets/uploads/1baf9cb1-334b-4688-9b0e-e3dda1d2d13e.webp"
+                  alt="Nile Ritz-Carlton hotel interior overlooking the Nile — 5-star Egypt hotels"
                   loading="lazy"
                 />
               </figure>
@@ -1183,9 +1179,9 @@ export default function WhyChooseUsEditorial() {
             <div className="wce-chapter-copy">
               <div className="wce-chapter-index wce-reveal">Chapter 04</div>
               <div className="wce-chapter-kicker wce-reveal">Tailor-made itineraries</div>
-              <h2 id="wce-itineraries-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
+              <h3 id="wce-itineraries-title" className="wce-chapter-title wce-reveal wce-reveal-delay-1">
                 A Journey Written for You Alone
-              </h2>
+              </h3>
               <p className="wce-chapter-body wce-reveal wce-reveal-delay-2">
                 No itinerary is ever repeated. Each journey is composed around your interests, your pace, and your
                 vision of Egypt — a private commission, not a package.
@@ -1199,9 +1195,9 @@ export default function WhyChooseUsEditorial() {
         <section className="wce-closing" aria-labelledby="wce-closing-title">
           <div className="wce-closing-inner">
             <div className="wce-eyebrow wce-reveal">The final page is yours</div>
-            <h2 id="wce-closing-title" className="wce-reveal wce-reveal-delay-1">
+            <h3 id="wce-closing-title" className="wce-reveal wce-reveal-delay-1">
               Your Egypt.<span>Your Way.</span>
-            </h2>
+            </h3>
             <p className="wce-reveal wce-reveal-delay-2">A journey personally curated around you.</p>
             <a className="wce-closing-link wce-reveal wce-reveal-delay-2" href="#wce-top">
               Begin Your Journey <span>→</span>
