@@ -1,79 +1,113 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
+import ExperienceCard from "../components/experience-card";
+import TripBuilderModal from "../components/trip-builder-modal";
 
 const GREAT_PYRAMID = "https://iluxuryegypt.com/api/assets/uploads/9dff839b-b0b2-43c2-b43c-f9e56900e392.webp";
 const LUXOR_TEMPLE = "https://iluxuryegypt.com/api/assets/uploads/957e080e-b0c1-4a40-8db8-49b317460747.webp";
 const EGYPTIAN_MUSEUM = "https://iluxuryegypt.com/api/assets/uploads/8cc1ba23-71a6-4635-a217-ddda9c4a48f8.webp";
 const EXCAVATION_SITE = "https://iluxuryegypt.com/api/assets/uploads/179e2e5e-fd76-447b-843d-7a9a187c43ec.webp";
 
-const MOMENTS = [
+const EXPERIENCES = [
   {
     title: "The Great Pyramid, Before the World Wakes",
-    body: "Step inside the last standing wonder of the ancient world in complete solitude. Your private permit grants entry to the King's Chamber and the rarely-opened Queen's Chamber, hours before the gates open to the public.",
+    subtitle: "The King's Chamber, before the gates open",
+    body: "Long before the first tour bus arrives, a private permit unlocks the last standing wonder of the ancient world for you alone. Descend through the ascending passage into the King's Chamber, and where access allows, the seldom-opened Queen's Chamber beyond it. In the hush of early morning, with no crowds pressing behind you, the scale and silence of the Great Pyramid become impossible to forget.",
     image: GREAT_PYRAMID,
     alt: "The Great Pyramid of Giza at sunrise",
   },
   {
     title: "Between the Paws of the Sphinx",
-    body: "Few travelers are ever granted entry into the Sphinx's own enclosure. Stand where pharaohs once stood, close enough to read the weathered stone, as the desert wakes around you.",
+    subtitle: "Standing where pharaohs once stood",
+    body: "The Sphinx's own enclosure is rarely opened to visitors, who typically view it from a distance behind a rope line. Our private arrangement brings you inside — close enough to trace the weathering on five thousand years of limestone, standing at eye level with a monument most travelers only ever photograph from afar, as the desert light shifts across its face.",
     image: GREAT_PYRAMID,
     alt: "The Great Sphinx of Giza close up",
   },
   {
     title: "Luxor Temple, Lit Only for You",
-    body: "When the crowds leave and the gates close, Luxor Temple is transformed. Walk its colonnades under floodlight and starlight, with the ancient stones entirely your own.",
+    subtitle: "The colonnades, entirely your own",
+    body: "By day, Luxor Temple draws crowds through its avenue of columns. After the gates close to the public, a private evening visit transforms it completely. Floodlights pick out carved reliefs invisible in daylight, the Nile breeze replaces the afternoon heat, and for an hour the temple's colossal statues and colonnaded courts belong to no one but you.",
     image: LUXOR_TEMPLE,
     alt: "Luxor Temple illuminated at night",
   },
   {
     title: "The Egyptian Museum, After Hours",
-    body: "Cairo's treasures — from golden masks to royal mummies — are yours to study without a single other visitor in sight. A private evening among five thousand years of history.",
+    subtitle: "Five thousand years, without a single crowd",
+    body: "Tutankhamun's golden mask, the royal mummy rooms, halls of statuary spanning three millennia — normally shared with thousands of daily visitors. A private after-hours visit removes the crowds entirely. Move at your own pace between galleries, linger as long as a piece holds your attention, and experience Cairo's greatest collection the way it was meant to be studied: quietly, and alone.",
     image: EGYPTIAN_MUSEUM,
     alt: "Egyptian Museum exhibition hall in Cairo",
   },
   {
     title: "Where Egypt's Past Is Still Being Uncovered",
-    body: "Step onto an active excavation site and witness archaeology as it happens. Meet the teams unearthing Egypt's next chapter, in places closed to all but a select few.",
+    subtitle: "Archaeology, witnessed firsthand",
+    body: "Beyond the monuments already open to the public, Egypt's excavation sites are still yielding discoveries. Where access can be arranged, step onto an active dig and meet the archaeologists piecing together the country's next chapter. It's a rare vantage point — not a finished exhibit, but history in the process of being written, one carefully brushed layer of sand at a time.",
     image: EXCAVATION_SITE,
     alt: "An active archaeological excavation site in Egypt",
   },
   {
     title: "The Step Pyramid, Egypt's First Wonder",
-    body: "Before Giza, there was Saqqara. Explore the world's oldest monumental stone structure in near-total privacy, guided through the origins of pyramid building itself.",
+    subtitle: "Where pyramid-building began",
+    body: "Before Giza's smooth-sided giants, there was Djoser's Step Pyramid at Saqqara — the world's oldest large-scale stone structure, and the prototype for everything that followed. Saqqara draws a fraction of Giza's visitors, so a private tour here feels closer to discovery than sightseeing. A knowledgeable guide walks you through the origins of pyramid design, in near-total quiet.",
     image: GREAT_PYRAMID,
     alt: "The Step Pyramid of Djoser at Saqqara",
   },
   {
     title: "The Hidden Vaults of the Egyptian Museum",
-    body: "Beneath the museum's public halls lies a basement rarely opened to outsiders — artifacts still being catalogued, studied, and preserved. A rare look at Egyptology in progress.",
+    subtitle: "Egyptology, still in progress",
+    body: "Beneath the Egyptian Museum's public galleries lies a basement most visitors never see — storerooms of artifacts still being catalogued, conserved, and studied by resident Egyptologists. Where special access can be arranged, a private visit offers a glimpse of the discipline at work: the ongoing, painstaking process behind everything eventually placed on public display.",
     image: EGYPTIAN_MUSEUM,
     alt: "Storage vaults beneath the Egyptian Museum",
   },
 ];
 
 export default function PrivateAccess() {
+  const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
+  const [activeExperience, setActiveExperience] = useState<string | undefined>(undefined);
+
   useSEO({
-    title: "Private Access | Egypt's Most Guarded Places, Opened Only for You | iLuxury Egypt",
+    title: "Private Access Tours in Egypt | Exclusive VIP Experiences – iLuxuryEgypt",
     description:
-      "Permit-secured, private access to Egypt's most guarded monuments — the Great Pyramid, the Sphinx, Luxor Temple, and more, opened only for you.",
+      "Step beyond the ropes and crowds with permit-secured private access to the Great Pyramid, the Sphinx, Luxor Temple and more — Egypt's most guarded places, opened only for you.",
   });
+
+  const openTripBuilder = (experienceTitle: string) => {
+    setActiveExperience(experienceTitle);
+    setIsTripBuilderOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
       <main>
-        <section className="pt-32 md:pt-40 pb-16 md:pb-24" data-testid="private-access-header">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
-              Private Access
-            </span>
-            <h1 className="text-4xl md:text-6xl font-serif font-bold text-primary mt-4 mb-6">
-              Egypt&rsquo;s Most Guarded Places, Opened Only for You
-            </h1>
-            <p className="text-muted-foreground leading-relaxed text-lg">
+        <section className="relative" data-testid="private-access-hero">
+          <div className="relative h-[60vh] min-h-[440px] md:min-h-[560px] w-full overflow-hidden">
+            <img
+              src={GREAT_PYRAMID}
+              alt="The Great Sphinx and Pyramids of Giza at dawn"
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-black/55" />
+            <div className="absolute inset-0 flex items-center justify-center text-center px-4">
+              <div>
+                <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-4">Private Access</h1>
+                <p className="text-white/85 text-lg max-w-xl mx-auto">
+                  Egypt&rsquo;s most guarded monuments, opened only for you.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 md:py-24" data-testid="private-access-intro">
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-primary mb-5">
+              Reserved for the Privileged Few
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
               Some places in Egypt were never meant to be seen by crowds. Through permits secured directly with
               Egyptian authorities, we open doors that remain closed to the public — quiet hours inside the
               world&rsquo;s greatest monuments, granted to a privileged few.
@@ -81,39 +115,32 @@ export default function PrivateAccess() {
           </div>
         </section>
 
-        <section className="pb-20 md:pb-28" data-testid="private-access-gallery">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {MOMENTS.map((moment, index) => (
-                <motion.div
-                  key={moment.title}
-                  initial={{ opacity: 0, x: index % 2 === 0 ? -60 : 60 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="rounded-2xl border border-border bg-card overflow-hidden flex flex-col"
-                  data-testid={`private-access-card-${index + 1}`}
-                >
-                  <div className="aspect-[4/3] overflow-hidden">
-                    <img
-                      src={moment.image}
-                      alt={moment.alt}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="p-6 flex flex-col flex-1">
-                    <h3 className="font-serif text-xl font-bold text-primary mb-3">{moment.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{moment.body}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+        <section className="pb-20 md:pb-28" data-testid="private-access-list">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-10 md:gap-14">
+            {EXPERIENCES.map((experience, i) => (
+              <ExperienceCard
+                key={experience.title}
+                index={i + 1}
+                eyebrow="Private Access"
+                title={experience.title}
+                subtitle={experience.subtitle}
+                description={experience.body}
+                image={experience.image}
+                imageAlt={experience.alt}
+                reverse={i % 2 === 1}
+                onMoreInfo={() => openTripBuilder(experience.title)}
+              />
+            ))}
           </div>
         </section>
       </main>
       <Footer />
       <ScrollToTopButton />
+      <TripBuilderModal
+        open={isTripBuilderOpen}
+        onOpenChange={setIsTripBuilderOpen}
+        contextLabel={activeExperience}
+      />
     </div>
   );
 }

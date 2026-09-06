@@ -4,9 +4,13 @@ import TripBuilderForm from "@/components/trip-builder-form";
 interface TripBuilderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Names the card/experience/hotel this modal was opened from, so the
+  // submitted inquiry reads e.g. "General Inquiry - The Great Pyramid,
+  // Before the World Wakes" instead of the generic Trip Builder title.
+  contextLabel?: string;
 }
 
-export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModalProps) {
+export default function TripBuilderModal({ open, onOpenChange, contextLabel }: TripBuilderModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -15,7 +19,7 @@ export default function TripBuilderModal({ open, onOpenChange }: TripBuilderModa
       >
         {/* Radix requires an accessible title; the visible one lives inside TripBuilderForm's own header */}
         <DialogTitle className="sr-only">Plan Your Bespoke Egypt Journey</DialogTitle>
-        <TripBuilderForm onSuccess={() => onOpenChange(false)} />
+        <TripBuilderForm onSuccess={() => onOpenChange(false)} contextLabel={contextLabel} />
       </DialogContent>
     </Dialog>
   );

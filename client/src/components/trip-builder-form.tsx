@@ -55,9 +55,13 @@ interface TripBuilderFormProps {
   // Hides the header title/progress bar's outer border, for contexts (like a
   // standalone page) that already provide their own heading treatment.
   showHeader?: boolean;
+  // When opened from a specific card/experience/hotel elsewhere on the site,
+  // this names it in the submitted inquiry (e.g. "General Inquiry - The Great
+  // Pyramid, Before the World Wakes") instead of the generic Trip Builder title.
+  contextLabel?: string;
 }
 
-export default function TripBuilderForm({ onSuccess, className, showHeader = true }: TripBuilderFormProps) {
+export default function TripBuilderForm({ onSuccess, className, showHeader = true, contextLabel }: TripBuilderFormProps) {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(initialFormState);
@@ -143,7 +147,11 @@ export default function TripBuilderForm({ onSuccess, className, showHeader = tru
     setIsSubmitting(true);
     try {
       await apiRequest("POST", "/api/tour-bookings", {
-        tourTitle: form.destinations.length ? `Trip Builder: ${form.destinations.join(", ")}` : "Trip Builder Request",
+        tourTitle: contextLabel
+          ? `General Inquiry - ${contextLabel}`
+          : form.destinations.length
+            ? `Trip Builder: ${form.destinations.join(", ")}`
+            : "Trip Builder Request",
         fullName: `${form.title} ${form.firstName} ${form.lastName}`.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() ? `${getDialCode(form.countryIso)} ${form.phone.trim()}` : undefined,
@@ -187,10 +195,17 @@ export default function TripBuilderForm({ onSuccess, className, showHeader = tru
     <div className={cn("flex flex-col gap-0", className)}>
       {showHeader && (
         <div className="px-8 lg:px-12 pt-8 pb-6 border-b border-border shrink-0">
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-6">
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2">
             Plan Your Bespoke Egypt Journey
           </h2>
-          <StepProgressBar currentStep={step} stepLabels={STEP_LABELS} />
+          {contextLabel && (
+            <p className="text-sm text-accent font-medium mb-4" data-testid="text-trip-builder-context">
+              General Inquiry &middot; {contextLabel}
+            </p>
+          )}
+          <div className={contextLabel ? "mt-4" : "mt-6"}>
+            <StepProgressBar currentStep={step} stepLabels={STEP_LABELS} />
+          </div>
         </div>
       )}
 
