@@ -3,7 +3,13 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, LazyMotion, m } from "framer-motion";
+
+// Passing domMax directly (a static import) still bundles it into the
+// main chunk eagerly — LazyMotion only actually defers it when given a
+// loader function, so the feature set becomes its own async chunk fetched
+// once, not re-parsed on every navigation.
+const loadFramerMotionFeatures = () => import("framer-motion").then((res) => res.domMax);
 import { useEffect, lazy, Suspense } from "react";
 import WhatsAppButton from "@/components/whatsapp-button";
 import FloatingSpeakExpertButton from "@/components/floating-speak-expert-button";
@@ -102,7 +108,7 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <AnimatePresence mode="wait">
-      <motion.div
+      <m.div
         key={location}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -110,7 +116,7 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
         transition={{ duration: 0.3, ease: "easeInOut" }}
       >
         {children}
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }
@@ -238,12 +244,28 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SiteMetadata />
-        <WebMcpTools />
-        <Toaster />
-        <Router />
-        <WhatsAppButton />
-        <FloatingSpeakExpertButton />
+        {/* LazyMotion + the `m` component (used here and in
+            how-it-works-section.tsx / testimonial-section.tsx) load only
+            the framer-motion feature set actually used across the app —
+            animation, gestures, and drag (testimonial-section.tsx's
+            swipeable card needs domMax, not just domAnimation) — instead
+            of statically importing the full API via `motion`, which
+            bundles every feature (layout projection included) regardless
+            of use. This was a meaningful share of the homepage's main JS
+            chunk per a bundle analysis (vite-bundle-visualizer). */}
+        {/* Not strict: several lazy-loaded routes (destinations, blog,
+            hotel-detail, stay) still import `motion` directly rather than
+            `m` — strict mode would throw when navigating to any of them.
+            Non-strict just means those keep using their own bundled API,
+            unaffected by this LazyMotion context. */}
+        <LazyMotion features={loadFramerMotionFeatures}>
+          <SiteMetadata />
+          <WebMcpTools />
+          <Toaster />
+          <Router />
+          <WhatsAppButton />
+          <FloatingSpeakExpertButton />
+        </LazyMotion>
       </TooltipProvider>
     </QueryClientProvider>
   );

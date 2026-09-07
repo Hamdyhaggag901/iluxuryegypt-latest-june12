@@ -8,24 +8,35 @@ export default function ScrollToTopButton() {
   useEffect(() => {
     const toggleVisibility = () => {
       const scrolled = document.documentElement.scrollTop || document.body.scrollTop;
-      if (scrolled > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+      setIsVisible(scrolled > 300);
     };
 
     // Check on mount
     toggleVisibility();
 
+    // Same unthrottled-scroll-handler pattern a Chrome trace pinned a
+    // forced-reflow Layout event to in Navigation's own scroll listener
+    // (see the comment there) — this button is also fixed-position and
+    // restyles (opacity/translate) on every scroll tick without this.
+    // requestAnimationFrame coalesces it to at most once per frame.
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        toggleVisibility();
+        ticking = false;
+      });
+    };
+
     // A duplicate document.addEventListener alongside this one used to
     // fire the same handler twice per scroll event for no benefit (window
     // scroll events already bubble/are observable at both targets).
     // passive: true avoids blocking the compositor's scroll-driven work.
-    window.addEventListener("scroll", toggleVisibility, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
-      window.removeEventListener("scroll", toggleVisibility);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 

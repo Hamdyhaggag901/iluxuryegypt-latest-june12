@@ -134,8 +134,22 @@ export default function Navigation() {
   }, [siteConfig]);
 
   useEffect(() => {
+    // A Chrome trace (Tracing.start with the devtools.timeline.stack
+    // category) pinned a "Forced reflow" Layout event's call stack
+    // directly to this handler: unthrottled, it re-ran setIsScrolled on
+    // every native scroll tick — tens of times a second — each one
+    // landing mid-frame on a position:fixed element that needs its
+    // box-shadow/border restyled, forcing layout to catch up before the
+    // browser could otherwise batch it with the next paint.
+    // requestAnimationFrame coalesces that down to at most once per frame.
+    let ticking = false;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 50);
+        ticking = false;
+      });
     };
     // passive: true tells the browser this handler never calls
     // preventDefault(), so it doesn't have to block the compositor's

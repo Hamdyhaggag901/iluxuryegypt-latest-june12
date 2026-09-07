@@ -11,6 +11,23 @@ const POPULAR_SEARCHES = [
   { label: "Luxury Honeymoon Egypt", slug: "luxury-honeymoon-egypt" },
 ];
 
+// player.vimeo.com/external/{id}.hd.mp4?s={hash}&profile_id={n} is Vimeo's
+// signed progressive-download CDN link, not a stable embed URL — the `s`
+// signature rotates/expires, which is what actually produces a 403 in
+// production rather than any domain-privacy restriction on the Vimeo
+// account. The numeric video ID inside it is still valid indefinitely, so
+// this rebuilds a stable player.vimeo.com/video/{id} background-embed URL
+// from that same ID instead of needing a freshly generated link. Any
+// player.vimeo.com/video/{id} URL already in that stable form matches too
+// and is returned as-is (with background-embed params merged in).
+function getVimeoEmbedUrl(src: string): string | null {
+  const externalMatch = src.match(/player\.vimeo\.com\/external\/(\d+)/);
+  const videoMatch = src.match(/player\.vimeo\.com\/video\/(\d+)/);
+  const id = externalMatch?.[1] || videoMatch?.[1];
+  if (!id) return null;
+  return `https://player.vimeo.com/video/${id}?background=1&autoplay=1&loop=1&muted=1&playsinline=1`;
+}
+
 interface Slide {
   id: string;
   type: "video" | "image";
@@ -197,16 +214,31 @@ export default function HeroSlider() {
               media file instead of every slide's video/image at once. */}
           {loadedSlides.has(index) && (
             slide.type === "video" ? (
-              <video
-                ref={(el) => (videoRefs.current[index] = el)}
-                className="absolute inset-0 w-full h-full object-cover"
-                src={slide.src}
-                poster={slide.poster}
-                muted={isMuted}
-                loop
-                playsInline
-                preload={index === 0 ? "auto" : "metadata"}
-              />
+              getVimeoEmbedUrl(slide.src) ? (
+                // Vimeo's stable background-embed iframe — see
+                // getVimeoEmbedUrl's comment for why this isn't a <video src>
+                // pointed straight at the stored URL. background=1 already
+                // forces muted+loop+no-controls, matching this slide style.
+                <iframe
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ border: 0 }}
+                  src={getVimeoEmbedUrl(slide.src)!}
+                  title={slide.title}
+                  allow="autoplay; fullscreen"
+                  loading={index === 0 ? "eager" : "lazy"}
+                />
+              ) : (
+                <video
+                  ref={(el) => (videoRefs.current[index] = el)}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  src={slide.src}
+                  poster={slide.poster}
+                  muted={isMuted}
+                  loop
+                  playsInline
+                  preload={index === 0 ? "auto" : "metadata"}
+                />
+              )
             ) : (
               <img
                 {...getResponsiveImageProps(slide.src)}
@@ -331,14 +363,19 @@ export default function HeroSlider() {
         ))}
       </div>
 
-      {/* Mute/Unmute Button */}
-      <button
-        onClick={toggleMute}
-        className="absolute bottom-8 right-4 md:right-8 z-30 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300"
-        aria-label={isMuted ? "Unmute" : "Mute"}
-      >
-        {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-      </button>
+      {/* Mute/Unmute Button — hidden for Vimeo-embedded slides, since the
+          background-embed iframe has no JS-controllable mute state without
+          Vimeo's Player SDK (a real <video> element's .muted still works
+          directly, so the button stays for those). */}
+      {!getVimeoEmbedUrl(slides[currentSlide]?.src || "") && (
+        <button
+          onClick={toggleMute}
+          className="absolute bottom-8 right-4 md:right-8 z-30 w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all duration-300"
+          aria-label={isMuted ? "Unmute" : "Mute"}
+        >
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
+      )}
 
       {/* Slide Counter */}
       <div className="absolute bottom-8 left-4 md:left-8 z-30 text-white/60 text-sm font-light tracking-wider">

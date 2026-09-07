@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { MessageCircle, Route, PlaneTakeoff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -28,7 +28,7 @@ export default function HowItWorksSection() {
   return (
     <section className="py-20 md:py-28 bg-background" data-testid="how-it-works-section">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
@@ -85,7 +85,7 @@ export default function HowItWorksSection() {
               Start planning your trip
             </Button>
           </Link>
-        </motion.div>
+        </m.div>
       </div>
     </section>
   );

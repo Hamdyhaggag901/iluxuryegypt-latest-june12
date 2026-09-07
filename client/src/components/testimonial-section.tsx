@@ -1,7 +1,7 @@
 import { Star, ChevronLeft, ChevronRight, ExternalLink, Quote } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import pyramidFromMenaHouseImage from "@assets/the-pyramid-from-mena-house_1757459228638.jpeg";
 
@@ -126,7 +126,11 @@ function TestimonialCard({
         )}
       </div>
 
-      <TripAdvisorBadge className="relative inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#00aa6c] hover:bg-[#00995f] text-white text-xs font-semibold rounded-full transition-all duration-300 mx-auto" />
+      {/* #00aa6c (TripAdvisor's own brand green) reads at only 3.01:1
+          against white text, under WCAG AA's 4.5:1 for this badge's 12px
+          text. Darkened to #008152 (same hue) for ~4.9:1, still clearly
+          recognizable as the TripAdvisor green family. */}
+      <TripAdvisorBadge className="relative inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#008152] hover:bg-[#007047] text-white text-xs font-semibold rounded-full transition-all duration-300 mx-auto" />
     </div>
   );
 }
@@ -248,7 +252,7 @@ export default function TestimonialSection() {
           {/* Desktop: 4 cards side by side — click any card to read it in full */}
           <div className="hidden lg:grid grid-cols-4 gap-6">
             {desktopTestimonials.map((testimonial) => (
-              <motion.div
+              <m.div
                 key={testimonial.id}
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -256,13 +260,13 @@ export default function TestimonialSection() {
                 whileHover={{ y: -4 }}
               >
                 <TestimonialCard testimonial={testimonial} onExpand={() => setExpandedTestimonial(testimonial)} />
-              </motion.div>
+              </m.div>
             ))}
           </div>
 
           {/* Mobile/Tablet: single card, swipeable — tap (not drag) opens the full review */}
           <div className="lg:hidden px-2 sm:px-8">
-            <motion.div
+            <m.div
               key={currentTestimonial.id}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -291,7 +295,7 @@ export default function TestimonialSection() {
               className="max-w-xl mx-auto cursor-grab active:cursor-grabbing"
             >
               <TestimonialCard testimonial={currentTestimonial} />
-            </motion.div>
+            </m.div>
           </div>
 
           {/* Dots Indicator */}
