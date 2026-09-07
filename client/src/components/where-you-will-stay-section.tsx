@@ -26,13 +26,19 @@ export default function WhereYouWillStaySection({
   viewAllHref = "/stay",
   viewAllLabel = "View All Stays",
 }: WhereYouWillStaySectionProps) {
-  const { data } = useQuery<{ success: boolean; hotels: Hotel[] }>({
-    queryKey: ["/api/hotels"],
-    queryFn: async () => {
-      const res = await fetch("/api/hotels");
-      if (!res.ok) throw new Error("Failed to load hotels");
-      return res.json();
-    },
+  // This self-fetch path only ever renders name/image/imageAlt/region/
+  // isPartner/partnerLogoUrl (see the JSX below), so it uses the lighter
+  // /api/public/hotels-summary endpoint instead of /api/hotels — the full
+  // endpoint sends every hotel's entire gallery, article, and SEO fields,
+  // which a PageSpeed audit flagged as a meaningful chunk of a 1,151ms
+  // response on this exact page. The hotelsProp path (pre-filtered lists
+  // passed in by a parent) is unaffected and still carries full Hotel data.
+  type HotelCardData = Pick<
+    Hotel,
+    "id" | "slug" | "name" | "image" | "imageAlt" | "region" | "status" | "isPartner" | "partnerLogoUrl"
+  >;
+  const { data } = useQuery<{ success: boolean; hotels: HotelCardData[] }>({
+    queryKey: ["/api/public/hotels-summary"],
     enabled: !hotelsProp,
   });
 
@@ -74,6 +80,10 @@ export default function WhereYouWillStaySection({
                       <img
                         src={hotel.partnerLogoUrl}
                         alt={`${hotel.name} logo`}
+                        width={60}
+                        height={16}
+                        loading="lazy"
+                        decoding="async"
                         className="h-4 max-w-[60px] w-auto object-contain shrink-0"
                         onError={(e) => { e.currentTarget.style.display = "none"; }}
                       />

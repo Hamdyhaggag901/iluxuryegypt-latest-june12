@@ -39,6 +39,12 @@ import { eq, and, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { db } from "./db";
 
+// Card-list projection of Hotel — see getHotelsSummary() below.
+export type HotelSummary = Pick<
+  Hotel,
+  "id" | "slug" | "name" | "image" | "imageAlt" | "location" | "region" | "type" | "rating" | "status" | "isPartner" | "partnerLogoUrl"
+>;
+
 // modify the interface with any CRUD methods
 // you might need
 
@@ -86,6 +92,12 @@ export interface IStorage {
   // Hotel methods
   createHotel(hotel: InsertHotel): Promise<Hotel>;
   getHotels(): Promise<Hotel[]>;
+  // Card-list shape (homepage "Where You Will Stay", /stay listing) —
+  // skips gallery, article, fullDescription, facilities/rooms and every
+  // SEO field, none of which those cards render. getHotels() sends all of
+  // it for every hotel on every request; a PageSpeed audit flagged
+  // /api/hotels at 1,151ms partly as a result of that unused payload.
+  getHotelsSummary(): Promise<HotelSummary[]>;
   getHotel(id: string): Promise<Hotel | undefined>;
   getHotelBySlug(slug: string): Promise<Hotel | undefined>;
   updateHotel(id: string, hotel: Partial<InsertHotel>): Promise<Hotel | undefined>;
@@ -309,6 +321,31 @@ export class DatabaseStorage implements IStorage {
       return hotelsList;
     } catch (error) {
       console.error("Error fetching hotels:", error);
+      return [];
+    }
+  }
+
+  async getHotelsSummary(): Promise<HotelSummary[]> {
+    try {
+      return await db
+        .select({
+          id: hotels.id,
+          slug: hotels.slug,
+          name: hotels.name,
+          image: hotels.image,
+          imageAlt: hotels.imageAlt,
+          location: hotels.location,
+          region: hotels.region,
+          type: hotels.type,
+          rating: hotels.rating,
+          status: hotels.status,
+          isPartner: hotels.isPartner,
+          partnerLogoUrl: hotels.partnerLogoUrl,
+        })
+        .from(hotels)
+        .orderBy(hotels.sortOrder, hotels.createdAt);
+    } catch (error) {
+      console.error("Error fetching hotels summary:", error);
       return [];
     }
   }
@@ -1916,6 +1953,13 @@ export class MemoryStorage implements IStorage {
     return Array.from(this.hotels.values()).sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+  }
+
+  async getHotelsSummary(): Promise<HotelSummary[]> {
+    const list = await this.getHotels();
+    return list.map(({ id, slug, name, image, imageAlt, location, region, type, rating, status, isPartner, partnerLogoUrl }) => ({
+      id, slug, name, image, imageAlt, location, region, type, rating, status, isPartner, partnerLogoUrl,
+    }));
   }
 
   async getHotel(id: string): Promise<Hotel | undefined> {

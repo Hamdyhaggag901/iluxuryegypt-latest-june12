@@ -831,6 +831,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lightweight hotel card list (public access) — for pages that only
+  // render a grid of hotel cards (name/image/region/rating) and don't
+  // need each hotel's full gallery, article, or SEO fields. See
+  // storage.getHotelsSummary() for exactly which columns this selects.
+  app.get("/api/public/hotels-summary", async (req, res) => {
+    try {
+      const hotels = await storage.getHotelsSummary();
+      res.json({ success: true, hotels });
+    } catch (error) {
+      console.error('Error fetching hotels summary:', error);
+      res.status(500).json({ message: 'Error fetching hotels summary' });
+    }
+  });
+
   // Get a specific hotel by slug or id (public access)
   app.get("/api/hotels/:idOrSlug", async (req, res) => {
     try {

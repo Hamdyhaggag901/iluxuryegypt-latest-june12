@@ -1,11 +1,18 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { prerenderMiddleware } from "./prerender";
 import { markdownNegotiationMiddleware } from "./markdown-negotiation";
 
 const app = express();
+// No response (API JSON included — hotels/tours/destinations payloads run
+// hundreds of KB of rich text and gallery URLs uncompressed) was being
+// gzipped before this; a PageSpeed audit flagged /api/hotels alone at
+// 1,151ms partly as a result. gzip/brotli here cuts text payloads by
+// roughly 70-80% with no code changes needed anywhere else.
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
