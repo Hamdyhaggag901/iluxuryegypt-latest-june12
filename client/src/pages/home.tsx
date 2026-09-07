@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useSEO } from "@/hooks/use-seo";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
@@ -14,11 +15,15 @@ import LuxuryPackagesSection from "../components/destination-blocks";
 import InteractiveMapSection from "../components/interactive-map-section";
 import HowItWorksSection from "../components/how-it-works-section";
 import TestimonialSection from "../components/testimonial-section";
+import DeferredSection from "../components/deferred-section";
 import CallToActionSection from "../components/call-to-action-section";
 import HomeFAQSection from "../components/home-faq-section";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
-import NewsletterSection from "../components/newsletter-section";
+// Lazy: react-hook-form + zod + @hookform/resolvers were otherwise part of
+// the homepage's main JS chunk despite this being the very last section on
+// the page, below everything else including the footer.
+const NewsletterSection = lazy(() => import("../components/newsletter-section"));
 
 export default function Home() {
   useSEO({
@@ -50,10 +55,16 @@ export default function Home() {
         <InteractiveMapSection />
         <HighlightsSection />
         <HowItWorksSection />
-        <TestimonialSection />
+        <DeferredSection minHeight="700px">
+          <TestimonialSection />
+        </DeferredSection>
         <CallToActionSection />
         <HomeFAQSection />
-        <NewsletterSection />
+        <DeferredSection minHeight="420px">
+          <Suspense fallback={null}>
+            <NewsletterSection />
+          </Suspense>
+        </DeferredSection>
       </main>
       <Footer />
       <ScrollToTopButton />

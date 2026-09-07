@@ -1,7 +1,14 @@
 import { Star, ChevronLeft, ChevronRight, ExternalLink, Quote } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { m } from "framer-motion";
+import { LazyMotion, m } from "framer-motion";
+
+// The app-wide LazyMotion instance (App.tsx) only loads domAnimation — this
+// section is the one place that needs domMax's drag/pan support (the mobile
+// swipeable card below). Loading it here, locally, means it's fetched only
+// once this below-the-fold section actually mounts, instead of on every
+// page load competing with the hero image for bandwidth during LCP.
+const loadDomMaxFeatures = () => import("framer-motion").then((res) => res.domMax);
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import pyramidFromMenaHouseImage from "@assets/the-pyramid-from-mena-house_1757459228638.jpeg";
 
@@ -203,6 +210,7 @@ export default function TestimonialSection() {
   const currentTestimonial = testimonials[currentIndex];
 
   return (
+    <LazyMotion features={loadDomMaxFeatures}>
     <section className="relative py-20 overflow-hidden" data-testid="testimonial-section">
       <div className="absolute inset-0">
         <img
@@ -329,5 +337,6 @@ export default function TestimonialSection() {
         </DialogContent>
       </Dialog>
     </section>
+    </LazyMotion>
   );
 }

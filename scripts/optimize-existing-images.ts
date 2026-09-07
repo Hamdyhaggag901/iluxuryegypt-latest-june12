@@ -10,6 +10,9 @@
 // - categories.image
 // - destinations.heroImage/gallery[]/attractions[].image (jsonb)
 // - tours.heroImage/gallery[]/itinerary[].image (jsonb, optional per day)
+// - our_story_section.image: homepage "Our Story" image, capped tighter
+//   (see OUR_STORY_MAX_WIDTH) since it never renders wider than ~600px.
+// - why_choose_cards.imageUrl: homepage "Why Choose I.LUXURYEGYPT?" cards.
 //
 // Run against the real database with:
 //   DATABASE_URL="postgresql://..." npx tsx scripts/optimize-existing-images.ts
@@ -21,7 +24,7 @@ import path from "path";
 import fs from "fs/promises";
 import sharp from "sharp";
 import { db, pool } from "../server/db";
-import { heroSlides, partners, hotels, categories, destinations, tours } from "../shared/schema";
+import { heroSlides, partners, hotels, categories, destinations, tours, ourStorySection, whyChooseCards } from "../shared/schema";
 import { optimizeUploadedImage } from "../server/image-optimize";
 import { eq } from "drizzle-orm";
 
@@ -30,6 +33,12 @@ const UPLOAD_URL_PREFIX = "/api/assets/uploads/";
 const TARGET_BYTES = 100 * 1024;
 const LOGO_MAX_WIDTH = 400;
 const CONTENT_MAX_WIDTH = 1600;
+// our_story_section.image sits in a fixed two-column grid (never full-bleed)
+// and is never rendered wider than ~600px even on a large desktop viewport —
+// capping the master file itself near that (with headroom for retina
+// displays) instead of the generic 1600px avoids shipping ~2-3x more pixel
+// data than any layout on the site can ever show for this field.
+const OUR_STORY_MAX_WIDTH = 900;
 
 interface ReoptimizeResult {
   action: "optimized" | "already-optimized" | "skipped-external" | "skipped-missing-file" | "error";
@@ -348,6 +357,30 @@ async function run() {
       tour.itinerary as Array<Record<string, any>> | null,
       CONTENT_MAX_WIDTH,
       async (newItinerary) => db.update(tours).set({ itinerary: newItinerary }).where(eq(tours.id, tour.id))
+    );
+  }
+
+  // our_story_section (single row) — the homepage "Our Story" image.
+  const storyRows = await db.select().from(ourStorySection);
+  console.log(`\n=== our_story_section (${storyRows.length} row(s)) ===`);
+  for (const story of storyRows) {
+    await processSingleColumn(
+      `our_story_section[${story.id}].image`,
+      story.image,
+      OUR_STORY_MAX_WIDTH,
+      async (newUrl) => db.update(ourStorySection).set({ image: newUrl }).where(eq(ourStorySection.id, story.id))
+    );
+  }
+
+  // why_choose_cards — the homepage "Why Choose I.LUXURYEGYPT?" cards.
+  const whyChooseCardRows = await db.select().from(whyChooseCards);
+  console.log(`\n=== why_choose_cards (${whyChooseCardRows.length} row(s)) ===`);
+  for (const card of whyChooseCardRows) {
+    await processSingleColumn(
+      `why_choose_cards[${card.title}].imageUrl`,
+      card.imageUrl,
+      CONTENT_MAX_WIDTH,
+      async (newUrl) => db.update(whyChooseCards).set({ imageUrl: newUrl }).where(eq(whyChooseCards.id, card.id))
     );
   }
 

@@ -100,7 +100,7 @@ export default function WhereYouWillStaySection({
               <h3 className="font-serif text-xl md:text-2xl font-bold text-primary mt-2 mb-4 leading-snug">
                 {hotel.name}
               </h3>
-              <Link href={`/hotel/${hotel.slug}`}>
+              <Link href={`/hotel/${hotel.slug}`} aria-label={`View details for ${hotel.name}`}>
                 <Button
                   variant="outline"
                   className="border-primary/30 text-primary hover:bg-primary hover:text-primary-foreground"

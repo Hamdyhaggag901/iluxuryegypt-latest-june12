@@ -5,11 +5,38 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence, LazyMotion, m } from "framer-motion";
 
-// Passing domMax directly (a static import) still bundles it into the
-// main chunk eagerly — LazyMotion only actually defers it when given a
+// Passing a feature bundle directly (a static import) still bundles it into
+// the main chunk eagerly — LazyMotion only actually defers it when given a
 // loader function, so the feature set becomes its own async chunk fetched
 // once, not re-parsed on every navigation.
-const loadFramerMotionFeatures = () => import("framer-motion").then((res) => res.domMax);
+//
+// `import("framer-motion")` is one dynamic-import specifier no matter which
+// named export (domAnimation vs domMax) is picked off it afterward, so
+// Rollup resolves both to the SAME chunk (confirmed by diffing the built
+// output — domAnimation-only didn't shrink it). Splitting by feature set
+// doesn't reduce what's downloaded here; what mattered for PageSpeed's
+// "proxy" finding was WHEN the fetch fires. LazyMotion's loader used to run
+// the instant this component mounted — on every page, including the
+// homepage — so a ~32KB chunk was competing with the hero image for
+// bandwidth during the LCP-critical window even though nothing on the
+// initial screen needs it (m.* here only drives the route fade transition
+// below, non-critical). requestIdleCallback delays the actual import()
+// until the main thread is idle — i.e. after the browser has already
+// dispatched the page's real critical requests — with a 2s cap so it still
+// runs promptly even under sustained load. Deliberately not gated on the
+// window `load` event: that waits for every resource on the page,
+// including slow or failing third-party ones (fonts, embeds), which would
+// make this needlessly fragile.
+function loadDeferred<T>(pick: (mod: typeof import("framer-motion")) => T): () => Promise<T> {
+  return () =>
+    new Promise<T>((resolve) => {
+      const fetchAndResolve = () => import("framer-motion").then((mod) => resolve(pick(mod)));
+      if (window.requestIdleCallback) window.requestIdleCallback(fetchAndResolve, { timeout: 2000 });
+      else setTimeout(fetchAndResolve, 200);
+    });
+}
+
+const loadFramerMotionFeatures = loadDeferred((mod) => mod.domAnimation);
 import { useEffect, lazy, Suspense } from "react";
 import WhatsAppButton from "@/components/whatsapp-button";
 import FloatingSpeakExpertButton from "@/components/floating-speak-expert-button";
@@ -245,14 +272,16 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         {/* LazyMotion + the `m` component (used here and in
-            how-it-works-section.tsx / testimonial-section.tsx) load only
-            the framer-motion feature set actually used across the app —
-            animation, gestures, and drag (testimonial-section.tsx's
-            swipeable card needs domMax, not just domAnimation) — instead
-            of statically importing the full API via `motion`, which
-            bundles every feature (layout projection included) regardless
-            of use. This was a meaningful share of the homepage's main JS
-            chunk per a bundle analysis (vite-bundle-visualizer). */}
+            how-it-works-section.tsx) load the framer-motion feature set
+            lazily instead of statically importing the full API via
+            `motion`, which bundles every feature regardless of use — a
+            meaningful share of the homepage's main JS chunk per a bundle
+            analysis (vite-bundle-visualizer). loadFramerMotionFeatures
+            (above) also delays the fetch itself until after window `load`,
+            so it no longer competes with the hero image and other real
+            critical resources during the LCP window; see its comment for
+            why splitting by domAnimation/domMax doesn't change what's
+            downloaded (same chunk either way). */}
         {/* Not strict: several lazy-loaded routes (destinations, blog,
             hotel-detail, stay) still import `motion` directly rather than
             `m` — strict mode would throw when navigating to any of them.

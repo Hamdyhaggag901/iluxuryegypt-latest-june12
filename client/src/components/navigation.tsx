@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, Phone, Search, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -69,6 +69,7 @@ const MOBILE_ADDITIONAL_LINKS = [
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const scrollSentinelRef = useRef<HTMLDivElement>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
   const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
@@ -135,28 +136,25 @@ export default function Navigation() {
 
   useEffect(() => {
     // A Chrome trace (Tracing.start with the devtools.timeline.stack
-    // category) pinned a "Forced reflow" Layout event's call stack
-    // directly to this handler: unthrottled, it re-ran setIsScrolled on
-    // every native scroll tick — tens of times a second — each one
-    // landing mid-frame on a position:fixed element that needs its
-    // box-shadow/border restyled, forcing layout to catch up before the
-    // browser could otherwise batch it with the next paint.
-    // requestAnimationFrame coalesces that down to at most once per frame.
-    let ticking = false;
-    const handleScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        setIsScrolled(window.scrollY > 50);
-        ticking = false;
-      });
-    };
-    // passive: true tells the browser this handler never calls
-    // preventDefault(), so it doesn't have to block the compositor's
-    // scroll-driven work waiting to find out — a forced-reflow-adjacent
-    // cost that shows up under "does not use passive listeners".
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    // category) pinned a "Forced reflow" Layout event's call stack to a
+    // scroll handler here that read window.scrollY. rAF-throttling it
+    // (still visible below in git history) cut the frequency but not the
+    // root cause: window.scrollY is a layout-dependent property, so
+    // reading it while anything else has dirtied layout earlier in the
+    // same frame still forces a synchronous recalc to serve the read.
+    // A follow-up trace against the throttled version still caught it.
+    //
+    // IntersectionObserver sidesteps the problem instead of racing it: it
+    // reports intersection changes off the main thread's synchronous
+    // layout path, so toggling isScrolled here never reads geometry at
+    // all. The sentinel below sits 50px into the document (matching the
+    // old `scrollY > 50` threshold) — isScrolled flips exactly when it
+    // scrolls out of view.
+    const sentinel = scrollSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(([entry]) => setIsScrolled(!entry.isIntersecting));
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, []);
 
   const scrollToSection = (sectionId: string) => {
@@ -181,6 +179,11 @@ export default function Navigation() {
     setOpenDropdowns(prev => ({ ...prev, [id]: state }));
   };
   return (
+    <>
+      {/* Scroll-position sentinel for the IntersectionObserver above — see
+          its comment. Sits in normal document flow (not fixed), so it
+          scrolls out of view exactly 50px into the page. */}
+      <div ref={scrollSentinelRef} aria-hidden="true" style={{ position: "absolute", top: 50, left: 0, height: 1, width: 1, pointerEvents: "none" }} />
     <nav className={`fixed top-0 left-0 right-0 w-full z-40 transition-all duration-300 ${
       isScrolled
         ? "bg-white border-b border-primary/20 shadow-lg"
@@ -437,5 +440,6 @@ export default function Navigation() {
         </Suspense>
       )}
     </nav>
+    </>
   );
 }

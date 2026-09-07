@@ -1,8 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, lazy, Suspense } from "react";
 import { MapPin, Mail, Phone } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import NewsletterBar from "./newsletter-bar";
+// Lazy: react-hook-form + zod + @hookform/resolvers were otherwise bundled
+// into the main chunk on every page (Footer renders on all of them),
+// despite only being needed once someone actually reaches this subscribe
+// form at the very bottom of the page.
+const NewsletterBar = lazy(() => import("./newsletter-bar"));
 
 interface FooterLink {
   id: string;
@@ -328,7 +332,9 @@ export default function Footer() {
             <div className="text-left w-full md:w-auto md:max-w-sm">
               <h4 className="text-sm md:text-base font-semibold mb-2">Newsletter</h4>
               <p className="text-xs md:text-sm text-primary-foreground/70 mb-3">Subscribe for exclusive offers and updates</p>
-              <NewsletterBar />
+              <Suspense fallback={<div className="h-9" />}>
+                <NewsletterBar />
+              </Suspense>
             </div>
           </div>
         </div>

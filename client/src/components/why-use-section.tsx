@@ -128,6 +128,8 @@ export default function WhyUseSection() {
                   <img
                     src={item.image}
                     alt={item.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                   />
 
