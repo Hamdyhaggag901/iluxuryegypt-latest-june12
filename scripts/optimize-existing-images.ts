@@ -38,14 +38,44 @@ interface ReoptimizeResult {
   detail?: string;
 }
 
+// Media is stored as absolute URLs in this database
+// (https://iluxuryegypt.com/api/assets/uploads/x.jpg), not the relative
+// form (/api/assets/uploads/x.jpg) the upload route itself returns.
+// startsWith(UPLOAD_URL_PREFIX) alone missed every real row as a result —
+// this pulls the path out of either form so both match.
+function extractUploadPath(url: string): string | null {
+  let pathname = url;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    // Not a valid absolute URL — already relative, use as-is.
+  }
+  return pathname.startsWith(UPLOAD_URL_PREFIX) ? pathname : null;
+}
+
+// Preserves the original URL's scheme+host (if it had one) when pointing
+// at the newly optimized file, so an absolute URL stays absolute and a
+// relative one stays relative — matching whatever form was already there.
+function buildNewUrl(originalUrl: string, newFilename: string): string {
+  const newPath = `${UPLOAD_URL_PREFIX}${newFilename}`;
+  try {
+    const parsed = new URL(originalUrl);
+    parsed.pathname = newPath;
+    return parsed.toString();
+  } catch {
+    return newPath;
+  }
+}
+
 async function reoptimizeUrl(url: string | null, maxWidth: number = 1600): Promise<ReoptimizeResult | null> {
   if (!url) return null;
 
-  if (!url.startsWith(UPLOAD_URL_PREFIX)) {
+  const uploadPath = extractUploadPath(url);
+  if (!uploadPath) {
     return { action: "skipped-external", originalUrl: url, detail: "Not a local /api/assets/uploads/ URL" };
   }
 
-  const filename = url.slice(UPLOAD_URL_PREFIX.length);
+  const filename = uploadPath.slice(UPLOAD_URL_PREFIX.length);
   const filePath = path.join(UPLOAD_DIR, filename);
 
   let stat;
@@ -74,7 +104,7 @@ async function reoptimizeUrl(url: string | null, maxWidth: number = 1600): Promi
     return {
       action: "optimized",
       originalUrl: url,
-      newUrl: `${UPLOAD_URL_PREFIX}${optimized.filename}`,
+      newUrl: buildNewUrl(url, optimized.filename),
       originalSize: stat.size,
       newSize: optimized.size,
     };
