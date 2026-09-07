@@ -14,7 +14,7 @@ const fallbackContent = {
 };
 
 export default function OurStorySection() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["publicOurStorySection"],
     queryFn: async () => {
       const response = await fetch("/api/public/our-story-section");
@@ -36,7 +36,7 @@ export default function OurStorySection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div className="text-center lg:text-left">
-            <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
+            <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent-text font-medium">
               {content.eyebrow}
             </span>
             <h2 className="text-4xl md:text-5xl font-serif font-light text-primary mt-4 mb-6 leading-tight">
@@ -56,13 +56,21 @@ export default function OurStorySection() {
           </div>
 
           <div>
-            <div className="aspect-[4/3] rounded-lg overflow-hidden">
-              <img
-                src={content.image}
-                alt="Historic Cairo at dawn — iLuxury Egypt"
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+            <div className="aspect-[4/3] rounded-lg overflow-hidden bg-muted">
+              {/* Rendering the fallback bundled JPG immediately, then
+                  swapping to the CMS's WebP once the query resolves, was
+                  fetching both images — the browser had already started
+                  downloading the fallback by the time the real src arrived.
+                  Waiting for the query to settle means only one image URL
+                  is ever set as src. */}
+              {!isLoading && (
+                <img
+                  src={content.image}
+                  alt="Historic Cairo at dawn — iLuxury Egypt"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
             </div>
           </div>
         </div>

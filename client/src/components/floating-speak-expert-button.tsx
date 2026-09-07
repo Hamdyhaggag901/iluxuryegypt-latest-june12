@@ -1,7 +1,9 @@
 // 2. client/src/components/floating-speak-expert-button.tsx
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Phone } from "lucide-react";
-import SpeakToExpertModal from "@/components/speak-to-expert-modal";
+
+// Lazy loaded: not needed until a visitor clicks the button
+const SpeakToExpertModal = lazy(() => import("@/components/speak-to-expert-modal"));
 
 export default function FloatingSpeakExpertButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +21,11 @@ export default function FloatingSpeakExpertButton() {
         Speak to an Expert
       </button>
 
-      <SpeakToExpertModal open={isOpen} onOpenChange={setIsOpen} />
+      {isOpen && (
+        <Suspense fallback={null}>
+          <SpeakToExpertModal open={isOpen} onOpenChange={setIsOpen} />
+        </Suspense>
+      )}
     </>
   );
 }

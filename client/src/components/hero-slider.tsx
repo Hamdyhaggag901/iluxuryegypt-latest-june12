@@ -241,7 +241,7 @@ export default function HeroSlider() {
                   {/* Subtitle */}
                   <div className="flex items-center gap-3 sm:gap-4 mb-2 sm:mb-3 md:mb-4">
                     <div className="w-8 sm:w-12 h-px bg-accent" />
-                    <span className="text-accent-text text-[10px] sm:text-xs md:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase font-light">
+                    <span className="text-accent text-[10px] sm:text-xs md:text-sm tracking-[0.2em] sm:tracking-[0.3em] uppercase font-light">
                       {slide.subtitle}
                     </span>
                   </div>
@@ -260,7 +260,7 @@ export default function HeroSlider() {
                   <Link href={slide.cta.link}>
                     <Button
                       size="lg"
-                      className="bg-accent hover:bg-accent/90 text-white px-4 py-3 text-sm sm:px-6 sm:py-4 sm:text-base md:px-8 md:py-6 tracking-wide group h-auto"
+                      className="bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-3 text-sm sm:px-6 sm:py-4 sm:text-base md:px-8 md:py-6 tracking-wide group h-auto"
                     >
                       {slide.cta.text}
                       <ChevronRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />

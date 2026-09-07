@@ -107,7 +107,10 @@ export default function AdminPartners() {
     mutationFn: async (file: File): Promise<string> => {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch("/api/cms/media", {
+      // ?logo=true tells the server to cap the resize at 400px instead of
+      // the default 1600px — this logo never renders larger than ~140px
+      // wide anywhere in the app (see partners-marquee-section.tsx).
+      const response = await fetch("/api/cms/media?logo=true", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,

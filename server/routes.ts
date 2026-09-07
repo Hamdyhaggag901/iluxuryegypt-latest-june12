@@ -46,7 +46,7 @@ import {
   HuggingFaceRateLimitError,
 } from "./huggingface-alt-text";
 import multer from "multer";
-import sharp from "sharp";
+import { optimizeUploadedImage } from "./image-optimize";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -2115,48 +2115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Every uploaded image (Media Library, hotels, tours — they all share this
-  // one endpoint) is converted to WebP and compressed toward a 50-100KB
-  // target so admins never have to think about image weight themselves.
-  // Videos/PDFs/docs pass through untouched. Never inflates a naturally
-  // small/simple image up to hit the 50KB floor — that would work against
-  // the point of compressing it in the first place.
-  async function optimizeUploadedImage(
-    uploadDir: string,
-    savedFilename: string
-  ): Promise<{ filename: string; size: number } | null> {
-    const fs = await import("fs/promises");
-    const originalPath = path.join(uploadDir, savedFilename);
-    const webpFilename = `${path.parse(savedFilename).name}.webp`;
-    const webpPath = path.join(uploadDir, webpFilename);
-
-    const TARGET_BYTES = 100 * 1024;
-    const compressAtWidth = async (width: number): Promise<Buffer> => {
-      let quality = 82;
-      let buf = await sharp(originalPath).resize({ width, withoutEnlargement: true }).webp({ quality }).toBuffer();
-      while (buf.length > TARGET_BYTES && quality > 35) {
-        quality -= 12;
-        buf = await sharp(originalPath).resize({ width, withoutEnlargement: true }).webp({ quality }).toBuffer();
-      }
-      return buf;
-    };
-
-    // Quality alone can't hit the target on genuinely high-entropy images
-    // (dense texture, scanned noise) — once quality bottoms out, step the
-    // dimensions down too rather than shipping an oversized file.
-    const widths = [1600, 1200, 1000, 800, 600];
-    let buffer = await compressAtWidth(widths[0]);
-    for (let i = 1; i < widths.length && buffer.length > TARGET_BYTES; i++) {
-      buffer = await compressAtWidth(widths[i]);
-    }
-
-    await fs.writeFile(webpPath, buffer);
-    if (webpPath !== originalPath) {
-      await fs.unlink(originalPath).catch(() => {});
-    }
-
-    return { filename: webpFilename, size: buffer.length };
-  }
+  // optimizeUploadedImage lives in ./image-optimize (shared with
+  // scripts/optimize-existing-images.ts, which re-runs the same
+  // compression against already-stored media that predates this pipeline).
 
   // Upload media file
   app.post("/api/cms/media", requireAuth, requireEditor, upload.single('file'), async (req, res) => {
@@ -2173,7 +2134,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (mimeType.startsWith("image/")) {
         try {
-          const optimized = await optimizeUploadedImage(uploadPath, req.file.filename);
+          // Partner logos (Sofitel, Four Seasons, etc.) render at ~140px
+          // wide in the homepage marquee and never larger anywhere else in
+          // the app — the default 1600px ceiling was shipping ~10x more
+          // pixels than any page ever displays. logoUrl callers (see
+          // client/src/pages/admin-partners.tsx) mark this with ?logo=true.
+          const maxWidth = req.query.logo === "true" ? 400 : 1600;
+          const optimized = await optimizeUploadedImage(uploadPath, req.file.filename, maxWidth);
           if (optimized) {
             filename = optimized.filename;
             mimeType = "image/webp";
@@ -2824,6 +2791,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching site metadata:', error);
       res.status(500).json({ message: 'Error fetching site metadata' });
+    }
+  });
+
+  // Merges 5 small (<1KB each), page-load-critical public endpoints —
+  // site-metadata, site-config, nav-items, social-links, whatsapp-settings —
+  // into a single round trip. Every page mounts Navigation, Footer,
+  // SiteMetadata and WhatsAppButton, so these 5 requests always fired
+  // together anyway; on a Lighthouse audit of the homepage they showed up
+  // as 5 of the 17 API calls stacking behind the browser's per-host
+  // connection limit. The 5 original endpoints are left in place for any
+  // other caller (admin pages included) that only needs one of them.
+  app.get("/api/public/site-bootstrap", async (req, res) => {
+    try {
+      const [titleSetting, faviconSetting, numberSetting, enabledSetting, navItemsRaw, configRaw, socialLinksRaw] =
+        await Promise.all([
+          storage.getSetting('site_title'),
+          storage.getSetting('favicon_url'),
+          storage.getSetting('whatsapp_number'),
+          storage.getSetting('whatsapp_enabled'),
+          storage.getNavItems(),
+          storage.getAllSiteConfig(),
+          storage.getSocialLinks(),
+        ]);
+
+      const config = configRaw.reduce((acc, item) => {
+        acc[item.key] = item.value;
+        return acc;
+      }, {} as Record<string, string>);
+
+      res.json({
+        success: true,
+        siteTitle: titleSetting?.value || 'I.LuxuryEgypt - Bespoke Luxury Travel in Egypt',
+        faviconUrl: faviconSetting?.value || null,
+        whatsappNumber: numberSetting?.value || null,
+        whatsappEnabled: enabledSetting?.value === 'true',
+        navItems: navItemsRaw.filter((item) => item.isVisible),
+        config,
+        socialLinks: socialLinksRaw.filter((link) => link.isVisible),
+      });
+    } catch (error) {
+      console.error('Error fetching site bootstrap data:', error);
+      res.status(500).json({ message: 'Error fetching site bootstrap data' });
     }
   });
 

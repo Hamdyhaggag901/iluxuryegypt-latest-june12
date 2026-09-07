@@ -1,9 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown, Phone, Search, ArrowRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import TripBuilderModal from "@/components/trip-builder-modal";
+
+// Lazy loaded: pulls in the Calendar/date-fns-heavy trip builder form,
+// which isn't needed until a visitor actually opens it
+const TripBuilderModal = lazy(() => import("@/components/trip-builder-modal"));
 
 interface NavItem {
   id: string;
@@ -71,18 +74,20 @@ export default function Navigation() {
   const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
   const [location] = useLocation();
 
-  const { data: navItemsResponse } = useQuery<{ success: boolean; navItems: NavItem[] }>({
-    queryKey: ["/api/public/nav-items"],
+  // Shares one request with SiteMetadata, WhatsAppButton and Footer's
+  // social links (all mount on every page) via React Query's cache
+  // dedup on identical queryKeys — see /api/public/site-bootstrap.
+  const { data: bootstrap } = useQuery<{
+    success: boolean;
+    navItems: NavItem[];
+    config: Record<string, string>;
+  }>({
+    queryKey: ["/api/public/site-bootstrap"],
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: siteConfigResponse } = useQuery<{ success: boolean; config: Record<string, string> }>({
-    queryKey: ["/api/public/site-config"],
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const dbNavItems = navItemsResponse?.navItems;
-  const siteConfig = siteConfigResponse?.config;
+  const dbNavItems = bootstrap?.navItems;
+  const siteConfig = bootstrap?.config;
 
   const navItems = useMemo(() => {
     if (!dbNavItems || dbNavItems.length === 0) {
@@ -132,7 +137,11 @@ export default function Navigation() {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
-    window.addEventListener("scroll", handleScroll);
+    // passive: true tells the browser this handler never calls
+    // preventDefault(), so it doesn't have to block the compositor's
+    // scroll-driven work waiting to find out — a forced-reflow-adjacent
+    // cost that shows up under "does not use passive listeners".
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -408,7 +417,11 @@ export default function Navigation() {
         </div>
       )}
 
-      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+      {isTripBuilderOpen && (
+        <Suspense fallback={null}>
+          <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+        </Suspense>
+      )}
     </nav>
   );
 }

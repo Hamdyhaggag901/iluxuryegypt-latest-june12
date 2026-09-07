@@ -44,7 +44,7 @@ export default function WhereYouWillStaySection({
     <section className="py-20 md:py-28 bg-background" data-testid="where-you-will-stay-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12 md:mb-16">
-          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium">
+          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent-text font-medium">
             {eyebrow}
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-light text-primary mt-4 mb-4">
@@ -84,7 +84,7 @@ export default function WhereYouWillStaySection({
                   </div>
                 )}
               </div>
-              <span className="text-xs tracking-[0.2em] uppercase text-accent font-medium">
+              <span className="text-xs tracking-[0.2em] uppercase text-accent-text font-medium">
                 {hotel.region}, Egypt
               </span>
               <h3 className="font-serif text-xl md:text-2xl font-bold text-primary mt-2 mb-4 leading-snug">

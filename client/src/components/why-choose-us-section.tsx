@@ -64,10 +64,10 @@ export default function WhyChooseUsSection() {
                 {card.number}
               </span>
               <div className="relative">
-                <span className="text-xs font-medium uppercase tracking-[0.2em] text-accent">{card.kicker}</span>
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-accent-text">{card.kicker}</span>
                 <h3 className="font-serif text-2xl md:text-3xl font-bold text-primary mt-3 mb-4">{card.title}</h3>
                 <p className="text-muted-foreground leading-relaxed mb-6">{card.body}</p>
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-accent-text">
                   {card.linkLabel}
                   <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">
                     →

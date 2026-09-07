@@ -100,7 +100,7 @@ export default function LuxuryPackagesSection({
         <Package className="h-12 w-12 text-accent" />
       </div>
       {eyebrow && (
-        <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium block mb-4">
+        <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent-text font-medium block mb-4">
           {eyebrow}
         </span>
       )}

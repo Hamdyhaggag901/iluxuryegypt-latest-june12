@@ -112,21 +112,22 @@ export default function Footer() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch social links from database
-  const { data: socialLinksResponse } = useQuery<{ success: boolean; socialLinks: SocialLink[] }>({
-    queryKey: ["/api/public/social-links"],
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch site config
-  const { data: siteConfigResponse } = useQuery<{ success: boolean; config: Record<string, string> }>({
-    queryKey: ["/api/public/site-config"],
+  // Social links + site config share one request with Navigation,
+  // SiteMetadata and WhatsAppButton (all mount on every page) via React
+  // Query's cache dedup on identical queryKeys — see
+  // /api/public/site-bootstrap.
+  const { data: bootstrap } = useQuery<{
+    success: boolean;
+    socialLinks: SocialLink[];
+    config: Record<string, string>;
+  }>({
+    queryKey: ["/api/public/site-bootstrap"],
     staleTime: 5 * 60 * 1000,
   });
 
   const dbFooterLinks = footerLinksResponse?.footerLinks;
-  const dbSocialLinks = socialLinksResponse?.socialLinks;
-  const siteConfig = siteConfigResponse?.config;
+  const dbSocialLinks = bootstrap?.socialLinks;
+  const siteConfig = bootstrap?.config;
 
   // Group footer links by section
   const footerLinksBySection = useMemo(() => {

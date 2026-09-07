@@ -34,6 +34,10 @@ export default function PartnersMarqueeSection() {
               <img
                 src={partner.logoUrl}
                 alt={partner.name}
+                width={140}
+                height={48}
+                loading="lazy"
+                decoding="async"
                 className="h-10 md:h-12 w-auto max-w-[140px] object-contain grayscale opacity-60 transition-all duration-300 hover:grayscale-0 hover:opacity-100 hover:scale-105"
                 data-testid={`img-partner-logo-${partner.id}`}
               />

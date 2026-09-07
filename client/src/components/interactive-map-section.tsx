@@ -69,7 +69,7 @@ export default function InteractiveMapSection() {
           <div className="flex justify-center mb-6">
             <Compass className="h-12 w-12 text-accent" />
           </div>
-          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent font-medium block mb-4">
+          <span className="text-xs md:text-sm tracking-[0.3em] uppercase text-accent-text font-medium block mb-4">
             Our Destinations
           </span>
           <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary mb-8 animate-fade-in">

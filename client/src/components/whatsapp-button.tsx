@@ -2,13 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 
 export default function WhatsAppButton() {
-  const { data: whatsappSettings, isLoading } = useQuery({
-    queryKey: ["/api/public/whatsapp-settings"],
-    queryFn: async () => {
-      const response = await fetch("/api/public/whatsapp-settings");
-      if (!response.ok) throw new Error("Failed to fetch WhatsApp settings");
-      return response.json();
-    },
+  // Shares one request with Navigation, SiteMetadata and Footer's social
+  // links (all mount on every page) via React Query's cache dedup on
+  // identical queryKeys — see /api/public/site-bootstrap.
+  const { data: whatsappSettings, isLoading } = useQuery<{
+    whatsappEnabled: boolean;
+    whatsappNumber: string | null;
+  }>({
+    queryKey: ["/api/public/site-bootstrap"],
   });
 
   // Don't render if loading, disabled, or no number set

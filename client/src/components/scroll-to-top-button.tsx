@@ -18,12 +18,14 @@ export default function ScrollToTopButton() {
     // Check on mount
     toggleVisibility();
 
-    window.addEventListener("scroll", toggleVisibility);
-    document.addEventListener("scroll", toggleVisibility);
-    
+    // A duplicate document.addEventListener alongside this one used to
+    // fire the same handler twice per scroll event for no benefit (window
+    // scroll events already bubble/are observable at both targets).
+    // passive: true avoids blocking the compositor's scroll-driven work.
+    window.addEventListener("scroll", toggleVisibility, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", toggleVisibility);
-      document.removeEventListener("scroll", toggleVisibility);
     };
   }, []);
 
@@ -42,6 +44,7 @@ export default function ScrollToTopButton() {
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
       data-testid="button-scroll-to-top"
+      aria-label="Scroll to top"
       style={{
         position: 'fixed',
         bottom: '6rem',

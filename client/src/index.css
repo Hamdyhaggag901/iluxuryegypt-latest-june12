@@ -146,6 +146,13 @@
   --muted-foreground: 210 6% 30%; /* Darker Obsidian */
   --accent: 41 37% 60%; /* Pharaoh Gold */
   --accent-foreground: 210 6% 6%; /* Obsidian Black */
+  /* Darker Pharaoh Gold for text/links on light backgrounds: the 60%
+     lightness --accent reads at only ~2.2:1 against --background, well
+     under WCAG AA's 4.5:1 for normal text. Same hue/saturation, dropped
+     to 34% lightness (~5.4:1) so kickers and links stay visually "gold"
+     while comfortably clearing 4.5:1 — 38% measured at 4.51:1 by hand but
+     4.49:1 under the browser's actual color math, failing by a hair. */
+  --accent-text: 41 37% 34%;
 
 
 /* Why Use Section - Clean accordion effect handled in component */
@@ -241,6 +248,9 @@
   --muted-foreground: 33 22% 70%; /* Light Desert Sand */
   --accent: 41 37% 60%; /* Pharaoh Gold */
   --accent-foreground: 210 6% 6%; /* Obsidian Black */
+  /* At 60% lightness, --accent already reads at ~8.2:1 against the dark
+     --background, so no separate darker text variant is needed here. */
+  --accent-text: 41 37% 60%;
   --destructive: 0 84% 60%; /* Red for errors */
   --destructive-foreground: 36 25% 96%; /* Papyrus White */
   --input: 220 26% 15%; /* Dark Nile Blue */

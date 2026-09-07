@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Phone, Mail, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import SpeakToExpertModal from "@/components/speak-to-expert-modal";
-import TripBuilderModal from "@/components/trip-builder-modal";
+
+// Lazy loaded: neither modal's content is needed until a visitor opens it
+const SpeakToExpertModal = lazy(() => import("@/components/speak-to-expert-modal"));
+const TripBuilderModal = lazy(() => import("@/components/trip-builder-modal"));
 
 // Fallback contact info
 const fallbackContact = {
@@ -80,7 +82,7 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Call Us</h3>
               <p className="text-muted-foreground">{contact.phone}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Available 24/7</p>
+              <p className="text-sm text-muted-foreground mt-1">Available 24/7</p>
             </div>
 
             {/* Email */}
@@ -90,7 +92,7 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Email Us</h3>
               <p className="text-muted-foreground">{contact.email}</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">Response within 2 hours</p>
+              <p className="text-sm text-muted-foreground mt-1">Response within 2 hours</p>
             </div>
 
             {/* Consultation */}
@@ -100,14 +102,22 @@ export default function CallToActionSection() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">Free Consultation</h3>
               <p className="text-muted-foreground">30-minute planning session</p>
-              <p className="text-sm text-muted-foreground/70 mt-1">No commitment required</p>
+              <p className="text-sm text-muted-foreground mt-1">No commitment required</p>
             </div>
           </div>
         </div>
       </div>
 
-      <SpeakToExpertModal open={isSpeakToExpertOpen} onOpenChange={setIsSpeakToExpertOpen} />
-      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+      {(isSpeakToExpertOpen || isTripBuilderOpen) && (
+        <Suspense fallback={null}>
+          {isSpeakToExpertOpen && (
+            <SpeakToExpertModal open={isSpeakToExpertOpen} onOpenChange={setIsSpeakToExpertOpen} />
+          )}
+          {isTripBuilderOpen && (
+            <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
+          )}
+        </Suspense>
+      )}
     </section>
   );
 }
