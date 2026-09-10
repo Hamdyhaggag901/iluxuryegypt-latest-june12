@@ -47,6 +47,7 @@ import {
 } from "./huggingface-alt-text";
 import multer from "multer";
 import { optimizeUploadedImage } from "./image-optimize";
+import { registerTourRedirects } from "./tour-redirects";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -60,6 +61,11 @@ import {
 } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // 301s for renamed tour slugs — must run before every other route so a
+  // stale link to an old slug redirects instead of falling through to
+  // TourDetail's "not found" state or (worse) a stale prerender/cache entry.
+  registerTourRedirects(app);
+
   // Agent-readiness discovery routes (api-catalog, ai-catalog.json, agent-skills, MCP)
   registerAgentReadinessRoutes(app);
 
@@ -568,6 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hotelIds: [],
           galleryAlt: {},
           availabilityStatus: "available" as const,
+          faqs: [],
           createdBy: adminUser.id
         },
         {
@@ -594,6 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hotelIds: [],
           galleryAlt: {},
           availabilityStatus: "available" as const,
+          faqs: [],
           createdBy: adminUser.id
         },
         {
@@ -622,6 +630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           hotelIds: [],
           galleryAlt: {},
           availabilityStatus: "available" as const,
+          faqs: [],
           createdBy: adminUser.id
         }
       ];
@@ -2675,6 +2684,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       {
         name: "tours.og_image",
         sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS og_image text`,
+      },
+      {
+        name: "tours.schema_markup",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS schema_markup text`,
+      },
+      {
+        name: "tours.faqs",
+        sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS faqs jsonb NOT NULL DEFAULT '[]'::jsonb`,
       },
     ];
 

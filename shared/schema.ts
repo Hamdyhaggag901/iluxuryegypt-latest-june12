@@ -191,7 +191,9 @@ export const tours = pgTable("tours", {
   canonicalUrl: text("canonical_url"), // Optional canonical URL override. Falls back to this page's own URL when empty.
   robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
   schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD. Falls back to "TouristTrip" when empty.
+  schemaMarkup: text("schema_markup"), // Optional raw JSON-LD override. Takes precedence over the schemaType-driven auto-generated block when set.
   ogImage: text("og_image"), // Optional social-share image override. Falls back to `heroImage` when empty.
+  faqs: jsonb("faqs").$type<Array<{ id: string; question: string; answer: string }>>().notNull().default([]), // Admin-curated FAQ entries. Falls back to the auto-generated FAQs (client/src/lib/tour-faq.ts) when empty.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -780,7 +782,9 @@ export const insertTourSchema = createInsertSchema(tours).omit({
   canonicalUrl: z.string().nullable().optional(),
   robots: z.string().nullable().optional(),
   schemaType: z.string().nullable().optional(),
+  schemaMarkup: z.string().nullable().optional(),
   ogImage: z.string().nullable().optional(),
+  faqs: z.array(faqSchema).default([]),
 });
 
 export const insertPackageSchema = createInsertSchema(packages).omit({

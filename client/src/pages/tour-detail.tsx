@@ -90,9 +90,28 @@ export default function TourDetail() {
     [tour, stayHotels]
   );
 
+  // Admin-curated FAQs (tour.faqs) take priority when present — same
+  // "DB override, else auto-generate" pattern destination-detail.tsx uses
+  // for its FAQs. Auto-generated ones only ever restate fields already on
+  // the tour (price includes, duration, hotels, destinations), so they're
+  // a safe fallback but not a substitute for real, SEO-targeted questions.
+  const curatedFaqs = useMemo(
+    () =>
+      (tour?.faqs || []).filter(
+        (f): f is { id: string; question: string; answer: string } =>
+          Boolean(f && f.question?.trim() && f.answer?.trim())
+      ),
+    [tour]
+  );
+
   const tourFaqs = useMemo(
-    () => (tour ? buildTourFaqs(tour, stayHotels) : []),
-    [tour, stayHotels]
+    () =>
+      curatedFaqs.length > 0
+        ? curatedFaqs.map((f) => ({ question: f.question, answer: f.answer }))
+        : tour
+          ? buildTourFaqs(tour, stayHotels)
+          : [],
+    [curatedFaqs, tour, stayHotels]
   );
 
   // All published tours, used for the "Continue the Journey" similarity matching
@@ -145,6 +164,15 @@ export default function TourDetail() {
   // Use tour's brochure URL if available
   const brochureUrl = tour?.brochureUrl;
 
+  // Note: this is FAQPage schema only, not a TouristTrip block — the server
+  // (server/seo-meta.ts) already server-renders a full TouristTrip JSON-LD
+  // for every tour page (name, description, images, offers, provider,
+  // itinerary, plus a BreadcrumbList), injected directly into the HTML
+  // response so it's present before React even hydrates. Generating another
+  // TouristTrip block here would just duplicate it. That existing generator
+  // doesn't yet check tour.schemaMarkup for a custom override — the column
+  // is there (matching destinations' precedent) for a future admin editor,
+  // but isn't consumed by either side yet.
   useSEO({
     title: tour?.seoTitle?.trim() || tour?.title,
     description:
