@@ -17,7 +17,7 @@ const CATEGORIES_BASE_PATH = "/luxury-egypt-tour-packages";
 const CATEGORY_TAGLINE_OVERRIDES: Record<string, string> = {
   "small-group-tours-egypt": "Intimate groups, licensed Egyptologist guides, five-star stays.",
   "egypt-family-tours": "Private guides and flexible itineraries built for every generation.",
-  "egypt-solo-travel": "Independent journeys shaped entirely around your own pace.",
+  "egypt-tours-for-solo-travellers": "Egypt tours for solo travellers, shaped entirely around your own pace.",
   "egypt-spiritual-tours": "Sacred temples, quiet reflection, and five-star comfort.",
   "luxury-honeymoon-egypt": "Private, romantic, and tailor-made for two.",
   "solar-eclipse-egypt": "Witness the 2027 total eclipse from a private viewing site.",

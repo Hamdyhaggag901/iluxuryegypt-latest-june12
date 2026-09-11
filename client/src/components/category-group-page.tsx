@@ -26,8 +26,8 @@ const CATEGORY_DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Travel in an intimate small group led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries — cultural depth without the crowds.",
   "egypt-family-tours":
     "Private Egyptologist guides, luxury hotels, and flexible itineraries designed for every generation. Explore the Pyramids, cruise the Nile, and discover Luxor and Aswan with VIP transportation and activities the whole family will remember.",
-  "egypt-solo-travel":
-    "Personalized private journeys for independent travelers who value flexibility and authentic experiences. Explore the Pyramids, the Nile, Luxor, and Aswan with expert Egyptologist guides, luxury hotels, and itineraries built around your own pace.",
+  "egypt-tours-for-solo-travellers":
+    "Egypt tours for solo travellers built around independence and flexibility. Explore the Pyramids, the Nile, Luxor, and Aswan with expert Egyptologist guides, luxury hotels, and itineraries shaped entirely around your own pace.",
   "egypt-spiritual-tours":
     "Visit the Great Pyramids, Abydos, Dendera, Luxor, Aswan, and the Nile with expert Egyptologist guides. Private meditation sessions, five-star stays, and personalized itineraries create peaceful moments of reflection and spiritual discovery.",
   "luxury-honeymoon-egypt":

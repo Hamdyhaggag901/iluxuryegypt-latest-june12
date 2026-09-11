@@ -11,6 +11,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 // Add an entry here whenever a listing page's own path changes.
 export const PATH_PREFIX_REDIRECTS: Record<string, string> = {
   "/egypt-tour-packages": "/luxury-egypt-tour-packages",
+  "/luxury-egypt-tour-packages/egypt-solo-travel": "/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers",
 };
 
 export function registerPathPrefixRedirects(app: Express) {

@@ -262,10 +262,10 @@ const CATEGORY_META_OVERRIDES: Record<string, StaticMeta> = {
     description:
       "Bespoke family vacations in Egypt designed for discerning travelers. Private guides, five-star hotels, and unforgettable experiences for all ages.",
   },
-  "egypt-solo-travel": {
-    title: "Luxury Solo Travel Egypt | iLuxury Egypt",
+  "egypt-tours-for-solo-travellers": {
+    title: "Egypt Tours for Solo Travellers | Private Journeys",
     description:
-      "Independent luxury travel in Egypt with private Egyptologist guides, five-star accommodations, and flexible itineraries built around you.",
+      "Discover Egypt tours for solo travellers, private journeys with expert guides, quiet archaeological sites, and itineraries shaped around your own pace.",
   },
   "egypt-spiritual-tours": {
     title: "Spiritual Tours Egypt | iLuxury Egypt",
