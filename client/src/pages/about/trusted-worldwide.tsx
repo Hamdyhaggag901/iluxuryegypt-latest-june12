@@ -412,7 +412,7 @@ export default function TrustedWorldwide() {
                   {content.ctaPrimaryText}
                 </Button>
               </Link>
-              <Link href="/egypt-tour-packages">
+              <Link href="/luxury-egypt-tour-packages">
                 <Button
                   size="lg"
                   variant="outline"

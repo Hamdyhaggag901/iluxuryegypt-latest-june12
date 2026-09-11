@@ -89,7 +89,7 @@ interface TourItineraryDay {
 // below). Titles/descriptions are copied verbatim from each page's own
 // `useSEO(...)` call in the client so the server-rendered tags match exactly
 // what React would set after hydration. These are checked BEFORE the dynamic
-// matchers, which also protects paths like `/egypt-tour-packages/classic-egypt`
+// matchers, which also protects paths like `/luxury-egypt-tour-packages/classic-egypt`
 // from being mistaken for a category slug.
 const STATIC_PAGE_META: Record<string, StaticMeta> = {
   "/": {
@@ -124,26 +124,26 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
     description:
       "Explore Egypt's most extraordinary destinations. From ancient temples and pyramids to pristine Red Sea coastlines.",
   },
-  "/egypt-tour-packages": {
-    title: "Luxury Egypt Tour Packages",
+  "/luxury-egypt-tour-packages": {
+    title: "Luxury Egypt Tour Packages | Private Journeys – iLuxury Egypt",
     description:
-      "Curated multi-day luxury journeys through Egypt. Private guides, five-star hotels, and iconic Egyptian experiences.",
+      "Explore our luxury Egypt tour packages, private journeys with expert Egyptologists, five-star stays, and itineraries built entirely around you.",
   },
-  "/egypt-tour-packages/classic-egypt": {
+  "/luxury-egypt-tour-packages/classic-egypt": {
     title: "Classic Egypt Tours - Luxury Packages",
     description:
       "Experience the timeless wonders of Egypt with our classic luxury tour packages. Pyramids, temples, and Nile cruises.",
   },
-  "/egypt-tour-packages/ultra-luxury": {
+  "/luxury-egypt-tour-packages/ultra-luxury": {
     title: "Ultra Luxury Egypt Tours - Premium Experiences",
     description: "The pinnacle of luxury travel in Egypt. Exclusive access, private jets, and the finest accommodations.",
   },
-  "/egypt-tour-packages/family-luxury": {
+  "/luxury-egypt-tour-packages/family-luxury": {
     title: "Luxury Family Vacations in Egypt",
     description:
       "Create unforgettable family memories in Egypt. Kid-friendly luxury tours with private guides and five-star comfort.",
   },
-  "/egypt-tour-packages/spiritual-journeys": {
+  "/luxury-egypt-tour-packages/spiritual-journeys": {
     title: "Spiritual Tours in Egypt - Sacred Journeys",
     description: "Discover Egypt's spiritual heritage. Visit ancient temples, sacred sites, and experience transformative journeys.",
   },
@@ -193,22 +193,22 @@ const STATIC_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   "/about/your-experience": [{ name: "Your Experience", url: "/about/your-experience" }],
   "/about/trusted-worldwide": [{ name: "Trusted Worldwide", url: "/about/trusted-worldwide" }],
   "/destinations": [{ name: "Destinations", url: "/destinations" }],
-  "/egypt-tour-packages": [{ name: "Egypt Tour Packages", url: "/egypt-tour-packages" }],
-  "/egypt-tour-packages/classic-egypt": [
-    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
-    { name: "Classic Egypt", url: "/egypt-tour-packages/classic-egypt" },
+  "/luxury-egypt-tour-packages": [{ name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" }],
+  "/luxury-egypt-tour-packages/classic-egypt": [
+    { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" },
+    { name: "Classic Egypt", url: "/luxury-egypt-tour-packages/classic-egypt" },
   ],
-  "/egypt-tour-packages/ultra-luxury": [
-    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
-    { name: "Ultra Luxury", url: "/egypt-tour-packages/ultra-luxury" },
+  "/luxury-egypt-tour-packages/ultra-luxury": [
+    { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" },
+    { name: "Ultra Luxury", url: "/luxury-egypt-tour-packages/ultra-luxury" },
   ],
-  "/egypt-tour-packages/family-luxury": [
-    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
-    { name: "Family Luxury", url: "/egypt-tour-packages/family-luxury" },
+  "/luxury-egypt-tour-packages/family-luxury": [
+    { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" },
+    { name: "Family Luxury", url: "/luxury-egypt-tour-packages/family-luxury" },
   ],
-  "/egypt-tour-packages/spiritual-journeys": [
-    { name: "Egypt Tour Packages", url: "/egypt-tour-packages" },
-    { name: "Spiritual Journeys", url: "/egypt-tour-packages/spiritual-journeys" },
+  "/luxury-egypt-tour-packages/spiritual-journeys": [
+    { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" },
+    { name: "Spiritual Journeys", url: "/luxury-egypt-tour-packages/spiritual-journeys" },
   ],
   "/egypt-day-tours": [{ name: "Egypt Day Tours", url: "/egypt-day-tours" }],
   "/egypt-nile-cruise-tours": [{ name: "Egypt Nile Cruise Tours", url: "/egypt-nile-cruise-tours" }],
@@ -247,7 +247,7 @@ const LEGACY_LEGAL_META: Record<string, StaticMeta> = {
 };
 
 // SEO-only overrides for specific category records, keyed by category slug
-// (not full path — these categories are shared across /egypt-tour-packages,
+// (not full path — these categories are shared across /luxury-egypt-tour-packages,
 // /egypt-day-tours, /egypt-nile-cruise-tours, and /categories). Overrides the
 // injected <title>/description ONLY; the category's `name`/`shortDescription`
 // in the DB (and therefore the on-page heading/copy) are left untouched.
@@ -756,7 +756,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
 
     if (
       (match = pathname.match(
-        /^\/(?:egypt-tour-packages|egypt-day-tours|egypt-nile-cruise-tours|categories)\/([^/]+)\/?$/,
+        /^\/(?:luxury-egypt-tour-packages|egypt-day-tours|egypt-nile-cruise-tours|categories)\/([^/]+)\/?$/,
       ))
     ) {
       const slug = decodeURIComponent(match[1]);
@@ -786,7 +786,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           ? { name: "Egypt Nile Cruise Tours", url: "/egypt-nile-cruise-tours" }
           : pathname.startsWith("/categories/")
             ? null
-            : { name: "Egypt Tour Packages", url: "/egypt-tour-packages" };
+            : { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" };
       // Auto-generated structured data from the schemaType dropdown, same
       // convention as destinations — only emitted when an admin actually
       // set one, categories have no custom-JSON-LD override field.

@@ -10,10 +10,10 @@ import {
 } from "@/components/ui/carousel";
 import type { Category, Tour } from "@shared/schema";
 
-const CATEGORIES_BASE_PATH = "/egypt-tour-packages";
+const CATEGORIES_BASE_PATH = "/luxury-egypt-tour-packages";
 
 // Short, one-to-two-line taglines for the carousel card (the full paragraph
-// copy on the /egypt-tour-packages grid is too long for this compact format).
+// copy on the /luxury-egypt-tour-packages grid is too long for this compact format).
 const CATEGORY_TAGLINE_OVERRIDES: Record<string, string> = {
   "small-group-tours-egypt": "Intimate groups, licensed Egyptologist guides, five-star stays.",
   "egypt-family-tours": "Private guides and flexible itineraries built for every generation.",

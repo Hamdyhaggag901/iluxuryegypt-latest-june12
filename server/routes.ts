@@ -48,6 +48,7 @@ import {
 import multer from "multer";
 import { optimizeUploadedImage } from "./image-optimize";
 import { registerTourRedirects } from "./tour-redirects";
+import { registerPathPrefixRedirects } from "./path-redirects";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -65,6 +66,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // stale link to an old slug redirects instead of falling through to
   // TourDetail's "not found" state or (worse) a stale prerender/cache entry.
   registerTourRedirects(app);
+  // 301s for renamed listing-page prefixes (e.g. /egypt-tour-packages ->
+  // /luxury-egypt-tour-packages), covering the parent page and every
+  // sub-page under it.
+  registerPathPrefixRedirects(app);
 
   // Agent-readiness discovery routes (api-catalog, ai-catalog.json, agent-skills, MCP)
   registerAgentReadinessRoutes(app);
@@ -4577,7 +4582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "weekly" },
         { url: "/destinations", priority: "0.9", changefreq: "weekly" },
-        { url: "/egypt-tour-packages", priority: "0.9", changefreq: "weekly" },
+        { url: "/luxury-egypt-tour-packages", priority: "0.9", changefreq: "weekly" },
         { url: "/egypt-day-tours", priority: "0.8", changefreq: "weekly" },
         { url: "/egypt-nile-cruise-tours", priority: "0.8", changefreq: "weekly" },
         { url: "/stay", priority: "0.8", changefreq: "weekly" },
@@ -4606,7 +4611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // mirrors the `group`/`basePath` pairs used by the three CategoryGroupPage
       // wrappers (experiences.tsx, adventure-tours.tsx, nile-cruises.tsx).
       const CATEGORY_TYPE_BASE_PATH: Record<string, string> = {
-        packages: "egypt-tour-packages",
+        packages: "luxury-egypt-tour-packages",
         "day-tours": "egypt-day-tours",
         "nile-cruise": "egypt-nile-cruise-tours",
       };
@@ -4665,7 +4670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Categories — grouped under their real listing page (packages / day-tours / nile-cruise)
       for (const cat of categories) {
         if (cat.slug) {
-          const parentPath = CATEGORY_TYPE_BASE_PATH[cat.categoryType] || "egypt-tour-packages";
+          const parentPath = CATEGORY_TYPE_BASE_PATH[cat.categoryType] || "luxury-egypt-tour-packages";
           xml += `  <url>
     <loc>${baseUrl}/${parentPath}/${cat.slug}</loc>
     <lastmod>${cat.updatedAt ? new Date(cat.updatedAt).toISOString().split("T")[0] : now}</lastmod>

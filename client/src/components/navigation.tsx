@@ -34,7 +34,7 @@ const defaultNavItems = [
   ]},
   { label: "Destinations", id: "destinations", type: "page" as const, href: "/destinations" },
   { label: "Experiences", id: "experiences", type: "dropdown" as const, subItems: [
-    { label: "Packages", href: "/egypt-tour-packages" },
+    { label: "Packages", href: "/luxury-egypt-tour-packages" },
     { label: "Day Tours", href: "/egypt-day-tours" },
     { label: "Nile Cruises", href: "/egypt-nile-cruise-tours" },
   ]},
@@ -48,17 +48,17 @@ const defaultNavItems = [
 // deliberately differs from the desktop dropdown nav above.
 const MOBILE_MAIN_CATEGORIES = [
   { label: "Egypt Destinations", href: "/destinations" },
-  { label: "Egypt Tour Packages", href: "/egypt-tour-packages" },
+  { label: "Egypt Tour Packages", href: "/luxury-egypt-tour-packages" },
   { label: "Egypt Day Tours", href: "/egypt-day-tours" },
   { label: "Stay", href: "/stay" },
 ];
 
 const MOBILE_POPULAR_LINKS = [
-  { label: "SMALL GROUP TOURS EGYPT", href: "/egypt-tour-packages/small-group-tours-egypt" },
-  { label: "LUXURY FAMILY EGYPT", href: "/egypt-tour-packages/egypt-family-tours" },
-  { label: "LUXURY HONEYMOON EGYPT", href: "/egypt-tour-packages/luxury-honeymoon-egypt" },
-  { label: "SOLAR ECLIPSE EGYPT", href: "/egypt-tour-packages/solar-eclipse-egypt" },
-  { label: "SPIRITUAL JOURNEYS EGYPT", href: "/egypt-tour-packages/egypt-spiritual-tours" },
+  { label: "SMALL GROUP TOURS EGYPT", href: "/luxury-egypt-tour-packages/small-group-tours-egypt" },
+  { label: "LUXURY FAMILY EGYPT", href: "/luxury-egypt-tour-packages/egypt-family-tours" },
+  { label: "LUXURY HONEYMOON EGYPT", href: "/luxury-egypt-tour-packages/luxury-honeymoon-egypt" },
+  { label: "SOLAR ECLIPSE EGYPT", href: "/luxury-egypt-tour-packages/solar-eclipse-egypt" },
+  { label: "SPIRITUAL JOURNEYS EGYPT", href: "/luxury-egypt-tour-packages/egypt-spiritual-tours" },
 ];
 
 const MOBILE_ADDITIONAL_LINKS = [

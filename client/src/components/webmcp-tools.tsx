@@ -81,8 +81,8 @@ export default function WebMcpTools() {
       description: "Show the visitor the full list of available Egypt tour packages by navigating to the packages page.",
       inputSchema: { type: "object", properties: {} },
       execute: async () => {
-        setLocation("/egypt-tour-packages");
-        return { navigatedTo: "/egypt-tour-packages" };
+        setLocation("/luxury-egypt-tour-packages");
+        return { navigatedTo: "/luxury-egypt-tour-packages" };
       },
     };
 

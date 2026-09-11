@@ -3,16 +3,17 @@ import { useSEO } from "@/hooks/use-seo";
 
 export default function Experiences() {
   useSEO({
-    title: "Luxury Egypt Tour Packages",
-    description: "Curated multi-day luxury journeys through Egypt. Private guides, five-star hotels, and iconic Egyptian experiences.",
+    title: "Luxury Egypt Tour Packages | Private Journeys",
+    description:
+      "Explore our luxury Egypt tour packages, private journeys with expert Egyptologists, five-star stays, and itineraries built entirely around you.",
   });
 
   return (
     <CategoryGroupPage
       group="packages"
-      title="Packages"
-      description="Curated multi-day journeys that blend luxury stays, private guides, and iconic Egyptian sites."
-      basePath="/egypt-tour-packages"
+      title="Luxury Egypt Tour Packages"
+      description="Explore our luxury Egypt tour packages, private journeys with expert Egyptologists, five-star stays, and itineraries built entirely around you."
+      basePath="/luxury-egypt-tour-packages"
     />
   );
 }

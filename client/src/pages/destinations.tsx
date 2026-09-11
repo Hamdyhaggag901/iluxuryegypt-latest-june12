@@ -178,7 +178,7 @@ export default function Destinations() {
             {categories.map((category) => (
               <Link
                 key={category.id}
-                href={`/egypt-tour-packages/${category.slug}`}
+                href={`/luxury-egypt-tour-packages/${category.slug}`}
                 className="group inline-flex items-center gap-1.5 text-lg font-serif text-primary hover:text-accent transition-colors duration-300"
                 data-testid={`link-plan-${category.slug}`}
               >

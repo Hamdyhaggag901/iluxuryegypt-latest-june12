@@ -54,7 +54,7 @@ const fallbackSlides: Slide[] = [
     description: "Stand before the last remaining wonder of the ancient world with exclusive private access",
     cta: {
       text: "Explore Pyramid Tours",
-      link: "/egypt-tour-packages",
+      link: "/luxury-egypt-tour-packages",
     },
   },
   {
@@ -109,7 +109,7 @@ export default function HeroSlider() {
         description: slide.description || "",
         cta: {
           text: slide.ctaText || "Learn More",
-          link: slide.ctaLink || "/egypt-tour-packages",
+          link: slide.ctaLink || "/luxury-egypt-tour-packages",
         },
       }))
     : fallbackSlides;
@@ -308,7 +308,7 @@ export default function HeroSlider() {
                       {POPULAR_SEARCHES.map(({ label, slug }) => (
                         <Link
                           key={slug}
-                          href={`/egypt-tour-packages/${slug}`}
+                          href={`/luxury-egypt-tour-packages/${slug}`}
                           className="px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-sm text-xs sm:text-sm font-medium text-white transition-all duration-300 hover:bg-white/20 hover:border-accent"
                           data-testid={`link-popular-search-${slug}`}
                         >

@@ -302,7 +302,7 @@ export default function Blog() {
                 Subscribe to Newsletter
               </Button>
             </Link>
-            <Link href="/egypt-tour-packages">
+            <Link href="/luxury-egypt-tour-packages">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg min-w-[200px]">
                 Explore Experiences
               </Button>

@@ -374,7 +374,7 @@ export default function StaysDetail() {
                 ))}
               </div>
               <div className="mt-10 text-center">
-                <Link href="/egypt-tour-packages">
+                <Link href="/luxury-egypt-tour-packages">
                   <button className="border border-[#c9a96e] text-[#c9a96e] px-8 py-3 text-sm tracking-widest uppercase hover:bg-[#c9a96e]/10 transition-colors">
                     View All Experiences
                   </button>

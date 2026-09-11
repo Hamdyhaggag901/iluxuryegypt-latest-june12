@@ -37,7 +37,7 @@ export default function FamilyLuxury() {
       <section className="relative pt-20 pb-20 bg-gradient-to-br from-background via-accent/5 to-primary/10 overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.egypttoursportal.com/images/2022/09/Discover-Ancient-Egypt-in-8-Days-Luxury-Holiday-Egypt-Tours-Portal.jpg')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/egypt-tour-packages">
+          <Link href="/luxury-egypt-tour-packages">
             <Button variant="outline" className="mb-8 hover:scale-105 transition-transform" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Experiences
@@ -155,7 +155,7 @@ export default function FamilyLuxury() {
                 Plan Our Adventure
               </Button>
             </Link>
-            <Link href="/egypt-tour-packages">
+            <Link href="/luxury-egypt-tour-packages">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg min-w-[200px] border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary hover:scale-105 transition-all" data-testid="button-all-experiences">
                 See All Experiences
               </Button>

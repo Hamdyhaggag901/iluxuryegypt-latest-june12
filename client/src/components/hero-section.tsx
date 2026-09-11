@@ -71,7 +71,7 @@ export default function HeroSection() {
                     Luxury Travel Designed Just For You
                   </h2>
                   <div className="pt-1">
-                    <Link href="/egypt-tour-packages">
+                    <Link href="/luxury-egypt-tour-packages">
                       <Button 
                         size="default" 
                         className="text-xs px-6 py-2 h-auto font-normal tracking-[0.15em] uppercase border-2 border-white text-white bg-white/10 hover:bg-white hover:text-black transition-all duration-300 backdrop-blur-sm"

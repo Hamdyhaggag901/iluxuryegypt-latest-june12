@@ -17,7 +17,7 @@ export default function CategoryDetail() {
     ? "/egypt-day-tours"
     : location.startsWith("/egypt-nile-cruise-tours")
       ? "/egypt-nile-cruise-tours"
-      : "/egypt-tour-packages";
+      : "/luxury-egypt-tour-packages";
   const baseLabel = basePath === "/egypt-day-tours"
     ? "Day Tours"
     : basePath === "/egypt-nile-cruise-tours"

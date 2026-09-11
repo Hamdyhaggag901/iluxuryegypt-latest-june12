@@ -170,12 +170,12 @@ function Router() {
             <Route path="/destinations/:slug" component={DestinationDetail} />
 
             {/* Experiences */}
-            <Route path="/egypt-tour-packages" component={Experiences} />
-            <Route path="/egypt-tour-packages/classic-egypt" component={ClassicEgypt} />
-            <Route path="/egypt-tour-packages/ultra-luxury" component={UltraLuxury} />
-            <Route path="/egypt-tour-packages/family-luxury" component={FamilyLuxury} />
-            <Route path="/egypt-tour-packages/spiritual-journeys" component={SpiritualJourneys} />
-            <Route path="/egypt-tour-packages/:slug" component={CategoryDetail} />
+            <Route path="/luxury-egypt-tour-packages" component={Experiences} />
+            <Route path="/luxury-egypt-tour-packages/classic-egypt" component={ClassicEgypt} />
+            <Route path="/luxury-egypt-tour-packages/ultra-luxury" component={UltraLuxury} />
+            <Route path="/luxury-egypt-tour-packages/family-luxury" component={FamilyLuxury} />
+            <Route path="/luxury-egypt-tour-packages/spiritual-journeys" component={SpiritualJourneys} />
+            <Route path="/luxury-egypt-tour-packages/:slug" component={CategoryDetail} />
             <Route path="/egypt-day-tours" component={AdventureTours} />
             <Route path="/egypt-day-tours/:slug" component={CategoryDetail} />
             <Route path="/egypt-nile-cruise-tours" component={NileCruises} />
