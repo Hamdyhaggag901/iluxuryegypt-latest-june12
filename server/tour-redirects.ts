@@ -16,6 +16,9 @@ export const TOUR_SLUG_REDIRECTS: Record<string, string> = {
   "10-day-egypt-family-tour": "family-tours-egypt",
   "egypt-luxury-family-tour": "egypt-family-vacation-packages",
   "14-day-egypt-family-tour": "egypt-tours-family",
+  "7-day-solo-travel-egypt": "7-day-egypt-tour",
+  "9-day-solo-egypt": "10-day-egypt-tour",
+  "solo-vacation-packages-luxury-egypt-5-day-tour": "12-days-egypt-tour",
 };
 
 // Plain middleware with an exact-path string check, not an app.get("/:slug")
