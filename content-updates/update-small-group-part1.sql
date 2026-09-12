@@ -54,7 +54,7 @@ SET
   meta_description = 'Discover small group Egypt tours limited to a handful of travellers, with private Nile cruises, expert Egyptologists, and five-star stays throughout.',
   focus_keyword = 'small group egypt tours',
   schema_type = 'CollectionPage',
-  faqs = '[{"id":"2a7267d6-a1de-415c-a176-84747b20a29a","question":"How many people are in a small group Egypt tour?","answer":"Our small group Egypt tours are limited to a small number of travellers, typically under twelve, which keeps the experience intimate and allows genuine flexibility in the daily schedule."},{"id":"4309c07c-d90b-4f3d-979c-ea3ca3db847e","question":"What is the difference between a small group tour and an Egypt private tour?","answer":"A private tour is exclusively yours, while a small group tour shares the journey with a handful of other travellers. Both include private guides and transfers, but small groups offer better value while retaining most of the same access."},{"id":"e3b6828a-9c5c-42ad-b8d2-1489abb20796","question":"Are luxury small group tours Egypt suitable for solo travellers?","answer":"Yes, small groups work particularly well for solo travellers who want company and shared experiences without booking an entirely private itinerary."},{"id":"52b35d35-a2d0-4d49-a3d0-fa94ca213a97","question":"Do small group tours of Egypt include a Nile cruise?","answer":"Most of our itineraries include a Nile cruise segment, with vessels selected for their size and character rather than capacity."},{"id":"d690c127-d5aa-4a57-8d41-1da6fb8bd72d","question":"Which sites do these tours cover?","answer":"Itineraries range from the Pyramids of Giza and Luxor''s Valley of the Kings to Abu Simbel, Aswan, and in longer journeys, Siwa Oasis and the Red Sea."},{"id":"f975b26f-e0e2-4c3b-9856-3164a8762f85","question":"How far in advance should I book?","answer":"Because group sizes are capped, popular dates fill early, particularly between October and April. Booking three to six months ahead is recommended."},{"id":"efe4c290-2721-4aea-8d6d-14990abbbc90","question":"Can I extend a small group tour with private days?","answer":"Yes, additional private days can be added before or after any group itinerary, whether for the Red Sea, Alexandria, or further archaeological sites."}]'::jsonb,
+  faqs = '[{"id":"328e2b32-2a39-43e4-a190-bf5985822835","question":"How many people are in a small group Egypt tour?","answer":"Our small group Egypt tours are limited to a small number of travellers, typically under twelve, which keeps the experience intimate and allows genuine flexibility in the daily schedule."},{"id":"646c6eb1-3b48-41ba-94a1-a7b8ded01d9f","question":"What is the difference between a small group tour and an Egypt private tour?","answer":"A private tour is exclusively yours, while a small group tour shares the journey with a handful of other travellers. Both include private guides and transfers, but small groups offer better value while retaining most of the same access."},{"id":"af053cca-e2a5-4c39-bffa-48bdb0088fc7","question":"Are luxury small group tours Egypt suitable for solo travellers?","answer":"Yes, small groups work particularly well for solo travellers who want company and shared experiences without booking an entirely private itinerary."},{"id":"d10d739e-bdf0-4538-ae2b-b5d16c9f34ee","question":"Do small group tours of Egypt include a Nile cruise?","answer":"Most of our itineraries include a Nile cruise segment, with vessels selected for their size and character rather than capacity."},{"id":"0191f451-903a-47d3-9892-df440270219f","question":"Which sites do these tours cover?","answer":"Itineraries range from the Pyramids of Giza and Luxor''s Valley of the Kings to Abu Simbel, Aswan, and in longer journeys, Siwa Oasis and the Red Sea."},{"id":"49c59099-e445-4a77-9a7a-098a8ccea466","question":"How far in advance should I book?","answer":"Because group sizes are capped, popular dates fill early, particularly between October and April. Booking three to six months ahead is recommended."},{"id":"d1fc7c73-5327-448d-bfde-e1fb4b1ff0aa","question":"Can I extend a small group tour with private days?","answer":"Yes, additional private days can be added before or after any group itinerary, whether for the Red Sea, Alexandria, or further archaeological sites."}]'::jsonb,
   updated_at = now()
 WHERE slug = 'small-group-tours-egypt';
 
@@ -81,7 +81,7 @@ SET
   seo_title = 'Egypt Small Group Tour | 14-Day Nile Cruise & Temples',
   meta_description = 'This Egypt small group tour spans fourteen days of private Nile cruising, rare Middle Egypt sites, and five-star stays, capped at twelve guests.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"2ee84f17-359e-46f6-a820-aa6cf5808ed1","question":"What''s included in this Egypt small group tour?","answer":"All fourteen nights of five-star accommodation, the full Nile cruise aboard MS Le Fayan, private Egyptologist guiding, domestic flights, VIP pyramid access, and every transfer, with all meals from the welcome dinner onward."},{"id":"efcbdb76-f02e-45b2-9ac7-f65ec498a02e","question":"How many travellers join this tour?","answer":"Groups are capped at twelve guests, with a typical size of eight to ten, which keeps guiding personal and the pace flexible."},{"id":"0d3efbed-c974-439a-ad57-f3acb0adf5d6","question":"What makes this different from other small group tours of Egypt?","answer":"Middle Egypt. Beni Hassan and Tell el-Amarna sit between Cairo and Luxor, and almost no itinerary includes them. Add after-hours access to the Valley of the Kings and the active dig at Taposiris Magna, and the route becomes genuinely rare."},{"id":"c86667f1-033e-40a3-bff6-f20ddd1f5e7a","question":"Is the Nile cruise private?","answer":"The MS Le Fayan carries only your group, so the vessel functions as a private Nile cruise rather than a shared ship with two hundred passengers."},{"id":"6c83f2e3-1c65-4cc1-9afb-90744c55050f","question":"When should I book this Egypt small group tour?","answer":"October through April offers the most comfortable weather, and because group sizes are capped, these dates often fill three to six months ahead."}]'::jsonb,
+  faqs = '[{"id":"92b378e8-7524-47cb-aba6-172026afc8ac","question":"What''s included in this Egypt small group tour?","answer":"All fourteen nights of five-star accommodation, the full Nile cruise aboard MS Le Fayan, private Egyptologist guiding, domestic flights, VIP pyramid access, and every transfer, with all meals from the welcome dinner onward."},{"id":"932a77b6-d143-4f56-b441-7116ce9b5f82","question":"How many travellers join this tour?","answer":"Groups are capped at twelve guests, with a typical size of eight to ten, which keeps guiding personal and the pace flexible."},{"id":"188d7f08-5f8e-4004-ab45-6a587e6ff415","question":"What makes this different from other small group tours of Egypt?","answer":"Middle Egypt. Beni Hassan and Tell el-Amarna sit between Cairo and Luxor, and almost no itinerary includes them. Add after-hours access to the Valley of the Kings and the active dig at Taposiris Magna, and the route becomes genuinely rare."},{"id":"cb7ca86c-80ee-4d58-a3ec-ca9d40b61e36","question":"Is the Nile cruise private?","answer":"The MS Le Fayan carries only your group, so the vessel functions as a private Nile cruise rather than a shared ship with two hundred passengers."},{"id":"5f13a091-a03e-4599-99d4-46f4ba34d21a","question":"When should I book this Egypt small group tour?","answer":"October through April offers the most comfortable weather, and because group sizes are capped, these dates often fill three to six months ahead."}]'::jsonb,
   updated_at = now()
 WHERE slug IN ('14-day-egypt-small-group-tour', '14-day-luxury-egypt-tour-package');
 
@@ -99,7 +99,7 @@ SET
   seo_title = 'Egypt Private Tour Packages | 14-Day Pyramids & Nile',
   meta_description = 'Egypt private tour packages built around privileged access, from the King''s Chamber at sunrise to Abu Simbel by private charter flight.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"352200ab-78f2-464e-b612-9bb49e59ae0e","question":"What private access is included in your Egypt private tour packages?","answer":"Private sunrise entry to the King''s Chamber, the Sphinx Enclosure at archaeologist level, the Pyramid Builders'' Tombs at Dahshur, a private viewing of Tutankhamun''s tomb, and a charter flight to Abu Simbel at dawn."},{"id":"f209724c-c743-4d11-a399-92489b3f171b","question":"How is this different from your other luxury Egypt tours?","answer":"Access. Other itineraries visit the same monuments during public hours. This one opens them before or after, through permits arranged individually for each departure."},{"id":"5f6f74b2-1e25-44a9-a983-2274ba45d22a","question":"Is the charter flight to Abu Simbel really private?","answer":"Yes, the pre-dawn flight is chartered for your group alone, which is what makes arriving before the tour buses possible."},{"id":"6eef87e1-29ca-4805-83ee-350f66603aca","question":"What is the Lost Golden City?","answer":"Discovered in 2020, it is the largest ancient urban settlement ever found in Egypt, with preserved workshops, bakeries, and homes from Amenhotep III''s reign, roughly thirty-four hundred years ago."},{"id":"6f36984a-c104-421d-8050-4ce1b5d9be2e","question":"How far ahead should I book this egypt private tour?","answer":"Six months is recommended. The permits required for private pyramid access are limited and allocated well in advance."}]'::jsonb,
+  faqs = '[{"id":"dfaeb3be-bec9-41a2-9cc2-11bf1db915da","question":"What private access is included in your Egypt private tour packages?","answer":"Private sunrise entry to the King''s Chamber, the Sphinx Enclosure at archaeologist level, the Pyramid Builders'' Tombs at Dahshur, a private viewing of Tutankhamun''s tomb, and a charter flight to Abu Simbel at dawn."},{"id":"289ad5cb-4a7a-458b-a920-c74e13d8e036","question":"How is this different from your other luxury Egypt tours?","answer":"Access. Other itineraries visit the same monuments during public hours. This one opens them before or after, through permits arranged individually for each departure."},{"id":"63061e87-35c0-4de0-8fb3-2cb56a18e361","question":"Is the charter flight to Abu Simbel really private?","answer":"Yes, the pre-dawn flight is chartered for your group alone, which is what makes arriving before the tour buses possible."},{"id":"bc1d22ad-06fb-4ee2-9452-378388e42fd2","question":"What is the Lost Golden City?","answer":"Discovered in 2020, it is the largest ancient urban settlement ever found in Egypt, with preserved workshops, bakeries, and homes from Amenhotep III''s reign, roughly thirty-four hundred years ago."},{"id":"6a87d70b-8158-4bcf-aa5a-961cfbca7be7","question":"How far ahead should I book this egypt private tour?","answer":"Six months is recommended. The permits required for private pyramid access are limited and allocated well in advance."}]'::jsonb,
   updated_at = now()
 WHERE slug = '14-day-royal-egypt';
 
@@ -117,7 +117,7 @@ SET
   seo_title = 'Egypt Private Tours | 9-Day Pyramids, Luxor & Red Sea',
   meta_description = 'Egypt private tours combining the Pyramids and Luxor''s royal tombs with three days of Red Sea beach time, in a small group of twelve.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"1d3db981-f469-4e7d-80ff-366d540eebb3","question":"What is included in your Egypt private tours?","answer":"Eight nights of five-star accommodation, all internal flights, a private Egyptologist throughout the cultural days, the Giftun Islands snorkelling excursion with a marine biologist, and all transfers."},{"id":"dfc5cbb2-324d-4c3c-8ba4-7a6a14034de3","question":"Is this a private tour or a small group tour?","answer":"Groups are capped at twelve travellers. Guiding, vehicles, and site entries are handled privately for the group, which delivers most of the benefits of a fully private Egypt tour at a more accessible price."},{"id":"d28e9f75-ddc2-465f-ad89-a6474f4b23c0","question":"How much of the itinerary is beach time?","answer":"Three of the nine days are on the Red Sea, with one dedicated snorkelling excursion and two days entirely at leisure."},{"id":"7ddc0151-17ba-4a8c-a6a1-7c4652a1847e","question":"Do I need to dive or snorkel to enjoy the Red Sea days?","answer":"No. The Giftun excursion is optional for non-swimmers, and the resort days are unstructured, so time by the pool or in the gardens works equally well."},{"id":"cbe16bd0-e4e9-4a88-bec4-a56042252c11","question":"Is nine days enough for these luxury Egypt tours?","answer":"Nine days covers Egypt''s essential monuments comfortably while leaving room to rest. Travellers wanting Aswan, Abu Simbel, or a Nile cruise should consider our longer itineraries."}]'::jsonb,
+  faqs = '[{"id":"ded0771a-37d1-473d-81c1-2f799fd99370","question":"What is included in your Egypt private tours?","answer":"Eight nights of five-star accommodation, all internal flights, a private Egyptologist throughout the cultural days, the Giftun Islands snorkelling excursion with a marine biologist, and all transfers."},{"id":"22c48d8d-dc3a-4905-b751-9e881b520d8e","question":"Is this a private tour or a small group tour?","answer":"Groups are capped at twelve travellers. Guiding, vehicles, and site entries are handled privately for the group, which delivers most of the benefits of a fully private Egypt tour at a more accessible price."},{"id":"f11e424f-ebbb-4d9f-9588-3b059c3857a1","question":"How much of the itinerary is beach time?","answer":"Three of the nine days are on the Red Sea, with one dedicated snorkelling excursion and two days entirely at leisure."},{"id":"94fb6039-054a-4a6b-bfbb-aa3347ff9e85","question":"Do I need to dive or snorkel to enjoy the Red Sea days?","answer":"No. The Giftun excursion is optional for non-swimmers, and the resort days are unstructured, so time by the pool or in the gardens works equally well."},{"id":"c225d55b-0029-4024-bac9-87247d05560e","question":"Is nine days enough for these luxury Egypt tours?","answer":"Nine days covers Egypt''s essential monuments comfortably while leaving room to rest. Travellers wanting Aswan, Abu Simbel, or a Nile cruise should consider our longer itineraries."}]'::jsonb,
   updated_at = now()
 WHERE slug = '9-day-egypt-pyramids-luxor-sea';
 
@@ -274,6 +274,163 @@ SET itinerary = (
   FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
 ), updated_at = now()
 WHERE slug = 'egypt-private-tours' AND jsonb_typeof(itinerary) = 'array';
+
+-- ---------------------------------------------------------------------------
+-- imageAlt, image URL shape, and one placeName typo
+-- ---------------------------------------------------------------------------
+-- egypt-small-group-tour: alts given explicitly per day.
+UPDATE tours
+SET itinerary = (
+  SELECT jsonb_agg(
+    CASE
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 1
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Pyramids of Giza viewed from Marriott Mena House on an Egypt small group tour"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 2
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Great Sphinx and Khafre''s Valley Temple at the Giza Plateau"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 3
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Tutankhamun collection at the Grand Egyptian Museum"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 6
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Temple of Seti I reliefs at Abydos"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 7
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Royal tomb interior in the Valley of the Kings, Luxor"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 8
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Tomb of Queen Nefertari in the Valley of the Queens, Luxor"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 9
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Kom Ombo dual temple beside the Nile"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 10
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Nubian village on the Nile near Aswan"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 12
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Bibliotheca Alexandrina on the Mediterranean shore, Alexandria"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 13
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Nile view from Four Seasons Cairo at The First Residence"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 14
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Departure from Cairo after a 14-day Egypt small group tour"'::jsonb)
+      ELSE day_entry
+    END
+    ORDER BY ord
+  )
+  FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
+), updated_at = now()
+WHERE slug = 'egypt-small-group-tour' AND jsonb_typeof(itinerary) = 'array';
+
+-- egypt-small-group-tour: any remaining boilerplate alt, rebuilt from placeName.
+UPDATE tours
+SET itinerary = (
+  SELECT jsonb_agg(
+    CASE
+      WHEN day_entry->>'imageAlt' LIKE '%iLuxury Egypt%'
+           AND COALESCE(day_entry->>'placeName', '') NOT IN ('', '-')
+        THEN jsonb_set(
+               day_entry,
+               '{imageAlt}',
+               to_jsonb((day_entry->>'placeName') || ' on an Egypt small group tour')
+             )
+      ELSE day_entry
+    END
+    ORDER BY ord
+  )
+  FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
+), updated_at = now()
+WHERE slug = 'egypt-small-group-tour'
+  AND jsonb_typeof(itinerary) = 'array'
+  AND itinerary::text LIKE '%iLuxury Egypt%';
+
+-- egypt-private-tour-packages: alts given explicitly per day.
+UPDATE tours
+SET itinerary = (
+  SELECT jsonb_agg(
+    CASE
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 1
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Marriott Mena House at the foot of the Great Pyramids, Giza"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 2
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Step Pyramid of Djoser at Saqqara"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 4
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Private access between the paws of the Great Sphinx on an Egypt private tour"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 5
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Great Hypostyle Hall columns at Karnak Temple, Luxor"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 6
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Private viewing of Tutankhamun''s tomb in the Valley of the Kings"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 7
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Temple of Horus at Edfu, one of Egypt''s best-preserved temples"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 8
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Nubian village near Aswan with traditional painted houses"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 9
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Abu Simbel colossal statues at sunrise on a private charter flight"'::jsonb)
+      WHEN (NULLIF(day_entry->>'day', ''))::int = 11
+        THEN jsonb_set(day_entry, '{imageAlt}', '"Deir el-Medina workers'' village on Luxor''s west bank"'::jsonb)
+      ELSE day_entry
+    END
+    ORDER BY ord
+  )
+  FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
+), updated_at = now()
+WHERE slug = 'egypt-private-tour-packages' AND jsonb_typeof(itinerary) = 'array';
+
+-- egypt-private-tour-packages: any remaining boilerplate alt, rebuilt from placeName.
+UPDATE tours
+SET itinerary = (
+  SELECT jsonb_agg(
+    CASE
+      WHEN day_entry->>'imageAlt' LIKE '%iLuxury Egypt%'
+           AND COALESCE(day_entry->>'placeName', '') NOT IN ('', '-')
+        THEN jsonb_set(
+               day_entry,
+               '{imageAlt}',
+               to_jsonb((day_entry->>'placeName') || ' on an Egypt private tour')
+             )
+      ELSE day_entry
+    END
+    ORDER BY ord
+  )
+  FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
+), updated_at = now()
+WHERE slug = 'egypt-private-tour-packages'
+  AND jsonb_typeof(itinerary) = 'array'
+  AND itinerary::text LIKE '%iLuxury Egypt%';
+
+
+-- egypt-private-tours: any remaining boilerplate alt, rebuilt from placeName.
+UPDATE tours
+SET itinerary = (
+  SELECT jsonb_agg(
+    CASE
+      WHEN day_entry->>'imageAlt' LIKE '%iLuxury Egypt%'
+           AND COALESCE(day_entry->>'placeName', '') NOT IN ('', '-')
+        THEN jsonb_set(
+               day_entry,
+               '{imageAlt}',
+               to_jsonb((day_entry->>'placeName') || ' on an Egypt private tour')
+             )
+      ELSE day_entry
+    END
+    ORDER BY ord
+  )
+  FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
+), updated_at = now()
+WHERE slug = 'egypt-private-tours'
+  AND jsonb_typeof(itinerary) = 'array'
+  AND itinerary::text LIKE '%iLuxury Egypt%';
+
+-- Normalise absolute asset URLs to the relative form the rest of the table
+-- uses. Scoped to /api/assets/ so any genuinely external image host is left
+-- alone, and idempotent because a relative path does not match the anchor.
+UPDATE tours
+SET itinerary = regexp_replace(itinerary::text, 'https?://[^/"]+/api/assets/', '/api/assets/', 'g')::jsonb,
+    updated_at = now()
+WHERE slug IN ('egypt-small-group-tour', 'egypt-private-tour-packages', 'egypt-private-tours')
+  AND itinerary::text ~ 'https?://[^/"]+/api/assets/';
+
+-- Missing comma in a placeName. Idempotent: the corrected value no longer
+-- contains the wrong one.
+UPDATE tours
+SET itinerary = replace(
+      itinerary::text,
+      'Tell el-Amarna Akhenaten''s Lost City',
+      'Tell el-Amarna, Akhenaten''s Lost City'
+    )::jsonb,
+    updated_at = now()
+WHERE slug = 'egypt-small-group-tour'
+  AND itinerary::text LIKE '%Tell el-Amarna Akhenaten''s Lost City%';
 
 -- Em/en dash cleanup across all three itineraries. The dash-to-comma
 -- rewrite is exactly what every punctuation correction in this pass asked
