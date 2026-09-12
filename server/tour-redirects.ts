@@ -25,6 +25,9 @@ export const TOUR_SLUG_REDIRECTS: Record<string, string> = {
   // Interim slug from an earlier revision of update-small-group-part1.sql,
   // mapped on in case that revision reached production before this one.
   "14-day-luxury-egypt-tour-package": "egypt-small-group-tour",
+  "10-day-nile-cruise": "egypt-nile-cruise-packages",
+  "luxury-siwa-oasis-expedition": "best-luxury-egypt-tours",
+  "7-day-vip-egypt": "luxury-small-group-tours-egypt",
 };
 
 // Plain middleware with an exact-path string check, not an app.get("/:slug")
