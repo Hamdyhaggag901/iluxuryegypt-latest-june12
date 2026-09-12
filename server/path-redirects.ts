@@ -13,6 +13,11 @@ export const PATH_PREFIX_REDIRECTS: Record<string, string> = {
   "/egypt-tour-packages": "/luxury-egypt-tour-packages",
   "/luxury-egypt-tour-packages/egypt-solo-travel": "/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers",
   "/luxury-egypt-tour-packages/small-group-tours-egypt": "/luxury-egypt-tour-packages/small-group-egypt-tours",
+  // /categories/:slug (App.tsx) renders the same category page as the
+  // parent-path form above, so a renamed slug 404s there too even though
+  // the sitemap only ever emits the parent-path URLs.
+  "/categories/egypt-solo-travel": "/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers",
+  "/categories/small-group-tours-egypt": "/luxury-egypt-tour-packages/small-group-egypt-tours",
 };
 
 export function registerPathPrefixRedirects(app: Express) {
