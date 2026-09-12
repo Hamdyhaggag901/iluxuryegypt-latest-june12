@@ -28,9 +28,10 @@ import {
   type StayCta, type InsertStayCta,
   type StayListingSettings, type InsertStayListingSettings,
   type LegalPage, type InsertLegalPage,
+  type CategoryGroupHero, type InsertCategoryGroupHero,
   users, inquiries, pages, sections, posts, media as mediaTable, hotels, tours, packages, destinations, categories, settings, seasons,
   navItems, siteConfig, footerLinks, socialLinks, faqs, newsletterSubscribers, tourBookings, heroSlides, siwaSection,
-  guestExperienceSection, ourStorySection, whyChooseSection, whyChooseCards, testimonials, contactCtaSection, testimonialsSection, partners,
+  guestExperienceSection, ourStorySection, categoryGroupHeroes, whyChooseSection, whyChooseCards, testimonials, contactCtaSection, testimonialsSection, partners,
   stayPageHero, stayAccommodationTypes, stayLuxuryFeatures, stayNileSection, stayCta, stayListingSettings,
   legalPages, getLegalPageHref,
   brochureDownloads
@@ -105,6 +106,8 @@ export interface IStorage {
   reorderHotels(orderedIds: string[]): Promise<void>;
 
   // Stay listing settings methods
+  getCategoryGroupHero(groupKey: string): Promise<CategoryGroupHero | undefined>;
+  upsertCategoryGroupHero(data: InsertCategoryGroupHero): Promise<CategoryGroupHero>;
   getStayListingSettings(): Promise<StayListingSettings | undefined>;
   upsertStayListingSettings(data: InsertStayListingSettings): Promise<StayListingSettings>;
 
@@ -1074,6 +1077,30 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(ourStorySection).values(data).returning();
       return created;
     }
+  }
+
+  async getCategoryGroupHero(groupKey: string): Promise<CategoryGroupHero | undefined> {
+    const [hero] = await db
+      .select()
+      .from(categoryGroupHeroes)
+      .where(eq(categoryGroupHeroes.groupKey, groupKey))
+      .limit(1);
+    return hero;
+  }
+
+  // Upserts on groupKey rather than a single row: one row per listing page.
+  async upsertCategoryGroupHero(data: InsertCategoryGroupHero): Promise<CategoryGroupHero> {
+    const existing = await this.getCategoryGroupHero(data.groupKey);
+    if (existing) {
+      const [updated] = await db
+        .update(categoryGroupHeroes)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(categoryGroupHeroes.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(categoryGroupHeroes).values(data).returning();
+    return created;
   }
 
   // Why Choose Section methods

@@ -21,7 +21,9 @@
 -- claims.
 --
 -- Requires the categories.faqs column (added to the idempotent ALTER TABLE
--- runner in server/routes.ts, applied on server start).
+-- runner in server/routes.ts). That runner is NOT automatic on boot: an
+-- admin has to trigger it once after deploying, via the "Run Migrations"
+-- button in Admin Settings (POST /api/cms/settings/run-migrations).
 --
 -- categories.name changes here, and tours.category stores the category's
 -- display NAME as free text (matched by exact string equality in

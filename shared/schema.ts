@@ -406,6 +406,19 @@ export const ourStorySection = pgTable("our_story_section", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Hero image for the three category listing pages (/luxury-egypt-tour-packages,
+// /egypt-day-tours, /egypt-nile-cruise-tours). Keyed by group rather than a
+// single row because one component (CategoryGroupPage) serves all three, so a
+// single row would apply the same image to every one of them. The column is
+// group_key, not group, since GROUP is a reserved word in SQL.
+export const categoryGroupHeroes = pgTable("category_group_heroes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupKey: text("group_key").notNull().unique(), // packages | day-tours | nile-cruise
+  heroImage: text("hero_image").notNull(),
+  heroImageAlt: text("hero_image_alt").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Why Choose Section Content
 export const whyChooseSection = pgTable("why_choose_section", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -978,6 +991,15 @@ export const insertOurStorySectionSchema = createInsertSchema(ourStorySection).o
   isActive: z.boolean().default(true),
 });
 
+export const insertCategoryGroupHeroSchema = createInsertSchema(categoryGroupHeroes).omit({
+  id: true,
+  updatedAt: true,
+}).extend({
+  groupKey: z.enum(["packages", "day-tours", "nile-cruise"]),
+  heroImage: z.string().min(1, "Hero image is required"),
+  heroImageAlt: z.string().min(1, "Hero image alt text is required"),
+});
+
 export const insertWhyChooseSectionSchema = createInsertSchema(whyChooseSection).omit({
   id: true,
   updatedAt: true,
@@ -1267,6 +1289,8 @@ export type InsertGuestExperienceSection = z.infer<typeof insertGuestExperienceS
 export type GuestExperienceSection = typeof guestExperienceSection.$inferSelect;
 export type InsertOurStorySection = z.infer<typeof insertOurStorySectionSchema>;
 export type OurStorySection = typeof ourStorySection.$inferSelect;
+export type InsertCategoryGroupHero = z.infer<typeof insertCategoryGroupHeroSchema>;
+export type CategoryGroupHero = typeof categoryGroupHeroes.$inferSelect;
 export type InsertWhyChooseSection = z.infer<typeof insertWhyChooseSectionSchema>;
 export type WhyChooseSection = typeof whyChooseSection.$inferSelect;
 export type InsertWhyChooseCard = z.infer<typeof insertWhyChooseCardSchema>;

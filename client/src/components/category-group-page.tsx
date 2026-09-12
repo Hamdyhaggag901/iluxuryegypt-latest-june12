@@ -4,9 +4,11 @@ import { Link } from "wouter";
 import { Loader2, ArrowRight, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import FaqSection from "@/components/faq-section";
 import { Button } from "@/components/ui/button";
 import TripBuilderModal from "@/components/trip-builder-modal";
-import type { Category, Tour } from "@shared/schema";
+import { sanitizeHtml } from "@/lib/sanitize-html";
+import type { Category, Tour, CategoryGroupHero } from "@shared/schema";
 
 type CategoryGroup = "packages" | "day-tours" | "nile-cruise";
 
@@ -36,6 +38,60 @@ const CATEGORY_DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Witness the longest total solar eclipse on land until 2114 from a private site along Luxor's path of totality. This small-group journey pairs the August 2, 2027 spectacle with after-hours access to the Great Pyramid and Valley of the Kings.",
 };
 
+// Long-form intro copy shown between the hero and the category grid, keyed by
+// group. Curated page copy, so it lives here alongside
+// CATEGORY_DESCRIPTION_OVERRIDES rather than in the database: these listing
+// pages are static routes, not `categories` rows. Real HTML, rendered through
+// sanitizeHtml below.
+const GROUP_INTRO_HTML: Partial<Record<CategoryGroup, string>> = {
+  packages: `<p>Our luxury Egypt tour packages are built around a simple idea: the country rewards travellers who arrive with the right access and the right pace. Every itinerary here includes private Egyptologist guiding, five-star accommodation selected for character rather than size, and permits arranged in advance for sites that close to the public.</p>
+<p>What differs between collections is who the journey is for. <a href="/luxury-egypt-tour-packages/small-group-egypt-tours">Small group tours</a> cap the party at twelve guests and open temples after hours. <a href="/luxury-egypt-tour-packages/egypt-family-tours">Family itineraries</a> pace the days around children's attention spans and build in genuine rest. <a href="/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers">Solo journeys</a> favour quieter archaeological sites and unstructured evenings. Others are shaped around a specific occasion, whether that means a <a href="/luxury-egypt-tour-packages/luxury-honeymoon-egypt">honeymoon along the Nile</a>, a <a href="/luxury-egypt-tour-packages/egypt-spiritual-tours">spiritual route through Egypt's sacred temples</a>, or a <a href="/luxury-egypt-tour-packages/solar-eclipse-egypt">rare astronomical event</a>.</p>
+<h2>Choosing Between Our Egypt Luxury Tour Packages</h2>
+<p>Each collection below holds several complete itineraries, ranging from seven days to sixteen. Durations matter less than fit: a well-designed week can feel richer than a rushed fortnight, and the right itinerary is the one shaped around how you actually want to travel.</p>
+<h3>What Every Luxury Egypt Tour Package Includes</h3>
+<p>Private transfers throughout, all internal flights, expert guiding, and a concierge line available around the clock.</p>`,
+};
+
+// Exported so the page wrapper can feed them to its single useSEO call as
+// FAQPage JSON-LD. A second useSEO call here would clash: the hook clears every
+// [data-seo-jsonld] script it finds before writing its own.
+export const GROUP_FAQS: Partial<Record<CategoryGroup, Array<{ question: string; answer: string }>>> = {
+  packages: [
+    {
+      question: "What is included in your luxury Egypt tour packages?",
+      answer: "Every package includes five-star accommodation, private Egyptologist guiding, all internal flights and transfers, entrance fees to listed sites, and round-the-clock concierge support throughout your journey.",
+    },
+    {
+      question: "How do I choose between your Egypt tour packages?",
+      answer: "Start with who is travelling rather than how long. Families, solo travellers, honeymooners, and small groups each have a dedicated collection built around different pacing and priorities.",
+    },
+    {
+      question: "Are these private or group tours?",
+      answer: "Both. Most collections are fully private, while our small group Egypt tours cap the party at twelve travellers, which lowers the cost while retaining most of the same access.",
+    },
+    {
+      question: "How long are your luxury Egypt tour packages?",
+      answer: "Itineraries range from seven to sixteen days. Shorter packages focus on Cairo, Luxor, and Aswan, while longer ones reach Alexandria, Siwa Oasis, and the Red Sea.",
+    },
+    {
+      question: "Do all packages include a Nile cruise?",
+      answer: "Not all, but most longer itineraries include a cruise segment between Luxor and Aswan. Some collections offer it as an option rather than a fixed inclusion.",
+    },
+    {
+      question: "Can these packages be customised?",
+      answer: "Yes. Every package can be adjusted for dates, hotel selection, pacing, or additional days, and our specialists build fully bespoke itineraries on request.",
+    },
+    {
+      question: "What is the best time of year to visit Egypt?",
+      answer: "October through April offers the most comfortable temperatures for exploring outdoor sites. Summer travel is possible with earlier starts and longer midday breaks.",
+    },
+    {
+      question: "How far in advance should I book?",
+      answer: "Three to six months is recommended, particularly for winter departures and any itinerary requiring private site permits, which are limited.",
+    },
+  ],
+};
+
 export default function CategoryGroupPage({
   group,
   title,
@@ -62,6 +118,21 @@ export default function CategoryGroupPage({
     },
   });
 
+  // Admin-managed hero image for this listing page. Absent for groups an
+  // admin has not set one for, which keeps the plain background below.
+  const { data: heroData } = useQuery<{ success: boolean; hero?: CategoryGroupHero }>({
+    queryKey: ["/api/public/category-group-hero", group],
+    queryFn: async () => {
+      const res = await fetch(`/api/public/category-group-hero/${group}`);
+      if (!res.ok) throw new Error("Failed to load hero");
+      return res.json();
+    },
+  });
+
+  const hero = heroData?.hero;
+  const introHtml = GROUP_INTRO_HTML[group];
+  const groupFaqs = GROUP_FAQS[group] || [];
+
   const categories = data?.categories || [];
   const tours = toursData?.tours || [];
   const tourCounts = categories.reduce((acc, category) => {
@@ -74,6 +145,28 @@ export default function CategoryGroupPage({
       <Navigation />
 
       <section className="min-h-[70vh] pt-[140px] pb-20 bg-[#e7e1da] relative overflow-hidden flex items-center">
+        {/* Admin-managed hero image. A real <img> rather than a CSS
+            background so it can carry alt text, and eager/high priority
+            because it is this page's LCP element. The scrim keeps the
+            existing light-on-beige text legible over a photograph. */}
+        {hero?.heroImage && (
+          <>
+            <img
+              src={hero.heroImage}
+              alt={hero.heroImageAlt}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              data-testid="img-category-group-hero"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-[#e7e1da]/85 via-[#e7e1da]/70 to-[#e7e1da]/55"
+              aria-hidden="true"
+            />
+          </>
+        )}
+
         {/* Subtle decorative elements */}
         <div className="absolute top-1/4 left-8 w-px h-32 bg-gradient-to-b from-transparent via-accent/30 to-transparent" />
         <div className="absolute top-1/3 right-8 w-px h-24 bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
@@ -152,6 +245,19 @@ export default function CategoryGroupPage({
           animation: bounce-slow 2s ease-in-out infinite;
         }
       `}</style>
+
+      {/* Long-form intro copy, between the hero and the category grid.
+          Rendered as HTML so the h2/h3 subheadings and the links to each
+          collection are real markup, same pipeline as category-detail.tsx. */}
+      {introHtml && (
+        <section className="py-12 md:py-16 bg-background">
+          <div
+            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-base md:text-lg text-muted-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&>h2]:text-2xl md:[&>h2]:text-3xl [&>h2]:font-serif [&>h2]:font-bold [&>h2]:text-primary [&>h2]:mt-8 [&>h2]:mb-4 [&>h3]:text-xl md:[&>h3]:text-2xl [&>h3]:font-serif [&>h3]:font-semibold [&>h3]:text-primary [&>h3]:mt-6 [&>h3]:mb-3 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(introHtml) }}
+            data-testid="section-group-intro"
+          />
+        </section>
+      )}
 
       {/* Tailor Made CTA - Always visible */}
       <section className="py-12 bg-background border-b border-accent/10">
@@ -320,6 +426,8 @@ export default function CategoryGroupPage({
           </Link>
         </div>
       </section>
+
+      <FaqSection id="group-faq" faqs={groupFaqs} testId="group-faq-section" />
 
       <Footer />
       <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />

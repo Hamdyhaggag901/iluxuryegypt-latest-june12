@@ -244,7 +244,7 @@ interface TrustedWorldwidePageContent {
   ctaSecondaryText: string;
 }
 
-type PageView = "list" | "home" | "contact" | "who-we-are" | "iluxury-difference" | "your-experience" | "trusted-worldwide";
+type PageView = "list" | "home" | "contact" | "who-we-are" | "iluxury-difference" | "your-experience" | "trusted-worldwide" | "tour-packages";
 
 export default function AdminPageEdits() {
   const { toast } = useToast();
@@ -286,6 +286,14 @@ export default function AdminPageEdits() {
     description: "",
     tagline: "",
     isActive: true,
+  });
+
+  // Packages listing page hero (/luxury-egypt-tour-packages). Stored per
+  // listing group, so the same card shape works for the other two later.
+  const [packagesHeroForm, setPackagesHeroForm] = useState({
+    groupKey: "packages",
+    heroImage: "",
+    heroImageAlt: "",
   });
 
   // Our Story Section state (homepage — between the hero and the categories carousel)
@@ -743,6 +751,26 @@ export default function AdminPageEdits() {
   });
 
   // Fetch our story section
+  const { data: packagesHeroData, isLoading: packagesHeroLoading } = useQuery({
+    queryKey: ["categoryGroupHero", "packages"],
+    queryFn: async () => {
+      const response = await fetch("/api/cms/category-group-hero/packages", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to fetch packages hero");
+      const data = await response.json();
+      if (data.hero) {
+        setPackagesHeroForm({
+          groupKey: "packages",
+          heroImage: data.hero.heroImage || "",
+          heroImageAlt: data.hero.heroImageAlt || "",
+        });
+      }
+      return data;
+    },
+    enabled: currentView === "tour-packages",
+  });
+
   const { data: ourStoryData, isLoading: ourStoryLoading } = useQuery({
     queryKey: ["ourStorySection"],
     queryFn: async () => {
@@ -1106,6 +1134,46 @@ export default function AdminPageEdits() {
   // image field with the returned URL, same pattern as TourForm's day-photo
   // upload (no separate media-picker component exists in this codebase; the
   // established pattern is upload-in-place, or paste a URL from /admin/media).
+  const updatePackagesHeroMutation = useMutation({
+    mutationFn: async (data: typeof packagesHeroForm) => {
+      const response = await fetch("/api/cms/category-group-hero", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Update failed");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categoryGroupHero", "packages"] });
+      toast({ title: "Success", description: "Packages page hero updated" });
+    },
+    onError: (error: any) => toast({ title: "Update failed", description: error.message, variant: "destructive" }),
+  });
+
+  const uploadPackagesHeroImageMutation = useMutation({
+    mutationFn: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/cms/media", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Upload failed");
+      }
+      const data = await response.json();
+      return data.media.url as string;
+    },
+    onSuccess: (url) => setPackagesHeroForm((prev) => ({ ...prev, heroImage: url })),
+    onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
+  });
+
   const uploadOurStoryImageMutation = useMutation({
     mutationFn: async (file: File): Promise<string> => {
       const formData = new FormData();
@@ -1610,6 +1678,91 @@ export default function AdminPageEdits() {
               </div>
             </CardContent>
           </Card>
+
+          <Card
+            className="cursor-pointer hover:border-primary transition-colors"
+            onClick={() => setCurrentView("tour-packages")}
+          >
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Plane className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Tour Packages Page</CardTitle>
+                  <CardDescription>Hero image behind the title</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>1 editable section</span>
+                <ChevronRight className="h-4 w-4" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  // Tour Packages listing page (/luxury-egypt-tour-packages)
+  if (currentView === "tour-packages") {
+    return (
+      <AdminLayout title="Edit Tour Packages Page" description="Manage the hero image on /luxury-egypt-tour-packages">
+        <div className="mb-6">
+          <Button variant="ghost" onClick={() => setCurrentView("list")} className="gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Pages
+          </Button>
+        </div>
+
+        <div className="space-y-8">
+        {/* Packages Page Hero */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Packages Page Hero Image</CardTitle>
+            <CardDescription>Background image behind the title on /luxury-egypt-tour-packages</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {packagesHeroLoading ? (
+              <div className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); updatePackagesHeroMutation.mutate(packagesHeroForm); }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Hero Image</Label>
+                  <div className="flex gap-2">
+                    <Input value={packagesHeroForm.heroImage} onChange={(e) => setPackagesHeroForm({ ...packagesHeroForm, heroImage: e.target.value })} placeholder="https://... or upload from the Media Library" required />
+                    <Button type="button" variant="outline" className="relative shrink-0" data-testid="button-upload-packages-hero-image">
+                      {uploadPackagesHeroImageMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadPackagesHeroImageMutation.mutate(file);
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </Button>
+                  </div>
+                  {packagesHeroForm.heroImage && (
+                    <img src={packagesHeroForm.heroImage} alt="Preview" className="mt-2 h-24 w-32 object-cover rounded-md border" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Image Alt Text</Label>
+                  <Input value={packagesHeroForm.heroImageAlt} onChange={(e) => setPackagesHeroForm({ ...packagesHeroForm, heroImageAlt: e.target.value })} placeholder="Great Sphinx and the Pyramids of Giza on a luxury Egypt tour package" required />
+                  <p className="text-xs text-muted-foreground">Describes the image for search engines and screen readers.</p>
+                </div>
+                <Button type="submit" disabled={updatePackagesHeroMutation.isPending} data-testid="button-save-packages-hero">
+                  {updatePackagesHeroMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : "Save Hero Image"}
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
         </div>
       </AdminLayout>
     );

@@ -28,6 +28,7 @@ import {
   insertSiwaSectionSchema,
   insertGuestExperienceSectionSchema,
   insertOurStorySectionSchema,
+  insertCategoryGroupHeroSchema,
   insertTestimonialsSectionSchema,
   insertPartnerSchema,
   insertWhyChooseSectionSchema,
@@ -2675,6 +2676,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS faqs jsonb NOT NULL DEFAULT '[]'::jsonb`,
       },
       {
+        name: "category_group_heroes",
+        sql: `CREATE TABLE IF NOT EXISTS category_group_heroes (
+          id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+          group_key text NOT NULL UNIQUE,
+          hero_image text NOT NULL,
+          hero_image_alt text NOT NULL,
+          updated_at timestamp NOT NULL DEFAULT now()
+        )`,
+      },
+      {
+        // Seeds the packages listing page only; the other two groups fall back
+        // to the plain background they have today until an admin sets one.
+        name: "category_group_heroes.packages_seed",
+        sql: `INSERT INTO category_group_heroes (group_key, hero_image, hero_image_alt)
+          VALUES (
+            'packages',
+            'https://iluxuryegypt.com/api/assets/uploads/9dff839b-b0b2-43c2-b43c-f9e56900e392.webp',
+            'Great Sphinx and the Pyramids of Giza on a luxury Egypt tour package'
+          )
+          ON CONFLICT (group_key) DO NOTHING`,
+      },
+      {
         name: "tours.focus_keyword",
         sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS focus_keyword text`,
       },
@@ -3899,6 +3922,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching our story section:', error);
       res.status(500).json({ message: 'Error fetching our story section' });
+    }
+  });
+
+  // Public: hero image for a category listing page (packages/day-tours/nile-cruise)
+  app.get("/api/public/category-group-hero/:group", async (req, res) => {
+    try {
+      const hero = await storage.getCategoryGroupHero(req.params.group);
+      res.json({ success: true, hero });
+    } catch (error) {
+      console.error('Error fetching category group hero:', error);
+      res.status(500).json({ message: 'Error fetching category group hero' });
+    }
+  });
+
+  // CMS: Get category group hero
+  app.get("/api/cms/category-group-hero/:group", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const hero = await storage.getCategoryGroupHero(req.params.group);
+      res.json({ success: true, hero });
+    } catch (error) {
+      console.error('Error fetching category group hero:', error);
+      res.status(500).json({ message: 'Error fetching category group hero' });
+    }
+  });
+
+  // CMS: Update/Create category group hero
+  app.post("/api/cms/category-group-hero", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const data = insertCategoryGroupHeroSchema.parse(req.body);
+      const hero = await storage.upsertCategoryGroupHero(data);
+      res.json({ success: true, hero });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+      }
+      console.error('Error updating category group hero:', error);
+      res.status(500).json({ message: 'Error updating category group hero' });
     }
   });
 
