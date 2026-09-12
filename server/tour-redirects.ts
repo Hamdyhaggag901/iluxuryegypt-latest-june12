@@ -21,7 +21,10 @@ export const TOUR_SLUG_REDIRECTS: Record<string, string> = {
   "solo-vacation-packages-luxury-egypt-5-day-tour": "12-days-egypt-tour",
   "14-day-royal-egypt": "egypt-private-tour-packages",
   "9-day-egypt-pyramids-luxor-sea": "egypt-private-tours",
-  "14-day-egypt-small-group-tour": "14-day-luxury-egypt-tour-package",
+  "14-day-egypt-small-group-tour": "egypt-small-group-tour",
+  // Interim slug from an earlier revision of update-small-group-part1.sql,
+  // mapped on in case that revision reached production before this one.
+  "14-day-luxury-egypt-tour-package": "egypt-small-group-tour",
 };
 
 // Plain middleware with an exact-path string check, not an app.get("/:slug")

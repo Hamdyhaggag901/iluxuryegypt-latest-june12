@@ -8,17 +8,17 @@
 --   14-day-royal-egypt             -> egypt-private-tour-packages
 --   9-day-egypt-pyramids-luxor-sea -> egypt-private-tours
 --
---   14-day-egypt-small-group-tour -> 14-day-luxury-egypt-tour-package
+--   14-day-egypt-small-group-tour  -> egypt-small-group-tour
 --
--- That last one was requested as "luxury-egypt-tour-packages", which is not
--- usable: tours are served from the site root (App.tsx's catch-all
--- "/:slug"), and "/luxury-egypt-tour-packages" is already the packages
--- landing page (an earlier App.tsx route, the target of the
+-- That last one was originally requested as "luxury-egypt-tour-packages",
+-- which is not usable: tours are served from the site root (App.tsx's
+-- catch-all "/:slug"), and "/luxury-egypt-tour-packages" is already the
+-- packages landing page (an earlier App.tsx route, the target of the
 -- /egypt-tour-packages 301 in server/path-redirects.ts, and a main nav
 -- entry). Wouter matches routes in order, so the tour page would have been
--- unreachable, and that landing page already targets the same keyword. The
--- slug below keeps the keyword without the collision; seo_title,
--- meta_description and focus_keyword still target the phrase itself.
+-- unreachable, and that landing page already targets that keyword. The tour
+-- was re-pointed at "egypt small group tour" instead, which nothing else
+-- claims.
 --
 -- Requires the categories.faqs column (added to the idempotent ALTER TABLE
 -- runner in server/routes.ts, applied on server start).
@@ -48,13 +48,13 @@ SET
 <h2>Why Choose Luxury Small Group Tours in Egypt</h2>
 <p>Travelling in a small group means the guide is genuinely yours, the vehicle is comfortable rather than crowded, and access to <a href="/private-access">restricted sites</a> becomes possible in ways large groups cannot manage. It also makes an <a href="/egypt-private-tours">Egypt private tour</a> experience more affordable, without sacrificing the quality that defines it.</p>
 <h3>What Makes Our Small Group Tours of Egypt Different</h3>
-<p>Group sizes stay small by design, itineraries avoid the midday crush at major sites, and every journey includes at least one experience reserved for a privileged few, whether that means a temple after closing or a <a href="/14-day-luxury-egypt-tour-package">pyramid chamber before the gates open</a>.</p>',
+<p>Group sizes stay small by design, itineraries avoid the midday crush at major sites, and every journey includes at least one experience reserved for a privileged few, whether that means a temple after closing or a <a href="/egypt-small-group-tour">pyramid chamber before the gates open</a>.</p>',
   short_description = 'Small group Egypt tours limited to a handful of travellers, with private Nile cruises, licensed Egyptologist guides, and five-star stays throughout.',
   seo_title = 'Small Group Egypt Tours | Private Luxury Journeys',
   meta_description = 'Discover small group Egypt tours limited to a handful of travellers, with private Nile cruises, expert Egyptologists, and five-star stays throughout.',
   focus_keyword = 'small group egypt tours',
   schema_type = 'CollectionPage',
-  faqs = '[{"id":"357670cc-7a7a-4548-8d47-f18ee7f355f2","question":"How many people are in a small group Egypt tour?","answer":"Our small group Egypt tours are limited to a small number of travellers, typically under twelve, which keeps the experience intimate and allows genuine flexibility in the daily schedule."},{"id":"6f2e2c17-b0a0-4796-a441-58323db9603f","question":"What is the difference between a small group tour and an Egypt private tour?","answer":"A private tour is exclusively yours, while a small group tour shares the journey with a handful of other travellers. Both include private guides and transfers, but small groups offer better value while retaining most of the same access."},{"id":"1f24dd5b-6fdf-4320-bed0-7ba3ff6bb897","question":"Are luxury small group tours Egypt suitable for solo travellers?","answer":"Yes, small groups work particularly well for solo travellers who want company and shared experiences without booking an entirely private itinerary."},{"id":"c9ace741-84cb-4427-8d3c-faf5c1e12439","question":"Do small group tours of Egypt include a Nile cruise?","answer":"Most of our itineraries include a Nile cruise segment, with vessels selected for their size and character rather than capacity."},{"id":"ba015257-d86b-45d9-a460-60aadd55315f","question":"Which sites do these tours cover?","answer":"Itineraries range from the Pyramids of Giza and Luxor''s Valley of the Kings to Abu Simbel, Aswan, and in longer journeys, Siwa Oasis and the Red Sea."},{"id":"21f3b76c-9c98-4f26-a59a-bd95f4aae8a9","question":"How far in advance should I book?","answer":"Because group sizes are capped, popular dates fill early, particularly between October and April. Booking three to six months ahead is recommended."},{"id":"4f4ca784-4b1d-42b7-bc3a-b1dfaabb1cec","question":"Can I extend a small group tour with private days?","answer":"Yes, additional private days can be added before or after any group itinerary, whether for the Red Sea, Alexandria, or further archaeological sites."}]'::jsonb,
+  faqs = '[{"id":"2a7267d6-a1de-415c-a176-84747b20a29a","question":"How many people are in a small group Egypt tour?","answer":"Our small group Egypt tours are limited to a small number of travellers, typically under twelve, which keeps the experience intimate and allows genuine flexibility in the daily schedule."},{"id":"4309c07c-d90b-4f3d-979c-ea3ca3db847e","question":"What is the difference between a small group tour and an Egypt private tour?","answer":"A private tour is exclusively yours, while a small group tour shares the journey with a handful of other travellers. Both include private guides and transfers, but small groups offer better value while retaining most of the same access."},{"id":"e3b6828a-9c5c-42ad-b8d2-1489abb20796","question":"Are luxury small group tours Egypt suitable for solo travellers?","answer":"Yes, small groups work particularly well for solo travellers who want company and shared experiences without booking an entirely private itinerary."},{"id":"52b35d35-a2d0-4d49-a3d0-fa94ca213a97","question":"Do small group tours of Egypt include a Nile cruise?","answer":"Most of our itineraries include a Nile cruise segment, with vessels selected for their size and character rather than capacity."},{"id":"d690c127-d5aa-4a57-8d41-1da6fb8bd72d","question":"Which sites do these tours cover?","answer":"Itineraries range from the Pyramids of Giza and Luxor''s Valley of the Kings to Abu Simbel, Aswan, and in longer journeys, Siwa Oasis and the Red Sea."},{"id":"f975b26f-e0e2-4c3b-9856-3164a8762f85","question":"How far in advance should I book?","answer":"Because group sizes are capped, popular dates fill early, particularly between October and April. Booking three to six months ahead is recommended."},{"id":"efe4c290-2721-4aea-8d6d-14990abbbc90","question":"Can I extend a small group tour with private days?","answer":"Yes, additional private days can be added before or after any group itinerary, whether for the Red Sea, Alexandria, or further archaeological sites."}]'::jsonb,
   updated_at = now()
 WHERE slug = 'small-group-tours-egypt';
 
@@ -68,23 +68,22 @@ WHERE category = 'Small Group Tours Egypt';
 -- ---------------------------------------------------------------------------
 -- Tours: content + SEO
 -- ---------------------------------------------------------------------------
--- 14-day-egypt-small-group-tour -> 14-day-luxury-egypt-tour-package
+-- 14-day-egypt-small-group-tour -> egypt-small-group-tour
 UPDATE tours
 SET
-  slug = '14-day-luxury-egypt-tour-package',
-  title = 'Luxury Egypt Tour Packages: 14-Day Nile Cruise & Temples',
-  description = '<p>Our luxury Egypt tour packages reach their fullest expression over fourteen days, long enough to include the sites almost no visitor reaches. This journey travels through Middle Egypt to Beni Hassan''s painted rock tombs and Tell el-Amarna, the lost capital of Akhenaten and Nefertiti, before joining the Nile at <a href="/destinations/luxor">Luxor</a>.</p>
-<h3>What a Fourteen Day Luxury Egypt Tour Makes Possible</h3>
-<p>What follows is a private cruise aboard MS Le Fayan carrying only your small group, after-hours access to the Valley of the Kings when the gates close to everyone else, and a dawn flight to Abu Simbel. Each luxury Egypt tour on this itinerary includes private Egyptologist guiding throughout, with a maximum of twelve guests, and nights at the <a href="/hotel/mena-house-hotel-egypt">Marriott Mena House</a> beneath the pyramids.</p>
-<p>Fourteen days covers Saqqara and Giza with <a href="/private-access">VIP pyramid access</a>, the Grand Egyptian Museum, Abydos and Dendera, the full Nile route to <a href="/destinations/aswan">Aswan</a>, <a href="/destinations/alexandria">Alexandria</a>''s Greco-Roman sites, and exclusive entry to the active excavation at Taposiris Magna. Shorter itineraries force difficult choices between famous monuments and rare ones. This one removes most of them. Browse the full range of <a href="/luxury-egypt-tour-packages/small-group-egypt-tours">small group Egypt tours</a> for shorter alternatives.</p>',
-  hero_image_alt = 'Private Nile cruise vessel at sunset on a luxury Egypt tour package',
-  focus_keyword = 'luxury egypt tour packages',
-  seo_title = 'Luxury Egypt Tour Packages | 14-Day Nile & Temples',
-  meta_description = 'Our luxury Egypt tour packages span fourteen days of private Nile cruising, rare Middle Egypt sites, and five-star stays in a small group.',
+  slug = 'egypt-small-group-tour',
+  title = 'Egypt Small Group Tour: 14-Day Nile Cruise & Temples',
+  description = '<p>This Egypt small group tour reaches its fullest expression over fourteen days, long enough to include the sites almost no visitor sees. The journey travels through Middle Egypt to Beni Hassan''s painted rock tombs and Tell el-Amarna, the lost capital of Akhenaten and Nefertiti, before joining the Nile at <a href="/destinations/luxor">Luxor</a>.</p>
+<p>What follows is a private cruise aboard MS Le Fayan carrying only your group, after-hours access to the Valley of the Kings when the gates close to everyone else, and a dawn flight to Abu Simbel. <a href="/luxury-egypt-tour-packages/small-group-egypt-tours">Small group tours of Egypt</a> work best when the group stays genuinely small, and this one is capped at twelve guests with private Egyptologist guiding throughout.</p>
+<p>Fourteen days covers Saqqara and Giza with <a href="/private-access">VIP pyramid access</a>, the Grand Egyptian Museum, Abydos and Dendera, the full Nile route to <a href="/destinations/aswan">Aswan</a>, <a href="/destinations/alexandria">Alexandria</a>''s Greco-Roman sites, and exclusive entry to the active excavation at Taposiris Magna. Shorter itineraries force difficult choices between famous monuments and rare ones. This one removes most of them.</p>',
+  hero_image_alt = 'Private Nile cruise vessel at sunset on an Egypt small group tour',
+  focus_keyword = 'egypt small group tour',
+  seo_title = 'Egypt Small Group Tour | 14-Day Nile Cruise & Temples',
+  meta_description = 'This Egypt small group tour spans fourteen days of private Nile cruising, rare Middle Egypt sites, and five-star stays, capped at twelve guests.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"9c51579e-2f2b-4124-a32f-82b93431cc9f","question":"What''s included in your luxury Egypt tour packages?","answer":"All fourteen nights of five-star accommodation, the full Nile cruise aboard MS Le Fayan, private Egyptologist guiding, domestic flights, VIP pyramid access, and every transfer. These luxury Egypt tours include all meals from the welcome dinner onward."},{"id":"6be87698-b9dd-42cf-a76e-24e2da70cdd7","question":"How many travellers join this tour?","answer":"Groups are capped at twelve guests, with a typical size of eight to ten. This keeps the experience closer to a private Egypt tour while remaining more accessible in price."},{"id":"011c7346-81e8-4046-9024-6e7b8f846623","question":"What makes this different from other luxury Egypt tours?","answer":"Middle Egypt. Beni Hassan and Tell el-Amarna sit between Cairo and Luxor, and almost no itinerary includes them. Add after-hours access to the Valley of the Kings and the active dig at Taposiris Magna, and the route becomes genuinely rare."},{"id":"bd5c1474-1d40-42ad-9eb4-17a9084757ee","question":"Is the Nile cruise private?","answer":"The MS Le Fayan carries only your group, so the vessel functions as a private Nile cruise rather than a shared ship with two hundred passengers."},{"id":"50188cfd-c6d9-4082-8aa3-8c8fbb7ed5a4","question":"When is the best time to book this egypt luxury tour package?","answer":"October through April offers the most comfortable weather. Because group sizes are capped, these dates often fill three to six months ahead."}]'::jsonb,
+  faqs = '[{"id":"2ee84f17-359e-46f6-a820-aa6cf5808ed1","question":"What''s included in this Egypt small group tour?","answer":"All fourteen nights of five-star accommodation, the full Nile cruise aboard MS Le Fayan, private Egyptologist guiding, domestic flights, VIP pyramid access, and every transfer, with all meals from the welcome dinner onward."},{"id":"efcbdb76-f02e-45b2-9ac7-f65ec498a02e","question":"How many travellers join this tour?","answer":"Groups are capped at twelve guests, with a typical size of eight to ten, which keeps guiding personal and the pace flexible."},{"id":"0d3efbed-c974-439a-ad57-f3acb0adf5d6","question":"What makes this different from other small group tours of Egypt?","answer":"Middle Egypt. Beni Hassan and Tell el-Amarna sit between Cairo and Luxor, and almost no itinerary includes them. Add after-hours access to the Valley of the Kings and the active dig at Taposiris Magna, and the route becomes genuinely rare."},{"id":"c86667f1-033e-40a3-bff6-f20ddd1f5e7a","question":"Is the Nile cruise private?","answer":"The MS Le Fayan carries only your group, so the vessel functions as a private Nile cruise rather than a shared ship with two hundred passengers."},{"id":"6c83f2e3-1c65-4cc1-9afb-90744c55050f","question":"When should I book this Egypt small group tour?","answer":"October through April offers the most comfortable weather, and because group sizes are capped, these dates often fill three to six months ahead."}]'::jsonb,
   updated_at = now()
-WHERE slug = '14-day-egypt-small-group-tour';
+WHERE slug IN ('14-day-egypt-small-group-tour', '14-day-luxury-egypt-tour-package');
 
 -- 14-day-royal-egypt -> egypt-private-tour-packages
 UPDATE tours
@@ -100,7 +99,7 @@ SET
   seo_title = 'Egypt Private Tour Packages | 14-Day Pyramids & Nile',
   meta_description = 'Egypt private tour packages built around privileged access, from the King''s Chamber at sunrise to Abu Simbel by private charter flight.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"87508c12-de10-4f22-a199-c464ae3f2b02","question":"What private access is included in your Egypt private tour packages?","answer":"Private sunrise entry to the King''s Chamber, the Sphinx Enclosure at archaeologist level, the Pyramid Builders'' Tombs at Dahshur, a private viewing of Tutankhamun''s tomb, and a charter flight to Abu Simbel at dawn."},{"id":"fab7dbc5-299f-4a89-9949-397773042815","question":"How is this different from your other luxury Egypt tours?","answer":"Access. Other itineraries visit the same monuments during public hours. This one opens them before or after, through permits arranged individually for each departure."},{"id":"ff2247ef-207f-4e48-8ea7-eee4d0f6d984","question":"Is the charter flight to Abu Simbel really private?","answer":"Yes, the pre-dawn flight is chartered for your group alone, which is what makes arriving before the tour buses possible."},{"id":"3c86e0c0-d9f1-487a-8712-fa49f40a46a3","question":"What is the Lost Golden City?","answer":"Discovered in 2020, it is the largest ancient urban settlement ever found in Egypt, with preserved workshops, bakeries, and homes from Amenhotep III''s reign, roughly thirty-four hundred years ago."},{"id":"9ebb372d-931a-4a9f-bf2b-d5c99878d6ed","question":"How far ahead should I book this egypt private tour?","answer":"Six months is recommended. The permits required for private pyramid access are limited and allocated well in advance."}]'::jsonb,
+  faqs = '[{"id":"352200ab-78f2-464e-b612-9bb49e59ae0e","question":"What private access is included in your Egypt private tour packages?","answer":"Private sunrise entry to the King''s Chamber, the Sphinx Enclosure at archaeologist level, the Pyramid Builders'' Tombs at Dahshur, a private viewing of Tutankhamun''s tomb, and a charter flight to Abu Simbel at dawn."},{"id":"f209724c-c743-4d11-a399-92489b3f171b","question":"How is this different from your other luxury Egypt tours?","answer":"Access. Other itineraries visit the same monuments during public hours. This one opens them before or after, through permits arranged individually for each departure."},{"id":"5f6f74b2-1e25-44a9-a983-2274ba45d22a","question":"Is the charter flight to Abu Simbel really private?","answer":"Yes, the pre-dawn flight is chartered for your group alone, which is what makes arriving before the tour buses possible."},{"id":"6eef87e1-29ca-4805-83ee-350f66603aca","question":"What is the Lost Golden City?","answer":"Discovered in 2020, it is the largest ancient urban settlement ever found in Egypt, with preserved workshops, bakeries, and homes from Amenhotep III''s reign, roughly thirty-four hundred years ago."},{"id":"6f36984a-c104-421d-8050-4ce1b5d9be2e","question":"How far ahead should I book this egypt private tour?","answer":"Six months is recommended. The permits required for private pyramid access are limited and allocated well in advance."}]'::jsonb,
   updated_at = now()
 WHERE slug = '14-day-royal-egypt';
 
@@ -118,7 +117,7 @@ SET
   seo_title = 'Egypt Private Tours | 9-Day Pyramids, Luxor & Red Sea',
   meta_description = 'Egypt private tours combining the Pyramids and Luxor''s royal tombs with three days of Red Sea beach time, in a small group of twelve.',
   schema_type = 'TouristTrip',
-  faqs = '[{"id":"7c81e060-49fd-4d57-af6f-a0bf9d82f09b","question":"What is included in your Egypt private tours?","answer":"Eight nights of five-star accommodation, all internal flights, a private Egyptologist throughout the cultural days, the Giftun Islands snorkelling excursion with a marine biologist, and all transfers."},{"id":"259f1225-cc14-409d-ba8d-2e779513ef54","question":"Is this a private tour or a small group tour?","answer":"Groups are capped at twelve travellers. Guiding, vehicles, and site entries are handled privately for the group, which delivers most of the benefits of a fully private Egypt tour at a more accessible price."},{"id":"4eda94be-58e5-437c-8a0a-13931ff6fb5c","question":"How much of the itinerary is beach time?","answer":"Three of the nine days are on the Red Sea, with one dedicated snorkelling excursion and two days entirely at leisure."},{"id":"215fe699-8239-4bd2-9e97-9be29e0894b7","question":"Do I need to dive or snorkel to enjoy the Red Sea days?","answer":"No. The Giftun excursion is optional for non-swimmers, and the resort days are unstructured, so time by the pool or in the gardens works equally well."},{"id":"554c0809-e5f9-44fe-aa70-d52de50525b0","question":"Is nine days enough for these luxury Egypt tours?","answer":"Nine days covers Egypt''s essential monuments comfortably while leaving room to rest. Travellers wanting Aswan, Abu Simbel, or a Nile cruise should consider our longer itineraries."}]'::jsonb,
+  faqs = '[{"id":"1d3db981-f469-4e7d-80ff-366d540eebb3","question":"What is included in your Egypt private tours?","answer":"Eight nights of five-star accommodation, all internal flights, a private Egyptologist throughout the cultural days, the Giftun Islands snorkelling excursion with a marine biologist, and all transfers."},{"id":"dfc5cbb2-324d-4c3c-8ba4-7a6a14034de3","question":"Is this a private tour or a small group tour?","answer":"Groups are capped at twelve travellers. Guiding, vehicles, and site entries are handled privately for the group, which delivers most of the benefits of a fully private Egypt tour at a more accessible price."},{"id":"d28e9f75-ddc2-465f-ad89-a6474f4b23c0","question":"How much of the itinerary is beach time?","answer":"Three of the nine days are on the Red Sea, with one dedicated snorkelling excursion and two days entirely at leisure."},{"id":"7ddc0151-17ba-4a8c-a6a1-7c4652a1847e","question":"Do I need to dive or snorkel to enjoy the Red Sea days?","answer":"No. The Giftun excursion is optional for non-swimmers, and the resort days are unstructured, so time by the pool or in the gardens works equally well."},{"id":"cbe16bd0-e4e9-4a88-bec4-a56042252c11","question":"Is nine days enough for these luxury Egypt tours?","answer":"Nine days covers Egypt''s essential monuments comfortably while leaving room to rest. Travellers wanting Aswan, Abu Simbel, or a Nile cruise should consider our longer itineraries."}]'::jsonb,
   updated_at = now()
 WHERE slug = '9-day-egypt-pyramids-luxor-sea';
 
@@ -130,7 +129,7 @@ WHERE slug = '9-day-egypt-pyramids-luxor-sea';
 -- itinerary jsonb is otherwise left untouched.
 -- ---------------------------------------------------------------------------
 
--- 14-day-luxury-egypt-tour-package: "House of Life, Abydo" -> "... Abydos"
+-- egypt-small-group-tour: "House of Life, Abydo" -> "... Abydos"
 -- (days 4 and 5). Scoped to the accommodation key so prose mentioning
 -- Abydos is untouched, and matched on the exact wrong value so re-running
 -- cannot produce "Abydoss".
@@ -146,7 +145,7 @@ SET itinerary = (
   )
   FROM jsonb_array_elements(itinerary) WITH ORDINALITY AS t(day_entry, ord)
 ), updated_at = now()
-WHERE slug = '14-day-luxury-egypt-tour-package'
+WHERE slug = 'egypt-small-group-tour'
   AND jsonb_typeof(itinerary) = 'array'
   AND EXISTS (
     SELECT 1 FROM jsonb_array_elements(itinerary) AS d
@@ -285,7 +284,7 @@ WHERE slug = 'egypt-private-tours' AND jsonb_typeof(itinerary) = 'array';
 UPDATE tours
 SET itinerary = replace(replace(itinerary::text, ' — ', ', '), ' – ', ', ')::jsonb,
     updated_at = now()
-WHERE slug IN ('14-day-luxury-egypt-tour-package', 'egypt-private-tour-packages', 'egypt-private-tours')
+WHERE slug IN ('egypt-small-group-tour', 'egypt-private-tour-packages', 'egypt-private-tours')
   AND (itinerary::text LIKE '% — %' OR itinerary::text LIKE '% – %');
 
 COMMIT;
@@ -300,7 +299,7 @@ FROM categories WHERE slug = 'small-group-egypt-tours';
 SELECT slug, category, focus_keyword, length(seo_title) AS seo_len,
        length(meta_description) AS meta_len, jsonb_array_length(faqs) AS faq_count
 FROM tours
-WHERE slug IN ('14-day-luxury-egypt-tour-package', 'egypt-private-tour-packages', 'egypt-private-tours')
+WHERE slug IN ('egypt-small-group-tour', 'egypt-private-tour-packages', 'egypt-private-tours')
 ORDER BY slug;
 
 -- Every FAQ entry must carry an id, or admin saves silently fail validation.
@@ -311,6 +310,6 @@ GROUP BY slug
 UNION ALL
 SELECT 'tours', slug, count(*)
 FROM tours, jsonb_array_elements(faqs) AS f
-WHERE slug IN ('14-day-luxury-egypt-tour-package', 'egypt-private-tour-packages', 'egypt-private-tours')
+WHERE slug IN ('egypt-small-group-tour', 'egypt-private-tour-packages', 'egypt-private-tours')
   AND NOT (f ? 'id')
 GROUP BY slug;
