@@ -54,7 +54,7 @@ const MOBILE_MAIN_CATEGORIES = [
 ];
 
 const MOBILE_POPULAR_LINKS = [
-  { label: "SMALL GROUP TOURS EGYPT", href: "/luxury-egypt-tour-packages/small-group-tours-egypt" },
+  { label: "SMALL GROUP EGYPT TOURS", href: "/luxury-egypt-tour-packages/small-group-egypt-tours" },
   { label: "LUXURY FAMILY EGYPT", href: "/luxury-egypt-tour-packages/egypt-family-tours" },
   { label: "LUXURY HONEYMOON EGYPT", href: "/luxury-egypt-tour-packages/luxury-honeymoon-egypt" },
   { label: "SOLAR ECLIPSE EGYPT", href: "/luxury-egypt-tour-packages/solar-eclipse-egypt" },

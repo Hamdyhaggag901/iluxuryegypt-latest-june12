@@ -252,10 +252,10 @@ const LEGACY_LEGAL_META: Record<string, StaticMeta> = {
 // injected <title>/description ONLY; the category's `name`/`shortDescription`
 // in the DB (and therefore the on-page heading/copy) are left untouched.
 const CATEGORY_META_OVERRIDES: Record<string, StaticMeta> = {
-  "small-group-tours-egypt": {
-    title: "Small Group Egypt Tours | iLuxury Egypt",
+  "small-group-egypt-tours": {
+    title: "Small Group Egypt Tours | Private Luxury Journeys",
     description:
-      "Join intimate small group tours of Egypt with expert Egyptologist guides, five-star hotels, and Nile cruises. Authentic cultural immersion, never mass tourism.",
+      "Discover small group Egypt tours limited to a handful of travellers, with private Nile cruises, expert Egyptologists, and five-star stays throughout.",
   },
   "egypt-family-tours": {
     title: "Luxury Family Tours Egypt | iLuxury Egypt",

@@ -15,7 +15,7 @@ const CATEGORIES_BASE_PATH = "/luxury-egypt-tour-packages";
 // Short, one-to-two-line taglines for the carousel card (the full paragraph
 // copy on the /luxury-egypt-tour-packages grid is too long for this compact format).
 const CATEGORY_TAGLINE_OVERRIDES: Record<string, string> = {
-  "small-group-tours-egypt": "Intimate groups, licensed Egyptologist guides, five-star stays.",
+  "small-group-egypt-tours": "Small group Egypt tours with licensed Egyptologist guides and five-star stays.",
   "egypt-family-tours": "Private guides and flexible itineraries built for every generation.",
   "egypt-tours-for-solo-travellers": "Egypt tours for solo travellers, shaped entirely around your own pace.",
   "egypt-spiritual-tours": "Sacred temples, quiet reflection, and five-star comfort.",

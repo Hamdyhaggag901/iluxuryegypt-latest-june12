@@ -258,6 +258,7 @@ export const categories = pgTable("categories", {
   robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
   schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD.
   ogImage: text("og_image"), // Optional social-share image override. Falls back to `image` when empty.
+  faqs: jsonb("faqs").$type<Array<{ id: string; question: string; answer: string }>>().notNull().default([]), // Admin-curated FAQ entries rendered on the category page, same shape as tours.faqs.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -829,6 +830,7 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
   robots: z.string().nullable().optional(),
   schemaType: z.string().nullable().optional(),
   ogImage: z.string().nullable().optional(),
+  faqs: z.array(faqSchema).default([]),
 });
 
 export const insertSeasonSchema = createInsertSchema(seasons).omit({

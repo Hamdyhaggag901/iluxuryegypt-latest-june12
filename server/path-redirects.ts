@@ -12,6 +12,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 export const PATH_PREFIX_REDIRECTS: Record<string, string> = {
   "/egypt-tour-packages": "/luxury-egypt-tour-packages",
   "/luxury-egypt-tour-packages/egypt-solo-travel": "/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers",
+  "/luxury-egypt-tour-packages/small-group-tours-egypt": "/luxury-egypt-tour-packages/small-group-egypt-tours",
 };
 
 export function registerPathPrefixRedirects(app: Express) {

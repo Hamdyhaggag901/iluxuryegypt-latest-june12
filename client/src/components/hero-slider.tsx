@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { getResponsiveImageProps } from "@/lib/responsive-image";
 
 const POPULAR_SEARCHES = [
-  { label: "Small Group Tours Egypt", slug: "small-group-tours-egypt" },
+  { label: "Small Group Egypt Tours", slug: "small-group-egypt-tours" },
   { label: "Solar Eclipse Egypt", slug: "solar-eclipse-egypt" },
   { label: "Luxury Honeymoon Egypt", slug: "luxury-honeymoon-egypt" },
 ];

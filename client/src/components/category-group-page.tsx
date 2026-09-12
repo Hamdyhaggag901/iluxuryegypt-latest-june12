@@ -22,8 +22,8 @@ interface CategoryGroupPageProps {
 // (not run through the 150-char truncation below) — these are curated copy,
 // not raw DB content that needs a safety clamp.
 const CATEGORY_DESCRIPTION_OVERRIDES: Record<string, string> = {
-  "small-group-tours-egypt":
-    "Travel in an intimate small group led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries — cultural depth without the crowds.",
+  "small-group-egypt-tours":
+    "Small group Egypt tours led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries, with cultural depth and never the crowds.",
   "egypt-family-tours":
     "Private Egyptologist guides, luxury hotels, and flexible itineraries designed for every generation. Explore the Pyramids, cruise the Nile, and discover Luxor and Aswan with VIP transportation and activities the whole family will remember.",
   "egypt-tours-for-solo-travellers":

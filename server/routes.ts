@@ -2671,6 +2671,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_image text`,
       },
       {
+        name: "categories.faqs",
+        sql: `ALTER TABLE categories ADD COLUMN IF NOT EXISTS faqs jsonb NOT NULL DEFAULT '[]'::jsonb`,
+      },
+      {
         name: "tours.focus_keyword",
         sql: `ALTER TABLE tours ADD COLUMN IF NOT EXISTS focus_keyword text`,
       },
