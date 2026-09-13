@@ -258,9 +258,9 @@ const CATEGORY_META_OVERRIDES: Record<string, StaticMeta> = {
       "Discover small group Egypt tours limited to a handful of travellers, with private Nile cruises, expert Egyptologists, and five-star stays throughout.",
   },
   "egypt-family-tours": {
-    title: "Luxury Family Tours Egypt | iLuxury Egypt",
+    title: "Egypt Family Tours | Private Luxury Journeys",
     description:
-      "Bespoke family vacations in Egypt designed for discerning travelers. Private guides, five-star hotels, and unforgettable experiences for all ages.",
+      "Egypt family tours designed around children's pace, with private guides, five-star stays, and itineraries that balance ancient history with real rest.",
   },
   "egypt-tours-for-solo-travellers": {
     title: "Egypt Tours for Solo Travellers | Private Journeys",
