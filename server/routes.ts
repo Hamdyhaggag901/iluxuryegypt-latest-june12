@@ -2654,6 +2654,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS scheduled_at timestamptz`,
       },
       {
+        // Curated FAQ entries per post, same shape as tours.faqs. Rendered on
+        // the post page and emitted as FAQPage structured data.
+        name: "posts.faqs",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS faqs jsonb NOT NULL DEFAULT '[]'::jsonb`,
+      },
+      {
+        name: "posts.schema_markup",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS schema_markup text`,
+      },
+      {
         // Lets the sitemap and the blog list skip the not-yet-due posts
         // without a sequential scan once there are enough of them to matter.
         name: "posts.scheduled_at index",

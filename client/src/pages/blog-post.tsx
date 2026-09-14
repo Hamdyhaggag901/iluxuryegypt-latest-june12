@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/hooks/use-seo";
+import FaqSection from "@/components/faq-section";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import { Clock, Calendar, User, ArrowLeft, Tag, Share2, Facebook, Twitter, Linkedin, Copy } from "lucide-react";
@@ -471,6 +472,16 @@ export default function BlogPost() {
     .filter((p: any) => post?.category && p.category === post.category && p.slug !== post?.slug)
     .slice(0, 4);
 
+  // Only entries with both halves filled in: a half-written FAQ would render
+  // an empty accordion row and put an empty Question into the structured data.
+  const postFaqs = useMemo(
+    () =>
+      ((post?.faqs || []) as Array<{ id?: string; question?: string; answer?: string }>)
+        .filter((f) => f && f.question?.trim() && f.answer?.trim())
+        .map((f) => ({ question: f.question!, answer: f.answer! })),
+    [post]
+  );
+
   useSEO({
     title: post?.title,
     description: post?.metaDescription || post?.excerpt?.slice(0, 160),
@@ -628,6 +639,15 @@ export default function BlogPost() {
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Curated FAQs, same component and shape the tour and category
+                  pages use. The matching FAQPage structured data is emitted
+                  server side by seo-meta.ts, so nothing is duplicated here. */}
+              {postFaqs.length > 0 && (
+                <div className="mt-16 -mx-4 sm:-mx-6 lg:-mx-8">
+                  <FaqSection faqs={postFaqs} testId="post-faq-section" id="post-faq" />
                 </div>
               )}
             </article>

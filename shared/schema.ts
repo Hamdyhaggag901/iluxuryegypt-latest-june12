@@ -74,6 +74,12 @@ export const posts = pgTable("posts", {
   // zone, unlike the older columns above, because a scheduled time is an
   // instant and "9am" has to mean the editor's 9am.
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+  // Same shape and purpose as tours.faqs and categories.faqs: admin-curated
+  // questions rendered on the post and emitted as FAQPage structured data.
+  faqs: jsonb("faqs").$type<Array<{ id: string; question: string; answer: string }>>().notNull().default([]),
+  // Escape hatch for hand-written JSON-LD on a post that needs something the
+  // generated BlogPosting and FAQPage do not cover. Unused by default.
+  schemaMarkup: text("schema_markup"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -650,6 +656,15 @@ export const insertSectionSchema = createInsertSchema(sections).omit({
   createdAt: true,
 });
 
+// Shared by tours.faqs, categories.faqs, destinations.faqs and posts.faqs.
+// Declared here rather than beside the hotel schemas because insertPostSchema,
+// the first consumer in file order, is defined above those.
+export const faqSchema = z.object({
+  id: z.string(),
+  question: z.string().min(1, "Question is required"),
+  answer: z.string().min(1, "Answer is required"),
+});
+
 export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
@@ -658,6 +673,8 @@ export const insertPostSchema = createInsertSchema(posts).omit({
   // Accepts the ISO string the admin form sends, an actual Date, or null to
   // clear a schedule and publish immediately.
   scheduledAt: z.coerce.date().nullable().optional(),
+  faqs: z.array(faqSchema).default([]),
+  schemaMarkup: z.string().nullable().optional(),
 });
 
 export const insertMediaSchema = createInsertSchema(media).omit({
@@ -687,12 +704,6 @@ export const attractionSchema = z.object({
   description: z.string().min(1, "Attraction description is required"),
   image: z.string().min(1, "Attraction image is required"),
   imageAlt: z.string().optional().default(""),
-});
-
-export const faqSchema = z.object({
-  id: z.string(),
-  question: z.string().min(1, "Question is required"),
-  answer: z.string().min(1, "Answer is required"),
 });
 
 export const insertHotelSchema = createInsertSchema(hotels).omit({

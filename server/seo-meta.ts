@@ -623,12 +623,33 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         },
         ...(post.tags && post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
       };
+
+      // Curated FAQs become their own FAQPage node alongside the BlogPosting,
+      // the same split tours and categories use. injectMetaTags renders one
+      // <script> per array item, so this needs no merging into a @graph.
+      const postFaqs = (post.faqs || []).filter(
+        (f): f is { id: string; question: string; answer: string } =>
+          Boolean(f && f.question?.trim() && f.answer?.trim())
+      );
+      const graph: object[] = [jsonLd];
+      if (postFaqs.length > 0) {
+        graph.push({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: postFaqs.map((f) => ({
+            "@type": "Question",
+            name: f.question,
+            acceptedAnswer: { "@type": "Answer", text: f.answer },
+          })),
+        });
+      }
+
       return {
         title: withSiteName(post.metaTitle || post.titleEn),
         description,
         image,
         type: "article",
-        jsonLd: withBreadcrumbs(jsonLd, [
+        jsonLd: withBreadcrumbs(graph, [
           { name: "Blog", url: "/blog" },
           { name: post.titleEn, url: `/blog/${post.slug}` },
         ]),
