@@ -361,6 +361,40 @@ export default function AdminSettings() {
     errors?: Array<{ name: string; error: string }>;
   } | null>(null);
 
+  const [indexNowResult, setIndexNowResult] = useState<{
+    success: boolean;
+    submitted?: number;
+    batches?: number;
+    reason?: string;
+    retryAfterSeconds?: number;
+    message?: string;
+  } | null>(null);
+
+  const submitIndexNowMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/settings/submit-indexnow", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setIndexNowResult(data);
+      if (!response.ok) {
+        throw new Error(data.reason || data.message || "Submission failed");
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Search engines notified",
+        description: `${data.submitted} URL${data.submitted === 1 ? "" : "s"} submitted.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Submission failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   const runMigrationsMutation = useMutation({
     mutationFn: async () => {
       const token = localStorage.getItem("adminToken");
@@ -1016,6 +1050,56 @@ export default function AdminSettings() {
                         <span>{e.name}: {e.error}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Notify Search Engines (IndexNow) */}
+          {activeSection === "database" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Globe className="h-5 w-5 mr-2" />
+                  Notify Search Engines
+                </CardTitle>
+                <CardDescription>
+                  Submits every URL in the sitemap to IndexNow, which shares it with Bing, Yandex and
+                  other participating engines. Saving a tour, category, destination, hotel or post
+                  already notifies them automatically, so this is for bulk changes made outside the
+                  admin. Google does not use IndexNow and still discovers changes via the sitemap.
+                  Limited to one submission every 10 minutes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={() => submitIndexNowMutation.mutate()}
+                  disabled={submitIndexNowMutation.isPending}
+                  data-testid="button-submit-indexnow"
+                >
+                  {submitIndexNowMutation.isPending ? "Submitting..." : "Notify Search Engines"}
+                </Button>
+
+                {indexNowResult && (
+                  <div className="space-y-2 text-sm">
+                    {indexNowResult.success ? (
+                      <p className="flex items-center gap-2 text-green-600">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        Submitted {indexNowResult.submitted} URLs in {indexNowResult.batches} batch
+                        {indexNowResult.batches === 1 ? "" : "es"}.
+                      </p>
+                    ) : (
+                      <p className="flex items-start gap-2 text-destructive">
+                        <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <span>
+                          {indexNowResult.reason || indexNowResult.message || "Submission failed."}
+                          {indexNowResult.retryAfterSeconds
+                            ? ` Try again in ${Math.ceil(indexNowResult.retryAfterSeconds / 60)} minute(s).`
+                            : ""}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>

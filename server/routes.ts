@@ -50,6 +50,7 @@ import multer from "multer";
 import { optimizeUploadedImage } from "./image-optimize";
 import { registerTourRedirects } from "./tour-redirects";
 import { registerPathPrefixRedirects } from "./path-redirects";
+import { notifyIndexNow, publicUrl, changedUrls, submitSitemap, registerIndexNowRoutes, isIndexNowEnabled } from "./indexnow";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -71,6 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // /luxury-egypt-tour-packages), covering the parent page and every
   // sub-page under it.
   registerPathPrefixRedirects(app);
+  registerIndexNowRoutes(app);
 
   // Agent-readiness discovery routes (api-catalog, ai-catalog.json, agent-skills, MCP)
   registerAgentReadinessRoutes(app);
@@ -757,6 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: authReq.user!.id
       });
 
+      notifyIndexNow([publicUrl.post(post.slug)]);
       res.status(201).json({ success: true, post });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -800,11 +803,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .replace(/^-|-$/g, '');
       }
 
+      // Read first so a slug change notifies the OLD url too: it now 301s,
+      // and the engines have to be told to re-fetch it, not just the new one.
+      const previous = await storage.getPost(req.params.id);
       const post = await storage.updatePost(req.params.id, postData);
       if (!post) {
         return res.status(404).json({ message: 'Post not found' });
       }
 
+      notifyIndexNow(changedUrls(publicUrl.post, previous?.slug, post.slug));
       res.json({ success: true, post });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -821,11 +828,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete post
   app.delete("/api/cms/posts/:id", requireAuth, requireEditor, async (req, res) => {
     try {
+      // Captured before the row goes away, so the URL that just stopped
+      // resolving can still be submitted for a recrawl.
+      const removed = await storage.getPost(req.params.id);
       const deleted = await storage.deletePost(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: 'Post not found' });
       }
       
+      if (removed?.slug) notifyIndexNow([publicUrl.post(removed.slug)]);
       res.json({ success: true, message: 'Post deleted successfully' });
     } catch (error) {
       console.error('Error deleting post:', error);
@@ -907,6 +918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: authReq.user!.id
       });
 
+      notifyIndexNow([publicUrl.hotel(hotel.slug)]);
       res.status(201).json({ success: true, hotel });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -926,11 +938,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authReq = req as AuthenticatedRequest;
       const hotelData = insertHotelSchema.partial().parse(req.body);
       
+      // Read first so a slug change notifies the OLD url too: it now 301s,
+      // and the engines have to be told to re-fetch it, not just the new one.
+      const previous = await storage.getHotel(req.params.id);
       const hotel = await storage.updateHotel(req.params.id, hotelData);
       if (!hotel) {
         return res.status(404).json({ message: 'Hotel not found' });
       }
       
+      notifyIndexNow(changedUrls(publicUrl.hotel, previous?.slug, hotel.slug));
       res.json({ success: true, hotel });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -947,11 +963,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete hotel (admin/editor access)
   app.delete("/api/cms/hotels/:id", requireAuth, requireEditor, async (req, res) => {
     try {
+      // Captured before the row goes away, so the URL that just stopped
+      // resolving can still be submitted for a recrawl.
+      const removed = await storage.getHotel(req.params.id);
       const deleted = await storage.deleteHotel(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: 'Hotel not found' });
       }
       
+      if (removed?.slug) notifyIndexNow([publicUrl.hotel(removed.slug)]);
       res.json({ success: true, message: 'Hotel deleted successfully' });
     } catch (error) {
       console.error('Error deleting hotel:', error);
@@ -1037,6 +1057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: authReq.user!.id
       });
 
+      notifyIndexNow([publicUrl.tour(tour.slug)]);
       res.status(201).json({ success: true, tour });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1495,11 +1516,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authReq = req as AuthenticatedRequest;
       const tourData = insertTourSchema.partial().parse(req.body);
       
+      // Read first so a slug change notifies the OLD url too: it now 301s,
+      // and the engines have to be told to re-fetch it, not just the new one.
+      const previous = await storage.getTour(req.params.id);
       const tour = await storage.updateTour(req.params.id, tourData);
       if (!tour) {
         return res.status(404).json({ message: 'Tour not found' });
       }
       
+      notifyIndexNow(changedUrls(publicUrl.tour, previous?.slug, tour.slug));
       res.json({ success: true, tour });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1516,11 +1541,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete tour (admin/editor access)
   app.delete("/api/cms/tours/:id", requireAuth, requireEditor, async (req, res) => {
     try {
+      // Captured before the row goes away, so the URL that just stopped
+      // resolving can still be submitted for a recrawl.
+      const removed = await storage.getTour(req.params.id);
       const deleted = await storage.deleteTour(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: 'Tour not found' });
       }
 
+      if (removed?.slug) notifyIndexNow([publicUrl.tour(removed.slug)]);
       res.json({ success: true, message: 'Tour deleted successfully' });
     } catch (error) {
       console.error('Error deleting tour:', error);
@@ -1628,6 +1657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: authReq.user!.id
       });
       
+      notifyIndexNow([publicUrl.category(category.slug, category.categoryType)]);
       res.status(201).json({ success: true, category });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1646,11 +1676,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const categoryData = insertCategorySchema.partial().parse(req.body);
       
+      // Read first so a slug change notifies the OLD url too: it now 301s,
+      // and the engines have to be told to re-fetch it, not just the new one.
+      const previous = await storage.getCategory(req.params.id);
       const category = await storage.updateCategory(req.params.id, categoryData);
       if (!category) {
         return res.status(404).json({ message: 'Category not found' });
       }
       
+      notifyIndexNow(
+        changedUrls((slug) => publicUrl.category(slug, category.categoryType), previous?.slug, category.slug)
+      );
       res.json({ success: true, category });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1667,11 +1703,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete category (admin/editor access)
   app.delete("/api/cms/categories/:id", requireAuth, requireEditor, async (req, res) => {
     try {
+      // Captured before the row goes away, so the URL that just stopped
+      // resolving can still be submitted for a recrawl.
+      const removed = await storage.getCategory(req.params.id);
       const deleted = await storage.deleteCategory(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: 'Category not found' });
       }
       
+      if (removed?.slug) notifyIndexNow([publicUrl.category(removed.slug, removed.categoryType)]);
       res.json({ success: true, message: 'Category deleted successfully' });
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -1931,6 +1971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: authReq.user!.id
       });
 
+      notifyIndexNow([publicUrl.destination(destination.slug)]);
       res.status(201).json({ success: true, destination });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -1970,11 +2011,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const authReq = req as AuthenticatedRequest;
       const destinationData = insertDestinationSchema.partial().parse(req.body);
       
+      // Read first so a slug change notifies the OLD url too: it now 301s,
+      // and the engines have to be told to re-fetch it, not just the new one.
+      const previous = await storage.getDestination(req.params.id);
       const destination = await storage.updateDestination(req.params.id, destinationData);
       if (!destination) {
         return res.status(404).json({ message: 'Destination not found' });
       }
       
+      notifyIndexNow(changedUrls(publicUrl.destination, previous?.slug, destination.slug));
       res.json({ success: true, destination });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1991,11 +2036,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete destination (admin/editor access)
   app.delete("/api/cms/destinations/:id", requireAuth, requireEditor, async (req, res) => {
     try {
+      // Captured before the row goes away, so the URL that just stopped
+      // resolving can still be submitted for a recrawl.
+      const removed = await storage.getDestination(req.params.id);
       const deleted = await storage.deleteDestination(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: 'Destination not found' });
       }
       
+      if (removed?.slug) notifyIndexNow([publicUrl.destination(removed.slug)]);
       res.json({ success: true, message: 'Destination deleted successfully' });
     } catch (error) {
       console.error('Error deleting destination:', error);
@@ -2569,6 +2618,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Run schema migrations (admin-only). Idempotently adds columns introduced
   // by the SEO + FAQ feature so the live database matches the current code
   // without needing CLI access.
+  // Backs the "Notify Search Engines" button in Admin Settings. Submits every
+  // URL in the sitemap to IndexNow, for the cases the per-save hooks cannot
+  // cover: a bulk SQL content update, or a first run after enabling the key.
+  app.post("/api/cms/settings/submit-indexnow", requireAuth, requireAdmin, async (req, res) => {
+    if (!isIndexNowEnabled()) {
+      return res.status(400).json({
+        success: false,
+        message: "IndexNow is not configured. Set INDEXNOW_KEY and restart.",
+      });
+    }
+    const result = await submitSitemap(req);
+    if (result.rateLimited) {
+      return res.status(429).json({ success: false, ...result });
+    }
+    res.status(result.ok ? 200 : 502).json({ success: result.ok, ...result });
+  });
+
   app.post("/api/cms/settings/run-migrations", requireAuth, requireAdmin, async (_req, res) => {
     const migrations: Array<{ name: string; sql: string }> = [
       {
