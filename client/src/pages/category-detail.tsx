@@ -142,7 +142,9 @@ export default function CategoryDetail() {
           category's own description is long-form HTML rendered above. */}
       <LuxuryPackagesSection
         category={category.name}
-        title={/\btours?$/i.test(category.name) ? category.name : `${category.name} Tours`}
+        // Names increasingly carry the word themselves ("Egypt Family Tours",
+        // "Egypt Tours for Solo Travellers"), so only append where it is absent.
+        title={/\btours?\b/i.test(category.name) ? category.name : `${category.name} Tours`}
       />
 
       <FaqSection id="category-faq" faqs={categoryFaqs} testId="category-faq-section" />
