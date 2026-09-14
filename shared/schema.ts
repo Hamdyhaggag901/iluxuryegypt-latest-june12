@@ -68,6 +68,12 @@ export const posts = pgTable("posts", {
   metaDescription: text("meta_description"),
   status: text("status").notNull().default("draft"),
   publishedAt: timestamp("published_at"),
+  // When set, the post stays invisible until this moment even though its
+  // status is "published". See shared/post-visibility.ts for the rule and why
+  // it is evaluated at read time rather than flipped by a job. Carries a time
+  // zone, unlike the older columns above, because a scheduled time is an
+  // instant and "9am" has to mean the editor's 9am.
+  scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -648,6 +654,10 @@ export const insertPostSchema = createInsertSchema(posts).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  // Accepts the ISO string the admin form sends, an actual Date, or null to
+  // clear a schedule and publish immediately.
+  scheduledAt: z.coerce.date().nullable().optional(),
 });
 
 export const insertMediaSchema = createInsertSchema(media).omit({

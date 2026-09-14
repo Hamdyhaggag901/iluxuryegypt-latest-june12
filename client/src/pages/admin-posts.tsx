@@ -19,6 +19,7 @@ import { z } from "zod";
 import { FileText, Plus, Edit, Search, ArrowLeft, Trash2, Calendar, X } from "lucide-react";
 import AdminLayout from "@/components/admin-layout";
 import { insertPostSchema } from "@shared/schema";
+import { postState } from "@shared/post-visibility";
 
 // Form validation schema based on insertPostSchema with required fields
 const postFormSchema = insertPostSchema.extend({
@@ -29,6 +30,123 @@ const postFormSchema = insertPostSchema.extend({
 });
 
 type PostFormData = z.infer<typeof postFormSchema>;
+
+// ---------------------------------------------------------------------------
+// Publication control
+// ---------------------------------------------------------------------------
+// The database stores two fields, `status` and `scheduledAt`, but an editor
+// thinks in one choice with three outcomes. This maps between them so the two
+// fields can never end up in a combination nobody meant, such as a draft with
+// a schedule hanging off it.
+
+type Publication = "draft" | "now" | "schedule";
+
+function publicationOf(status: string | undefined, scheduledAt: unknown): Publication {
+  if (status !== "published") return "draft";
+  return scheduledAt ? "schedule" : "now";
+}
+
+// <input type="datetime-local"> speaks local wall-clock time with no zone, and
+// the column is a timestamptz. These two convert across that boundary in the
+// browser's own zone, which is what the editor means by "9am".
+function toLocalInputValue(value: unknown): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalInputValue(value: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatScheduled(value: unknown): string {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit",
+  });
+}
+
+function PublicationField({ form, idPrefix }: { form: any; idPrefix: string }) {
+  const status = form.watch("status");
+  const scheduledAt = form.watch("scheduledAt");
+  const mode = publicationOf(status, scheduledAt);
+  const scheduledDate = scheduledAt ? new Date(String(scheduledAt)) : null;
+  const isPast = !!scheduledDate && !Number.isNaN(scheduledDate.getTime()) && scheduledDate.getTime() <= Date.now();
+
+  const setMode = (next: Publication) => {
+    if (next === "draft") {
+      form.setValue("status", "draft");
+      form.setValue("scheduledAt", null);
+      return;
+    }
+    form.setValue("status", "published");
+    if (next === "now") {
+      form.setValue("scheduledAt", null);
+    } else if (!scheduledAt) {
+      // Seeding tomorrow morning beats an empty box that silently means "now".
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      form.setValue("scheduledAt", tomorrow);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <FormItem>
+        <FormLabel>Publication</FormLabel>
+        <Select onValueChange={(v) => setMode(v as Publication)} value={mode}>
+          <FormControl>
+            <SelectTrigger data-testid={`select-${idPrefix}-publication`}>
+              <SelectValue />
+            </SelectTrigger>
+          </FormControl>
+          <SelectContent>
+            <SelectItem value="draft">Draft, not visible</SelectItem>
+            <SelectItem value="now">Publish now</SelectItem>
+            <SelectItem value="schedule">Schedule for later</SelectItem>
+          </SelectContent>
+        </Select>
+      </FormItem>
+
+      {mode === "schedule" && (
+        <FormField
+          control={form.control}
+          name="scheduledAt"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Goes live at</FormLabel>
+              <FormControl>
+                <Input
+                  type="datetime-local"
+                  data-testid={`input-${idPrefix}-scheduled-at`}
+                  value={toLocalInputValue(field.value)}
+                  onChange={(e) => field.onChange(fromLocalInputValue(e.target.value))}
+                />
+              </FormControl>
+              <p className="text-xs text-gray-500">
+                Your local time. The post stays hidden from the blog, the sitemap and search engines until then.
+              </p>
+              {isPast && (
+                <p className="text-xs text-amber-600" data-testid={`text-${idPrefix}-scheduled-past`}>
+                  That time has already passed, so this will go live as soon as you save.
+                </p>
+              )}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
 
 export default function AdminPosts() {
   const [, setLocation] = useLocation();
@@ -131,6 +249,7 @@ export default function AdminPosts() {
       metaTitle: "",
       metaDescription: "",
       status: "draft",
+      scheduledAt: null,
     },
   });
 
@@ -160,6 +279,7 @@ export default function AdminPosts() {
         metaTitle: editingPost.metaTitle || "",
         metaDescription: editingPost.metaDescription || "",
         status: editingPost.status || "draft",
+        scheduledAt: editingPost.scheduledAt ? new Date(editingPost.scheduledAt) : null,
       });
     }
   }, [editingPost, editForm]);
@@ -230,27 +350,7 @@ export default function AdminPosts() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={createForm.control}
-                        name="status"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger data-testid="select-status">
-                                  <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="published">Published</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <PublicationField form={createForm} idPrefix="create" />
                     </div>
                     
                     <FormField
@@ -495,12 +595,18 @@ export default function AdminPosts() {
                           <h3 className="font-medium text-gray-900" data-testid={`text-title-${post.id}`}>
                             {post.titleEn || "Untitled"}
                           </h3>
-                          <Badge 
-                            variant={post.status === "published" ? "default" : "secondary"}
+                          <Badge
+                            variant={postState(post) === "published" ? "default" : "secondary"}
+                            className={postState(post) === "scheduled" ? "bg-amber-100 text-amber-800 hover:bg-amber-100" : undefined}
                             data-testid={`badge-status-${post.id}`}
                           >
-                            {post.status}
+                            {postState(post)}
                           </Badge>
+                          {postState(post) === "scheduled" && (
+                            <span className="text-xs text-amber-700" data-testid={`text-scheduled-${post.id}`}>
+                              Scheduled for {formatScheduled(post.scheduledAt)}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-gray-600 mb-2" data-testid={`text-slug-${post.id}`}>
                           Slug: {post.slug}
@@ -577,27 +683,7 @@ export default function AdminPosts() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={editForm.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-edit-status">
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="published">Published</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <PublicationField form={editForm} idPrefix="edit" />
               </div>
               
               <FormField

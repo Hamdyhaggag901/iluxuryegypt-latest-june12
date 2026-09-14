@@ -245,3 +245,59 @@ export async function submitSitemap(req: Request): Promise<SubmitResult & { rate
   lastManualSubmission = Date.now();
   return submitUrls(urls);
 }
+
+// ---------------------------------------------------------------------------
+// Scheduled posts
+// ---------------------------------------------------------------------------
+// A scheduled post goes live because wall-clock time passed, not because
+// anything ran. No mutation handler fires at that moment, so the CMS hooks that
+// notify IndexNow on every other change never see it.
+//
+// Rather than a job that flips a flag, each newly-due post is CLAIMED by a
+// single statement:
+//
+//   UPDATE posts SET published_at = now()
+//   WHERE status = 'published' AND scheduled_at <= now() AND published_at IS NULL
+//   RETURNING slug
+//
+// UPDATE ... RETURNING is atomic, so a slug comes back to exactly one caller
+// even if two requests (or two processes) run this at the same instant. That
+// gives exactly-once notification with no new flag column and no lock, and it
+// fills in published_at, which until now stayed null for anything scheduled.
+//
+// Deliberately NOT notifying at save time: submitting the URL when the editor
+// hits save would point the engines at a page that 404s until its date, which
+// is worse for the post than saying nothing.
+// Deliberately NOT gated on isIndexNowEnabled(): claiming the row is also what
+// fills in published_at, which the BlogPosting JSON-LD reads. Skipping the whole
+// thing when no key is configured would make a post's published date depend on
+// an unrelated setting. Only the submission at the end is conditional.
+export async function notifyDuePosts(): Promise<string[]> {
+  try {
+    const { pool } = await import("./db");
+    const client = pool as unknown as { query(text: string): Promise<{ rows: Array<{ slug: string }> }> };
+    const { rows } = await client.query(
+      `UPDATE posts
+          SET published_at = now()
+        WHERE status = 'published'
+          AND scheduled_at IS NOT NULL
+          AND scheduled_at <= now()
+          AND published_at IS NULL
+      RETURNING slug`
+    );
+
+    const slugs = rows.map((r) => r.slug).filter(Boolean);
+    if (slugs.length === 0) return [];
+
+    console.log(`[indexnow] ${slugs.length} scheduled post(s) went live: ${slugs.join(", ")}`);
+    // Blog index as well as the posts: a new article changes that listing too.
+    // notifyIndexNow is itself a no-op when no key is set.
+    notifyIndexNow(["/blog", ...slugs.map((slug) => publicUrl.post(slug))]);
+    return slugs;
+  } catch (error) {
+    // Never allowed to break the caller. The next call picks the same rows up
+    // again, because nothing was claimed if the statement itself failed.
+    console.error("[scheduled-posts] could not claim newly due posts:", error);
+    return [];
+  }
+}

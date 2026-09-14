@@ -50,7 +50,8 @@ import multer from "multer";
 import { optimizeUploadedImage } from "./image-optimize";
 import { registerTourRedirects } from "./tour-redirects";
 import { registerPathPrefixRedirects } from "./path-redirects";
-import { notifyIndexNow, publicUrl, changedUrls, submitSitemap, registerIndexNowRoutes, isIndexNowEnabled } from "./indexnow";
+import { notifyIndexNow, publicUrl, changedUrls, submitSitemap, registerIndexNowRoutes, isIndexNowEnabled, notifyDuePosts } from "./indexnow";
+import { isPostLive } from "@shared/post-visibility";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -73,6 +74,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // sub-page under it.
   registerPathPrefixRedirects(app);
   registerIndexNowRoutes(app);
+
+  // Catches any post whose scheduled moment passed while the process was down.
+  // Not awaited: boot must not wait on an external API, and a failure here is
+  // picked up by the next sitemap fetch anyway.
+  void notifyDuePosts();
 
   // Agent-readiness discovery routes (api-catalog, ai-catalog.json, agent-skills, MCP)
   registerAgentReadinessRoutes(app);
@@ -703,7 +709,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/blog/posts", async (req, res) => {
     try {
       const allPosts = await storage.getPosts();
-      const publishedPosts = allPosts.filter(post => post.status === "published");
+      // isPostLive, not a bare status check: a post with a future scheduled_at
+      // is "published" but must not appear yet.
+      const publishedPosts = allPosts.filter((post) => isPostLive(post));
       res.json({ success: true, posts: publishedPosts });
     } catch (error) {
       console.error('Error fetching published posts:', error);
@@ -718,7 +726,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!post) {
         return res.status(404).json({ message: 'Blog post not found' });
       }
-      if (post.status !== "published") {
+      // A scheduled post 404s until its moment, the same as a draft. Anything
+      // softer (a 200 with a teaser, a 403) would let it be crawled early.
+      if (!isPostLive(post)) {
         return res.status(404).json({ message: 'Blog post not found' });
       }
       res.json({ success: true, post });
@@ -2637,6 +2647,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/cms/settings/run-migrations", requireAuth, requireAdmin, async (_req, res) => {
     const migrations: Array<{ name: string; sql: string }> = [
+      {
+        // Scheduled publishing. Nullable, so every existing post keeps
+        // behaving exactly as it does today the moment this lands.
+        name: "posts.scheduled_at",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS scheduled_at timestamptz`,
+      },
+      {
+        // Lets the sitemap and the blog list skip the not-yet-due posts
+        // without a sequential scan once there are enough of them to matter.
+        name: "posts.scheduled_at index",
+        sql: `CREATE INDEX IF NOT EXISTS posts_status_scheduled_at_idx ON posts (status, scheduled_at)`,
+      },
       {
         name: "destinations.seo_title",
         sql: `ALTER TABLE destinations ADD COLUMN IF NOT EXISTS seo_title text`,
@@ -4747,6 +4769,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Dynamic content from database
+      // Any post whose scheduled moment has passed is claimed and submitted to
+      // IndexNow here, before the sitemap is built, so this response already
+      // contains it. Awaited because the claim is what decides whether the URL
+      // belongs in the XML below; the submission itself is fire and forget.
+      await notifyDuePosts();
+
       const [tours, destinations, categories, posts, hotelsList, legalPages] = await Promise.all([
         storage.getTours().catch(() => []),
         storage.getDestinations().catch(() => []),
@@ -4826,7 +4854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Blog posts — only published ones (posts use a status enum, not a boolean)
       for (const post of posts) {
-        if (post.slug && post.status === "published") {
+        if (post.slug && isPostLive(post)) {
           xml += `  <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>
     <lastmod>${post.updatedAt ? new Date(post.updatedAt).toISOString().split("T")[0] : now}</lastmod>

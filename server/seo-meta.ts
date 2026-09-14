@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { isPostLive } from "@shared/post-visibility";
 import type { Facility, Tour } from "@shared/schema";
 import { getLegalPageHref } from "@shared/schema";
 import { stripHtml } from "@shared/strip-html";
@@ -587,7 +588,10 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
 
     if ((match = pathname.match(/^\/blog\/([^/]+)\/?$/))) {
       const post = await storage.getPostBySlug(decodeURIComponent(match[1]));
-      if (!post || post.status !== "published") return null;
+      // Returning null leaves the site default meta on the page, so a
+      // scheduled post has no title, description or BlogPosting JSON-LD of its
+      // own for a crawler to pick up before it is live.
+      if (!post || !isPostLive(post)) return null;
       const description = truncate(post.metaDescription || post.excerpt || DEFAULT_DESCRIPTION, 160);
       const image = post.featuredImage || DEFAULT_IMAGE;
       // No byline field exists on posts (only `createdBy`, an internal admin
