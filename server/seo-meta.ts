@@ -120,9 +120,9 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
     description: "I.LuxuryEgypt is trusted by discerning travelers worldwide for luxury Egypt travel experiences.",
   },
   "/egypt-travel-guide": {
-    title: "Egypt Destinations - Luxury Travel Guide",
+    title: "Egypt Travel Guide | Cities, Sites and Seasons",
     description:
-      "Explore Egypt's most extraordinary destinations. From ancient temples and pyramids to pristine Red Sea coastlines.",
+      "An Egypt travel guide to Cairo, Luxor, Aswan, Alexandria, Hurghada and Siwa Oasis, covering what each place holds, when to go, and how long to stay.",
   },
   "/luxury-egypt-tour-packages": {
     title: "Luxury Egypt Tour Packages | Private Journeys – iLuxury Egypt",

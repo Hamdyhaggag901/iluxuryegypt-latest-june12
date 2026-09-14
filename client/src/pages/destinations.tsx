@@ -82,8 +82,9 @@ export default function Destinations() {
   const faqJsonLd = buildFaqJsonLd(GENERAL_EGYPT_FAQS);
 
   useSEO({
-    title: "Egypt Destinations - Luxury Travel Guide",
-    description: "Explore Egypt's most extraordinary destinations. From ancient temples and pyramids to pristine Red Sea coastlines.",
+    title: "Egypt Travel Guide | Cities, Sites and Seasons",
+    description:
+      "An Egypt travel guide to Cairo, Luxor, Aswan, Alexandria, Hurghada and Siwa Oasis, covering what each place holds, when to go, and how long to stay.",
     jsonLd: faqJsonLd,
   });
 
@@ -107,11 +108,37 @@ export default function Destinations() {
             Egypt Destinations
           </span>
           <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-serif font-bold mt-4 mb-6">
-            Explore Egypt's Iconic Destinations
+            Egypt Travel Guide
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-white/85 max-w-2xl mx-auto leading-relaxed">
             From the pyramids of Giza to the temples of Luxor and the shores of the Red Sea — every
             city tells its own chapter of Egypt's story.
+          </p>
+        </div>
+      </section>
+
+      {/* Intro copy. Links every city by its own slug so the guide reads as one
+          piece rather than a grid of cards with no connective tissue. */}
+      <section className="py-12 md:py-16 bg-background">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-base md:text-lg text-muted-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2">
+          <p>
+            This Egypt travel guide covers the six places most journeys are built around, with
+            what each one actually holds and how much time it deserves. Begin with the{" "}
+            <Link href="/egypt-travel-guide/cairo-travel-guide" className="text-accent underline underline-offset-2">Cairo Egypt travel guide</Link>{" "}
+            for the Giza plateau and the Grand Egyptian Museum, then move south to{" "}
+            <Link href="/egypt-travel-guide/attractions-in-luxor" className="text-accent underline underline-offset-2">Luxor's royal tombs and temple complexes</Link>{" "}
+            and{" "}
+            <Link href="/egypt-travel-guide/aswan-egypt-attractions" className="text-accent underline underline-offset-2">Aswan, where the Nile narrows between granite islands</Link>.
+          </p>
+          <p>
+            On the coast,{" "}
+            <Link href="/egypt-travel-guide/alexandria-egypt-attractions" className="text-accent underline underline-offset-2">Alexandria keeps its Greco-Roman layers</Link>{" "}
+            and{" "}
+            <Link href="/egypt-travel-guide/things-to-do-in-hurghada" className="text-accent underline underline-offset-2">Hurghada opens onto the Red Sea reefs</Link>, while{" "}
+            <Link href="/egypt-travel-guide/siwa-oasis-egypt" className="text-accent underline underline-offset-2">Siwa lies far west in the Western Desert</Link>,
+            Berber-speaking and still largely its own world. Together they work as an ancient Egypt
+            travel guide and a practical travel guide in Egypt: temples and tombs on one side,
+            seasons, transport and realistic pacing on the other.
           </p>
         </div>
       </section>
