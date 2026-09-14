@@ -219,7 +219,7 @@ export default function AdminDestinations() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`/destinations/${destination.slug}`, '_blank')}
+                        onClick={() => window.open(`/egypt-travel-guide/${destination.slug}`, '_blank')}
                         data-testid={`button-view-${destination.id}`}
                       >
                         <Eye className="h-4 w-4 mr-1" />

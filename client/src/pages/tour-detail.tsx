@@ -445,7 +445,7 @@ export default function TourDetail() {
       {linkedDestination && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 md:-mt-10 mb-6 md:mb-10 text-center">
           <Link
-            href={`/destinations/${linkedDestination.slug}`}
+            href={`/egypt-travel-guide/${linkedDestination.slug}`}
             className="group inline-flex items-center gap-2 text-sm md:text-base font-medium text-primary hover:text-accent transition-colors duration-300"
             data-testid="link-explore-tour-destination"
           >

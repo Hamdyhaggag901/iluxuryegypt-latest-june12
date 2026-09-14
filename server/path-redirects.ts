@@ -18,6 +18,21 @@ export const PATH_PREFIX_REDIRECTS: Record<string, string> = {
   // the sitemap only ever emits the parent-path URLs.
   "/categories/egypt-solo-travel": "/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers",
   "/categories/small-group-tours-egypt": "/luxury-egypt-tour-packages/small-group-egypt-tours",
+
+  // /destinations -> /egypt-travel-guide, where the destination slugs changed
+  // in the same move. ORDER MATTERS: the loop below returns on the first
+  // match, so each old slug has to be listed BEFORE the bare /destinations
+  // prefix. Otherwise /destinations/cairo would match the prefix first and
+  // redirect to /egypt-travel-guide/cairo, which no longer exists.
+  "/destinations/cairo": "/egypt-travel-guide/cairo-travel-guide",
+  "/destinations/luxor": "/egypt-travel-guide/attractions-in-luxor",
+  "/destinations/aswan": "/egypt-travel-guide/aswan-egypt-attractions",
+  "/destinations/alexandria": "/egypt-travel-guide/alexandria-egypt-attractions",
+  "/destinations/hurghada": "/egypt-travel-guide/things-to-do-in-hurghada",
+  "/destinations/siwa-oasis": "/egypt-travel-guide/siwa-oasis-egypt",
+  // Catch-all for the landing page itself and any destination whose slug did
+  // not change.
+  "/destinations": "/egypt-travel-guide",
 };
 
 export function registerPathPrefixRedirects(app: Express) {

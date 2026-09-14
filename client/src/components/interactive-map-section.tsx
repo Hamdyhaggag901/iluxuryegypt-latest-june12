@@ -184,7 +184,7 @@ export default function InteractiveMapSection() {
 
         {/* Explore All Destinations — clear CTA to the full destinations landing page */}
         <div className="mt-20 flex justify-center items-center">
-          <Link href="/destinations" data-testid="link-explore-all-destinations">
+          <Link href="/egypt-travel-guide" data-testid="link-explore-all-destinations">
             <div className="group inline-flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-full cursor-pointer shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
               <MapPin className="h-5 w-5 text-accent" />
               <span className="text-sm md:text-base font-medium tracking-wide">Explore All Egypt Destinations</span>

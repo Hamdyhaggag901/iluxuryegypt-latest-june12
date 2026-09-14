@@ -119,7 +119,7 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
     title: "Trusted Worldwide",
     description: "I.LuxuryEgypt is trusted by discerning travelers worldwide for luxury Egypt travel experiences.",
   },
-  "/destinations": {
+  "/egypt-travel-guide": {
     title: "Egypt Destinations - Luxury Travel Guide",
     description:
       "Explore Egypt's most extraordinary destinations. From ancient temples and pyramids to pristine Red Sea coastlines.",
@@ -192,7 +192,7 @@ const STATIC_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   "/about/iluxury-difference": [{ name: "The iLuxury Difference", url: "/about/iluxury-difference" }],
   "/about/your-experience": [{ name: "Your Experience", url: "/about/your-experience" }],
   "/about/trusted-worldwide": [{ name: "Trusted Worldwide", url: "/about/trusted-worldwide" }],
-  "/destinations": [{ name: "Destinations", url: "/destinations" }],
+  "/egypt-travel-guide": [{ name: "Destinations", url: "/egypt-travel-guide" }],
   "/luxury-egypt-tour-packages": [{ name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" }],
   "/luxury-egypt-tour-packages/classic-egypt": [
     { name: "Luxury Egypt Tour Packages", url: "/luxury-egypt-tour-packages" },
@@ -480,8 +480,8 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
 
   // Destinations landing page — ItemList of published destinations, built
   // from live DB data on top of the otherwise-static title/description.
-  if (normalized === "/destinations") {
-    const meta = STATIC_PAGE_META["/destinations"];
+  if (normalized === "/egypt-travel-guide") {
+    const meta = STATIC_PAGE_META["/egypt-travel-guide"];
     try {
       const allDestinations = await storage.getDestinations();
       const published = allDestinations.filter((d) => d.published);
@@ -494,7 +494,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
                 "@type": "ListItem",
                 position: index + 1,
                 name: d.name,
-                url: `${SITE_URL}/destinations/${d.slug}`,
+                url: `${SITE_URL}/egypt-travel-guide/${d.slug}`,
               })),
             }
           : undefined;
@@ -503,7 +503,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
-        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/destinations"]),
+        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/egypt-travel-guide"]),
       };
     } catch (err) {
       console.error("[seo-meta] Failed to resolve destinations ItemList:", err);
@@ -512,7 +512,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
-        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/destinations"]),
+        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/egypt-travel-guide"]),
       };
     }
   }
@@ -631,7 +631,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       };
     }
 
-    if ((match = pathname.match(/^\/destinations\/([^/]+)\/?$/))) {
+    if ((match = pathname.match(/^\/egypt-travel-guide\/([^/]+)\/?$/))) {
       const destination = await storage.getDestinationBySlug(decodeURIComponent(match[1]));
       if (!destination || destination.published === false) return null;
       return {
@@ -645,8 +645,8 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         canonical: destination.canonicalUrl?.trim() || undefined,
         robots: destination.robots?.trim() || undefined,
         jsonLd: buildBreadcrumbJsonLd([
-          { name: "Destinations", url: "/destinations" },
-          { name: destination.name, url: `/destinations/${destination.slug}` },
+          { name: "Destinations", url: "/egypt-travel-guide" },
+          { name: destination.name, url: `/egypt-travel-guide/${destination.slug}` },
         ]),
       };
     }

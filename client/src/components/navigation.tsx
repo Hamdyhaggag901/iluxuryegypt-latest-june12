@@ -32,7 +32,7 @@ const defaultNavItems = [
     { label: "Your Experience Includes", href: "/about/your-experience" },
     { label: "Trusted Worldwide", href: "/about/trusted-worldwide" },
   ]},
-  { label: "Destinations", id: "destinations", type: "page" as const, href: "/destinations" },
+  { label: "Destinations", id: "destinations", type: "page" as const, href: "/egypt-travel-guide" },
   { label: "Experiences", id: "experiences", type: "dropdown" as const, subItems: [
     { label: "Packages", href: "/luxury-egypt-tour-packages" },
     { label: "Day Tours", href: "/egypt-day-tours" },
@@ -47,7 +47,7 @@ const defaultNavItems = [
 // information architecture (main categories / Popular / additional links)
 // deliberately differs from the desktop dropdown nav above.
 const MOBILE_MAIN_CATEGORIES = [
-  { label: "Egypt Destinations", href: "/destinations" },
+  { label: "Egypt Destinations", href: "/egypt-travel-guide" },
   { label: "Egypt Tour Packages", href: "/luxury-egypt-tour-packages" },
   { label: "Egypt Day Tours", href: "/egypt-day-tours" },
   { label: "Stay", href: "/stay" },

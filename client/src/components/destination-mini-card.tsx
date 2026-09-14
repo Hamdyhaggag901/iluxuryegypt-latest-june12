@@ -21,7 +21,7 @@ export default function DestinationMiniCard({ slug, name, image, index = 0 }: De
       transition={{ duration: 0.5, delay: (index % 6) * 0.08, ease: "easeOut" }}
     >
       <Link
-        href={`/destinations/${slug}`}
+        href={`/egypt-travel-guide/${slug}`}
         className="group block relative aspect-square overflow-hidden rounded-full"
         data-testid={`destination-mini-card-${slug}`}
       >

@@ -26,7 +26,7 @@ export default function DestinationCityCard({ slug, name, region, tagline, image
       whileHover={{ y: -6 }}
       transition={{ duration: 0.6, delay: (index % 6) * 0.1, ease: "easeOut" }}
     >
-      <Link href={`/destinations/${slug}`} className="group block" data-testid={`destination-card-${slug}`}>
+      <Link href={`/egypt-travel-guide/${slug}`} className="group block" data-testid={`destination-card-${slug}`}>
         <div className="relative">
           <div
             className="aspect-[3/4] overflow-hidden transition-[filter] duration-500 ease-out group-hover:[filter:drop-shadow(0_20px_20px_rgb(0_0_0/0.3))]"

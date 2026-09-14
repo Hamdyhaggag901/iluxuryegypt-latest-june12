@@ -59,7 +59,7 @@ interface Destination {
 }
 
 export default function DestinationDetail() {
-  const [, params] = useRoute('/destinations/:slug');
+  const [, params] = useRoute('/egypt-travel-guide/:slug');
   const slug = params?.slug;
 
   const { data: destination, isLoading, error } = useQuery<Destination>({
@@ -158,7 +158,7 @@ export default function DestinationDetail() {
             <h1 className="text-4xl font-serif font-bold text-primary mb-4">Destination Not Found</h1>
             <p className="text-muted-foreground mb-8">The destination you're looking for doesn't exist.</p>
             <Button asChild>
-              <Link href="/destinations">View All Destinations</Link>
+              <Link href="/egypt-travel-guide">View All Destinations</Link>
             </Button>
           </div>
         </div>
@@ -215,7 +215,7 @@ export default function DestinationDetail() {
               <Link href="/contact">Plan Your Experience</Link>
             </Button>
             <Button size="lg" variant="secondary" className="px-5 md:px-8 py-3 md:py-4 text-sm md:text-lg" asChild data-testid="button-view-all-destinations">
-              <Link href="/destinations">View All Destinations</Link>
+              <Link href="/egypt-travel-guide">View All Destinations</Link>
             </Button>
           </div>
         </div>
@@ -351,7 +351,7 @@ export default function DestinationDetail() {
               <Link href="/contact">Contact Our Specialists</Link>
             </Button>
             <Button size="lg" variant="outline" className="px-5 md:px-8 py-3 md:py-4 text-sm md:text-lg w-full sm:w-auto sm:min-w-[220px] border-white text-white hover:bg-white hover:text-primary" asChild data-testid="button-view-all-egypt-destinations">
-              <Link href="/destinations">View All Destinations</Link>
+              <Link href="/egypt-travel-guide">View All Destinations</Link>
             </Button>
           </div>
         </div>

@@ -294,7 +294,7 @@ export default function HotelDetail() {
 
             {linkedDestination && (
               <Link
-                href={`/destinations/${linkedDestination.slug}`}
+                href={`/egypt-travel-guide/${linkedDestination.slug}`}
                 onClick={(e) => e.stopPropagation()}
                 className="group inline-flex items-center gap-1.5 mt-3 text-sm md:text-base text-white/90 hover:text-white transition-colors duration-300"
                 data-testid="link-explore-hotel-destination"
@@ -452,7 +452,7 @@ export default function HotelDetail() {
               </div>
               <div className="text-center mt-10">
                 <Link
-                  href={`/destinations/${linkedDestination.slug}`}
+                  href={`/egypt-travel-guide/${linkedDestination.slug}`}
                   className="group inline-flex items-center gap-2 text-primary font-medium hover:text-accent transition-colors duration-300"
                   data-testid="link-nearby-attractions-view-more"
                 >

@@ -66,7 +66,7 @@ export default function HotelRevealCard({ hotel, destinations, index = 0 }: Hote
           </div>
           {linkedDestination && (
             <Link
-              href={`/destinations/${linkedDestination.slug}`}
+              href={`/egypt-travel-guide/${linkedDestination.slug}`}
               className="group/link inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-accent hover:text-white transition-colors duration-300"
               data-testid={`link-hotel-destination-${hotel.slug}`}
             >

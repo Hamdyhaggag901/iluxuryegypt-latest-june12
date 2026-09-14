@@ -78,7 +78,7 @@ export default function Alexandria() {
               <Link href="/contact">Plan Your Alexandria Experience</Link>
             </Button>
             <Button size="lg" variant="secondary" className="px-8 py-4 text-lg" asChild data-testid="button-view-all-destinations">
-              <Link href="/destinations">View All Destinations</Link>
+              <Link href="/egypt-travel-guide">View All Destinations</Link>
             </Button>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function Alexandria() {
               <Link href="/contact">Contact Our Alexandria Specialists</Link>
             </Button>
             <Button size="lg" variant="outline" className="px-8 py-4 text-lg min-w-[220px] border-white text-white hover:bg-white hover:text-primary" asChild data-testid="button-view-all-egypt-destinations">
-              <Link href="/destinations">View All Egypt Destinations</Link>
+              <Link href="/egypt-travel-guide">View All Egypt Destinations</Link>
             </Button>
           </div>
         </div>

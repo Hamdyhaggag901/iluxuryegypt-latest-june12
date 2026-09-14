@@ -33,7 +33,7 @@ export default function SiwaOasis() {
                 Plan Your Siwa Journey
               </Button>
             </Link>
-            <Link href="/destinations">
+            <Link href="/egypt-travel-guide">
               <Button size="lg" variant="outline" className="px-8 py-4 text-lg min-w-[200px] border-white text-white hover:bg-white hover:text-primary" data-testid="button-explore-destinations">
                 Explore More Destinations
               </Button>
@@ -69,7 +69,7 @@ export default function SiwaOasis() {
       <section className="py-20 bg-background">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-12">
-            <Link href="/destinations">
+            <Link href="/egypt-travel-guide">
               <Button variant="ghost" className="mb-8" data-testid="button-back-destinations">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Destinations

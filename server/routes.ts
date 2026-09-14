@@ -4645,7 +4645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Static pages
       const staticPages = [
         { url: "/", priority: "1.0", changefreq: "weekly" },
-        { url: "/destinations", priority: "0.9", changefreq: "weekly" },
+        { url: "/egypt-travel-guide", priority: "0.9", changefreq: "weekly" },
         { url: "/luxury-egypt-tour-packages", priority: "0.9", changefreq: "weekly" },
         { url: "/egypt-day-tours", priority: "0.8", changefreq: "weekly" },
         { url: "/egypt-nile-cruise-tours", priority: "0.8", changefreq: "weekly" },
@@ -4722,7 +4722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const dest of destinations) {
         if (dest.slug && dest.published !== false) {
           xml += `  <url>
-    <loc>${baseUrl}/destinations/${dest.slug}</loc>
+    <loc>${baseUrl}/egypt-travel-guide/${dest.slug}</loc>
     <lastmod>${dest.updatedAt ? new Date(dest.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
