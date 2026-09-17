@@ -2,7 +2,7 @@ export default {
   slug: "what-to-see-in-luxor",
   primary: "what to see in luxor",
   secondary: ["what to do in luxor egypt", "luxor sightseeing"],
-  category: "Travel Guides",
+  category: "Destinations",
   tags: ["Luxor", "Karnak", "West Bank", "Itineraries"],
   titleEn: "What to See in Luxor: Two Days, Two Banks",
   metaTitle: "What to See in Luxor: A Two Day Plan",

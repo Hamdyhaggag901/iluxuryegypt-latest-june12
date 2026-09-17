@@ -2,7 +2,7 @@ export default {
   slug: "dahshur-pyramids-egypt",
   primary: "dahshur pyramids egypt",
   secondary: ["dahshur pyramids", "saqqara pyramid egypt", "bent pyramid"],
-  category: "Travel Guides",
+  category: "Culture & History",
   tags: ["Dahshur", "Saqqara", "Pyramids", "Cairo"],
   titleEn: "Dahshur Pyramids Egypt: Saqqara Without the Crowds",
   metaTitle: "Dahshur Pyramids Egypt: Pyramids Without Crowds",

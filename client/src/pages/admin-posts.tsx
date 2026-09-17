@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,8 @@ import { FileText, Plus, Edit, Search, ArrowLeft, Trash2, Calendar, X } from "lu
 import AdminLayout from "@/components/admin-layout";
 import { insertPostSchema } from "@shared/schema";
 import { postState } from "@shared/post-visibility";
+import { POST_CATEGORIES } from "@shared/post-categories";
+import { parseBodyImages, setBodyImageAlt, type BodyImage } from "@/lib/body-images";
 
 // Form validation schema based on insertPostSchema with required fields
 const postFormSchema = insertPostSchema.extend({
@@ -30,6 +32,11 @@ const postFormSchema = insertPostSchema.extend({
 });
 
 type PostFormData = z.infer<typeof postFormSchema>;
+
+/** Occurrences of an opening tag, used to detect content lost in a round trip. */
+function countTag(html: string, tag: string): number {
+  return html.split(tag).length - 1;
+}
 
 // ---------------------------------------------------------------------------
 // SEO overrides
@@ -43,6 +50,66 @@ const SCHEMA_TYPES = ["BlogPosting", "Article", "NewsArticle", "TravelGuide", "F
 
 /** Blank means "use the default", which is null in the database. */
 const orNull = (v: string) => (v.trim() === "" ? null : v);
+
+// ---------------------------------------------------------------------------
+// Alt text for images inside the article body
+// ---------------------------------------------------------------------------
+// The figures live as raw HTML in body_en. Rather than storing their alt text
+// in a parallel column that can drift from what actually renders, this reads
+// the tags out of the body and writes changes straight back into it. The body
+// stays the single source of truth, and a figure moved in the editor carries
+// its alt with it.
+
+function BodyImageAltFields({ html, onChange, idPrefix }: { html: string; onChange: (next: string) => void; idPrefix: string }) {
+  const images = useMemo(() => parseBodyImages(html), [html]);
+
+  if (images.length === 0) return null;
+
+  const update = (index: number, alt: string) => onChange(setBodyImageAlt(html, index, alt));
+
+  return (
+    <div className="border-t pt-4 mt-6">
+      <h3 className="text-lg font-semibold mb-1">Images in the Article</h3>
+      <p className="text-xs text-gray-500 mb-4">
+        {images.length} image{images.length === 1 ? "" : "s"} found in the body. Editing an alt here rewrites it
+        inside the article HTML. Where the visible caption still matches the alt, it is updated too.
+      </p>
+
+      <div className="space-y-4">
+        {images.map((image: BodyImage) => {
+          const words = image.alt.trim() ? image.alt.trim().split(/\s+/).length : 0;
+          const inRange = words >= 8 && words <= 15;
+          return (
+            <div key={image.index} className="flex gap-3 items-start" data-testid={`${idPrefix}-body-image-${image.index}`}>
+              <img
+                src={image.src}
+                alt=""
+                className="w-24 h-16 object-cover rounded border flex-shrink-0 bg-gray-100"
+                loading="lazy"
+              />
+              <div className="flex-1 min-w-0">
+                <label className="text-sm font-medium text-gray-700">Alt text</label>
+                <Input
+                  className="mt-1"
+                  placeholder="Describe what this photo shows, 8 to 15 words"
+                  value={image.alt}
+                  onChange={(e) => update(image.index, e.target.value)}
+                  data-testid={`input-${idPrefix}-body-image-alt-${image.index}`}
+                />
+                <p className={`text-xs mt-1 ${image.alt.trim() === "" ? "text-red-600" : inRange ? "text-green-600" : "text-amber-600"}`}>
+                  {image.alt.trim() === ""
+                    ? "Empty. A screen reader will announce nothing for this image."
+                    : `${words} words${inRange ? "" : ", aim for 8 to 15"}`}
+                </p>
+                <p className="text-xs text-gray-400 truncate" title={image.src}>{image.src}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function SeoOverrideFields({ form, idPrefix }: { form: any; idPrefix: string }) {
   const metaDescription: string = form.watch("metaDescription") || "";
@@ -224,7 +291,6 @@ function SeoOverrideFields({ form, idPrefix }: { form: any; idPrefix: string }) 
   );
 }
 
-
 // ---------------------------------------------------------------------------
 // Publication control
 // ---------------------------------------------------------------------------
@@ -341,7 +407,6 @@ function PublicationField({ form, idPrefix }: { form: any; idPrefix: string }) {
   );
 }
 
-
 export default function AdminPosts() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -350,8 +415,13 @@ export default function AdminPosts() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingPost, setDeletingPost] = useState<any>(null);
+  // The article body exactly as it came from the API. Tiptap's StarterKit has
+  // no node for tables, figures or mark, so merely opening the editor strips
+  // them from the form value. Alt edits are applied to THIS string, and it is
+  // what gets saved unless the admin actually typed in the editor.
+  const [pristineBody, setPristineBody] = useState<string>("");
+  const bodyUserEdited = useRef(false);
   const { toast } = useToast();
-
 
   const { data: postsResponse, isLoading } = useQuery({
     queryKey: ["/api/cms/posts"],
@@ -460,6 +530,8 @@ export default function AdminPosts() {
   // Reset edit form when editing post changes
   useEffect(() => {
     if (editingPost) {
+      setPristineBody(editingPost.bodyEn || "");
+      bodyUserEdited.current = false;
       editForm.reset({
         slug: editingPost.slug || "",
         titleEn: editingPost.titleEn || "",
@@ -493,9 +565,30 @@ export default function AdminPosts() {
   };
 
   const onEditSubmit = (data: PostFormData) => {
-    if (editingPost) {
-      updatePostMutation.mutate({ id: editingPost.id, data });
+    if (!editingPost) return;
+
+    // Untouched editor means the prose did not change, so the article is saved
+    // as it was loaded, carrying only the alt edits made above. This is what
+    // stops an admin opening a post to fix one word of alt text and silently
+    // deleting every comparison table in it.
+    const body = bodyUserEdited.current ? (data.bodyEn || "") : pristineBody;
+
+    const structural = ["<table", "<figure", "<figcaption", "<mark", "<th", "<td"];
+    const lost = structural.filter(
+      (tag) => countTag(body, tag) < countTag(editingPost.bodyEn || "", tag)
+    );
+    if (lost.length > 0) {
+      toast({
+        title: "Save blocked: this would delete part of the article",
+        description:
+          `The rich text editor cannot represent ${lost.join(", ")} and would drop ${lost.length === 1 ? "it" : "them"}. ` +
+          "Alt text and the SEO fields can still be edited and saved. To change the article text itself, edit it in the SQL file instead.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    updatePostMutation.mutate({ id: editingPost.id, data: { ...data, bodyEn: body } });
   };
 
   const handleEdit = (post: any) => {
@@ -619,34 +712,11 @@ export default function AdminPosts() {
                       )}
                     />
 
-              <FormField
-                control={editForm.control}
-                name="featuredImageAlt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Featured Image Alt Text</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Describe what the photo shows, 8 to 15 words"
-                        data-testid="input-edit-featured-image-alt"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(orNull(e.target.value))}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-gray-500">
-                      Read aloud by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
                     <FormField
                       control={createForm.control}
                       name="featuredImageAlt"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="mt-4">
                           <FormLabel>Featured Image Alt Text</FormLabel>
                           <FormControl>
                             <Input
@@ -658,7 +728,7 @@ export default function AdminPosts() {
                             />
                           </FormControl>
                           <p className="text-xs text-gray-500">
-                            Read aloud by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
+                            Read by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
                           </p>
                           <FormMessage />
                         </FormItem>
@@ -682,13 +752,11 @@ export default function AdminPosts() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="All Posts">All Posts</SelectItem>
-                                <SelectItem value="Culture & History">Culture & History</SelectItem>
-                                <SelectItem value="Travel Tips">Travel Tips</SelectItem>
-                                <SelectItem value="Destinations">Destinations</SelectItem>
-                                <SelectItem value="Food & Culture">Food & Culture</SelectItem>
-                                <SelectItem value="Travel Planning">Travel Planning</SelectItem>
-                                <SelectItem value="Responsible Travel">Responsible Travel</SelectItem>
+                                {POST_CATEGORIES.map((c) => (
+
+                                  <SelectItem key={c} value={c}>{c}</SelectItem>
+
+                                ))}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -928,7 +996,8 @@ export default function AdminPosts() {
                         value={field.value || ''}
                         onChange={field.onChange}
                         placeholder="Write your blog post content here..."
-                      />
+                        onUserInput={() => { bodyUserEdited.current = true; }}
+                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -950,6 +1019,30 @@ export default function AdminPosts() {
                 )}
               />
 
+              <FormField
+                control={editForm.control}
+                name="featuredImageAlt"
+                render={({ field }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>Featured Image Alt Text</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Describe what the photo shows, 8 to 15 words"
+                        data-testid="input-edit-featured-image-alt"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(orNull(e.target.value))}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-gray-500">
+                      Read by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <BodyImageAltFields html={pristineBody} onChange={setPristineBody} idPrefix="edit" />
               <SeoOverrideFields form={editForm} idPrefix="edit" />
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-lg font-semibold mb-4">Categories & Tags</h3>
@@ -967,13 +1060,11 @@ export default function AdminPosts() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="All Posts">All Posts</SelectItem>
-                          <SelectItem value="Culture & History">Culture & History</SelectItem>
-                          <SelectItem value="Travel Tips">Travel Tips</SelectItem>
-                          <SelectItem value="Destinations">Destinations</SelectItem>
-                          <SelectItem value="Food & Culture">Food & Culture</SelectItem>
-                          <SelectItem value="Travel Planning">Travel Planning</SelectItem>
-                          <SelectItem value="Responsible Travel">Responsible Travel</SelectItem>
+                          {POST_CATEGORIES.map((c) => (
+
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

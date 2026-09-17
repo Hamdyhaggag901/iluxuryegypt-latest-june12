@@ -2,7 +2,7 @@ export default {
   slug: "abu-simbel-tour-from-aswan",
   primary: "abu simbel tour from aswan",
   secondary: ["abu simbel day trip from aswan", "abu simbel from aswan"],
-  category: "Travel Guides",
+  category: "Destinations",
   tags: ["Abu Simbel", "Aswan", "Day Trips", "Nile Valley"],
   titleEn: "Abu Simbel Tour from Aswan: Flight or Road",
   metaTitle: "Abu Simbel Tour from Aswan: Flight vs Road",

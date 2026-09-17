@@ -38,7 +38,7 @@ reached its date would 404. The generator enforces this.
 - **SEO title:** Abu Simbel Tour from Aswan: Flight vs Road (42 chars)
 - **Meta description:** 153 chars
 - **Length:** 1679 words, 11 H2 sections
-- **FAQs:** 6, rendered on the page and emitted as FAQPage structured data
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/blog-01-abu-simbel-tour-from-aswan.sql`
 - **Internal links:**
   - tour: `/12-days-egypt-tour` &mdash; anchor "twelve day Egypt itinerary"
@@ -57,7 +57,7 @@ reached its date would 404. The generator enforces this.
 - **SEO title:** Grand Egyptian Museum Tour: Visitor's Guide (43 chars)
 - **Meta description:** 151 chars
 - **Length:** 1807 words, 12 H2 sections
-- **FAQs:** 7, rendered on the page and emitted as FAQPage structured data
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/blog-02-grand-egyptian-museum-tour.sql`
 - **Internal links:**
   - tour: `/7-day-egypt-tour` &mdash; anchor "seven day Egypt itinerary"
@@ -74,7 +74,7 @@ reached its date would 404. The generator enforces this.
 - **SEO title:** Tombs in the Valley of Kings: Which to Choose (45 chars)
 - **Meta description:** 159 chars
 - **Length:** 1520 words, 11 H2 sections
-- **FAQs:** 7, rendered on the page and emitted as FAQPage structured data
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/blog-03-tombs-in-the-valley-of-kings.sql`
 - **Internal links:**
   - tour: `/12-days-egypt-tour` &mdash; anchor "twelve day Egypt itinerary"
@@ -91,7 +91,7 @@ reached its date would 404. The generator enforces this.
 - **SEO title:** What to See in Luxor: A Two Day Plan (36 chars)
 - **Meta description:** 150 chars
 - **Length:** 1816 words, 14 H2 sections
-- **FAQs:** 6, rendered on the page and emitted as FAQPage structured data
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/blog-04-what-to-see-in-luxor.sql`
 - **Internal links:**
   - article: `/blog/tombs-in-the-valley-of-kings` &mdash; anchor "which three tombs to pick"
@@ -108,7 +108,7 @@ reached its date would 404. The generator enforces this.
 - **SEO title:** Dahshur Pyramids Egypt: Pyramids Without Crowds (47 chars)
 - **Meta description:** 155 chars
 - **Length:** 1510 words, 12 H2 sections
-- **FAQs:** 6, rendered on the page and emitted as FAQPage structured data
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/blog-05-dahshur-pyramids-egypt.sql`
 - **Internal links:**
   - tour: `/12-days-egypt-tour` &mdash; anchor "twelve day Egypt itinerary"

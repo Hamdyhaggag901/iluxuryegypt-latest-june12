@@ -31,6 +31,15 @@ const DESTINATION_SLUGS = new Set([
   "alexandria-egypt-attractions", "things-to-do-in-hurghada", "siwa-oasis-egypt",
 ]);
 
+// Mirrors shared/post-categories.ts. A category outside this list is not a
+// cosmetic problem: client/src/pages/blog.tsx filters on exact string equality,
+// so an unrecognised value makes the post appear under no filter at all. That
+// is what "Travel Guides" would have done to all five of these.
+const POST_CATEGORIES = [
+  "Culture & History", "Travel Tips", "Destinations",
+  "Food & Culture", "Travel Planning", "Responsible Travel",
+];
+
 const BANNED_PHRASES = [
   "delve into", "it's worth noting", "it is worth noting", "in conclusion",
   "nestled", "boasts", "a testament to", "unforgettable", "breathtaking",
@@ -61,6 +70,10 @@ ARTICLES.forEach((a, index) => {
   const lower = text.toLowerCase();
   const wordCount = words(text).length;
   const first100 = words(text).slice(0, 100).join(" ").toLowerCase();
+
+  // ---- category ----
+  if (!POST_CATEGORIES.includes(a.category))
+    problems.push(`${L}: category "${a.category}" is not one of the site's categories, so the post would appear under no blog filter`);
 
   // ---- SEO placement ----
   if (a.metaTitle.length > 60) problems.push(`${L}: meta_title ${a.metaTitle.length} chars (max 60)`);
@@ -368,5 +381,5 @@ if (placeholders.length > 0) {
   console.log(`\n${placeholders.length} placeholder(s) to fill before publishing:`);
   for (const p of placeholders) console.log(`  ${p.slug} :: ${p.key}\n      ${p.text}`);
 }
-writeFileSync("/tmp/claude-0/-home-user-iluxuryegypt-latest-june12/8bfa6a18-cf1c-5e25-b67f-3e1d2213f191/scratchpad/posts/placeholders.json", JSON.stringify(placeholders, null, 1));
-writeFileSync("/tmp/claude-0/-home-user-iluxuryegypt-latest-june12/8bfa6a18-cf1c-5e25-b67f-3e1d2213f191/scratchpad/posts/schedule.json", JSON.stringify(report, null, 1));
+writeFileSync(new URL("./placeholders.json", import.meta.url), JSON.stringify(placeholders, null, 1));
+writeFileSync(new URL("./schedule.json", import.meta.url), JSON.stringify(report, null, 1));

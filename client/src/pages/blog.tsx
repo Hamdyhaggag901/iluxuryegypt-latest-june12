@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { POST_CATEGORY_FILTERS } from "@shared/post-categories";
 import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
 import { useQuery } from "@tanstack/react-query";
@@ -86,15 +87,7 @@ const sampleBlogPosts = [
   }
 ];
 
-const categories = [
-  'All Posts',
-  'Culture & History',
-  'Travel Tips',
-  'Destinations',
-  'Food & Culture',
-  'Travel Planning',
-  'Responsible Travel'
-];
+const categories = POST_CATEGORY_FILTERS;
 
 export default function Blog() {
   useSEO({

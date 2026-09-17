@@ -2,7 +2,7 @@ export default {
   slug: "grand-egyptian-museum-tour",
   primary: "grand egyptian museum tour",
   secondary: ["grand egyptian museum tours", "grand egyptian museum reviews"],
-  category: "Travel Guides",
+  category: "Destinations",
   tags: ["Grand Egyptian Museum", "Giza", "Cairo", "Museums"],
   titleEn: "Grand Egyptian Museum Tour: A Visitor's Guide",
   metaTitle: "Grand Egyptian Museum Tour: Visitor's Guide",

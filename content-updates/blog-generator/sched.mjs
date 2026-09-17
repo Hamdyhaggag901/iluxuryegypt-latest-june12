@@ -2,8 +2,8 @@ import { writeFileSync, readFileSync } from "node:fs";
 import a1 from "./a1.mjs"; import a2 from "./a2.mjs"; import a3 from "./a3.mjs";
 import a4 from "./a4.mjs"; import a5 from "./a5.mjs";
 const A = [a1,a2,a3,a4,a5];
-const S = JSON.parse(readFileSync("./schedule.json","utf8"));
-const P = JSON.parse(readFileSync("./placeholders.json","utf8"));
+const S = JSON.parse(readFileSync(new URL("./schedule.json", import.meta.url),"utf8"));
+const P = JSON.parse(readFileSync(new URL("./placeholders.json", import.meta.url),"utf8"));
 const fmt = (iso) => {
   const d = new Date(iso);
   return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Africa/Cairo"})

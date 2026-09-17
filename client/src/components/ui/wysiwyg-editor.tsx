@@ -33,9 +33,17 @@ interface WysiwygEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /**
+   * Fires only on real user input, never when content is loaded or set
+   * programmatically. Callers use it to tell "the admin rewrote this article"
+   * apart from "Tiptap reformatted it on the way in", which matters because
+   * StarterKit has no node for tables, figures or mark and silently drops them
+   * the moment it parses a body that contains any.
+   */
+  onUserInput?: () => void;
 }
 
-export function WysiwygEditor({ value, onChange, placeholder = "Start writing..." }: WysiwygEditorProps) {
+export function WysiwygEditor({ value, onChange, placeholder = "Start writing...", onUserInput }: WysiwygEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -77,6 +85,13 @@ export function WysiwygEditor({ value, onChange, placeholder = "Start writing...
       attributes: {
         class: 'prose prose-sm sm:prose max-w-none focus:outline-none min-h-[200px] px-4 py-3',
       },
+      // Real typing, pasting and dropping. Programmatic setContent does not
+      // reach these, which is exactly the distinction the caller needs.
+      handleDOMEvents: {
+        beforeinput: () => { onUserInput?.(); return false; },
+        paste: () => { onUserInput?.(); return false; },
+        drop: () => { onUserInput?.(); return false; },
+      },
     },
   });
 
@@ -108,7 +123,7 @@ export function WysiwygEditor({ value, onChange, placeholder = "Start writing...
   return (
     <div className="border rounded-md overflow-hidden">
       {/* Toolbar */}
-      <div className="border-b bg-gray-50 p-2 flex flex-wrap gap-1">
+      <div className="border-b bg-gray-50 p-2 flex flex-wrap gap-1" onMouseDown={() => onUserInput?.()}>
         {/* Text formatting */}
         <div className="flex gap-0.5 border-r pr-2 mr-1">
           <Button

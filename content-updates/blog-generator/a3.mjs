@@ -2,7 +2,7 @@ export default {
   slug: "tombs-in-the-valley-of-kings",
   primary: "tombs in the valley of kings",
   secondary: ["how many tombs are in the valley of the kings", "valley of the kings tickets"],
-  category: "Travel Guides",
+  category: "Culture & History",
   tags: ["Valley of the Kings", "Luxor", "Tombs", "West Bank"],
   titleEn: "Tombs in the Valley of Kings: Which Three to Pick",
   metaTitle: "Tombs in the Valley of Kings: Which to Choose",
