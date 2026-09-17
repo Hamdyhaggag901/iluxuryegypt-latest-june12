@@ -32,6 +32,200 @@ const postFormSchema = insertPostSchema.extend({
 type PostFormData = z.infer<typeof postFormSchema>;
 
 // ---------------------------------------------------------------------------
+// SEO overrides
+// ---------------------------------------------------------------------------
+// The same set tours, categories and destinations already carry. Every field
+// falls back to a sensible default when left blank, so blank must be stored as
+// null and never as an empty string: an empty string is a value, and a value
+// beats a fallback.
+
+const SCHEMA_TYPES = ["BlogPosting", "Article", "NewsArticle", "TravelGuide", "FAQPage", "HowTo"];
+
+/** Blank means "use the default", which is null in the database. */
+const orNull = (v: string) => (v.trim() === "" ? null : v);
+
+function SeoOverrideFields({ form, idPrefix }: { form: any; idPrefix: string }) {
+  const metaDescription: string = form.watch("metaDescription") || "";
+  const metaLength = metaDescription.length;
+  const metaInRange = metaLength >= 150 && metaLength <= 160;
+
+  return (
+    <div className="border-t pt-4 mt-6">
+      <h3 className="text-lg font-semibold mb-1">SEO Overrides</h3>
+      <p className="text-xs text-gray-500 mb-4">
+        Leave a field blank to use its default. Nothing here is required.
+      </p>
+
+      <FormField
+        control={form.control}
+        name="metaTitle"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Meta Title</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="Blank uses the article title"
+                data-testid={`input-${idPrefix}-meta-title`}
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(orNull(e.target.value))}
+              />
+            </FormControl>
+            <p className="text-xs text-gray-500">{(field.value ?? "").length} characters, aim for under 60.</p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="metaDescription"
+        render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>Meta Description</FormLabel>
+            <FormControl>
+              <Textarea
+                rows={3}
+                placeholder="Blank uses the excerpt"
+                data-testid={`textarea-${idPrefix}-meta-description`}
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(orNull(e.target.value))}
+              />
+            </FormControl>
+            <p className={`text-xs ${metaInRange ? "text-green-600" : "text-amber-600"}`} data-testid={`text-${idPrefix}-meta-count`}>
+              {metaLength} characters{metaInRange ? "" : ", aim for 150 to 160"}
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="focusKeyword"
+        render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>Focus Keyword</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="e.g. abu simbel tour from aswan"
+                data-testid={`input-${idPrefix}-focus-keyword`}
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(orNull(e.target.value))}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="canonicalUrl"
+        render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>Canonical URL</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="Blank uses this page's own URL"
+                data-testid={`input-${idPrefix}-canonical-url`}
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(orNull(e.target.value))}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <FormField
+          control={form.control}
+          name="robots"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Robots</FormLabel>
+              <Select
+                value={field.value || "__default__"}
+                onValueChange={(v) => field.onChange(v === "__default__" ? null : v)}
+              >
+                <FormControl>
+                  <SelectTrigger data-testid={`select-${idPrefix}-robots`}>
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="__default__">Default (index, follow)</SelectItem>
+                  <SelectItem value="index, follow">index, follow</SelectItem>
+                  <SelectItem value="noindex, follow">noindex, follow</SelectItem>
+                  <SelectItem value="index, nofollow">index, nofollow</SelectItem>
+                  <SelectItem value="noindex, nofollow">noindex, nofollow</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="schemaType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Schema Type</FormLabel>
+              <Select
+                value={field.value || "__default__"}
+                onValueChange={(v) => field.onChange(v === "__default__" ? null : v)}
+              >
+                <FormControl>
+                  <SelectTrigger data-testid={`select-${idPrefix}-schema-type`}>
+                    <SelectValue placeholder="Default" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="__default__">Default (BlogPosting)</SelectItem>
+                  {SCHEMA_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      <FormField
+        control={form.control}
+        name="ogImage"
+        render={({ field }) => (
+          <FormItem className="mt-4">
+            <FormLabel>Social Share Image</FormLabel>
+            <FormControl>
+              <Input
+                placeholder="Blank uses the featured image"
+                data-testid={`input-${idPrefix}-og-image`}
+                {...field}
+                value={field.value ?? ""}
+                onChange={(e) => field.onChange(orNull(e.target.value))}
+              />
+            </FormControl>
+            <p className="text-xs text-gray-500">
+              Only changes the preview on social networks. The article still shows the featured image.
+            </p>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
 // Publication control
 // ---------------------------------------------------------------------------
 // The database stores two fields, `status` and `scheduledAt`, but an editor
@@ -245,9 +439,14 @@ export default function AdminPosts() {
       excerpt: "",
       category: "",
       tags: [],
-      focusKeyword: "",
-      metaTitle: "",
-      metaDescription: "",
+      focusKeyword: null,
+      metaTitle: null,
+      metaDescription: null,
+      canonicalUrl: null,
+      robots: null,
+      schemaType: null,
+      ogImage: null,
+      featuredImageAlt: null,
       status: "draft",
       scheduledAt: null,
     },
@@ -275,9 +474,14 @@ export default function AdminPosts() {
         excerpt: editingPost.excerpt || "",
         category: editingPost.category || "",
         tags: editingPost.tags || [],
-        focusKeyword: editingPost.focusKeyword || "",
-        metaTitle: editingPost.metaTitle || "",
-        metaDescription: editingPost.metaDescription || "",
+        focusKeyword: editingPost.focusKeyword ?? null,
+        metaTitle: editingPost.metaTitle ?? null,
+        metaDescription: editingPost.metaDescription ?? null,
+        canonicalUrl: editingPost.canonicalUrl ?? null,
+        robots: editingPost.robots ?? null,
+        schemaType: editingPost.schemaType ?? null,
+        ogImage: editingPost.ogImage ?? null,
+        featuredImageAlt: editingPost.featuredImageAlt ?? null,
         status: editingPost.status || "draft",
         scheduledAt: editingPost.scheduledAt ? new Date(editingPost.scheduledAt) : null,
       });
@@ -374,7 +578,8 @@ export default function AdminPosts() {
                         <FormItem>
                           <FormLabel>Excerpt</FormLabel>
                           <FormControl>
-                            <Textarea placeholder="Brief description of the post" {...field} data-testid="textarea-excerpt" />
+                            <Textarea placeholder="Brief description of the post" {...field}
+                        value={field.value ?? ""} data-testid="textarea-excerpt" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -406,64 +611,61 @@ export default function AdminPosts() {
                         <FormItem>
                           <FormLabel>Featured Image URL</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-image" />
+                            <Input placeholder="https://example.com/image.jpg" {...field}
+                        value={field.value ?? ""} data-testid="input-image" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <div className="border-t pt-4 mt-4">
-                      <h3 className="text-lg font-semibold mb-4">SEO Settings</h3>
-                      
-                      <FormField
-                        control={createForm.control}
-                        name="focusKeyword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Focus Keyword</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., luxury egypt travel" {...field} data-testid="input-focus-keyword" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+              <FormField
+                control={editForm.control}
+                name="featuredImageAlt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Featured Image Alt Text</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Describe what the photo shows, 8 to 15 words"
+                        data-testid="input-edit-featured-image-alt"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(orNull(e.target.value))}
                       />
+                    </FormControl>
+                    <p className="text-xs text-gray-500">
+                      Read aloud by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                      <FormField
-                        control={createForm.control}
-                        name="metaTitle"
-                        render={({ field }) => (
-                          <FormItem className="mt-4">
-                            <FormLabel>Meta Title (SEO)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Optimized title for search engines" {...field} data-testid="input-meta-title" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormField
+                      control={createForm.control}
+                      name="featuredImageAlt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Featured Image Alt Text</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Describe what the photo shows, 8 to 15 words"
+                              data-testid="input-create-featured-image-alt"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(orNull(e.target.value))}
+                            />
+                          </FormControl>
+                          <p className="text-xs text-gray-500">
+                            Read aloud by screen readers. Blank falls back to the article title, which describes the article rather than the picture.
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <FormField
-                        control={createForm.control}
-                        name="metaDescription"
-                        render={({ field }) => (
-                          <FormItem className="mt-4">
-                            <FormLabel>Meta Description (SEO)</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Write a compelling description for search results (150-160 characters recommended)" 
-                                rows={3} 
-                                {...field} 
-                                data-testid="textarea-meta-description" 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+                    <SeoOverrideFields form={createForm} idPrefix="create" />
                     <div className="border-t pt-4 mt-4">
                       <h3 className="text-lg font-semibold mb-4">Categories & Tags</h3>
                       
@@ -707,7 +909,8 @@ export default function AdminPosts() {
                   <FormItem>
                     <FormLabel>Excerpt</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Brief description of the post" {...field} data-testid="textarea-edit-excerpt" />
+                      <Textarea placeholder="Brief description of the post" {...field}
+                        value={field.value ?? ""} data-testid="textarea-edit-excerpt" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -739,64 +942,15 @@ export default function AdminPosts() {
                   <FormItem>
                     <FormLabel>Featured Image URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-edit-image" />
+                      <Input placeholder="https://example.com/image.jpg" {...field}
+                        value={field.value ?? ""} data-testid="input-edit-image" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="border-t pt-4 mt-4">
-                <h3 className="text-lg font-semibold mb-4">SEO Settings</h3>
-                
-                <FormField
-                  control={editForm.control}
-                  name="focusKeyword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Focus Keyword</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., luxury egypt travel" {...field} data-testid="input-edit-focus-keyword" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="metaTitle"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Meta Title (SEO)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Optimized title for search engines" {...field} data-testid="input-edit-meta-title" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="metaDescription"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Meta Description (SEO)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Write a compelling description for search results (150-160 characters recommended)" 
-                          rows={3} 
-                          {...field} 
-                          data-testid="textarea-edit-meta-description" 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+              <SeoOverrideFields form={editForm} idPrefix="edit" />
               <div className="border-t pt-4 mt-4">
                 <h3 className="text-lg font-semibold mb-4">Categories & Tags</h3>
                 

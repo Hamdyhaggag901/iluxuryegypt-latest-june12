@@ -23,6 +23,7 @@ interface TourForAlt {
 interface PostForAlt {
   titleEn: string;
   category?: string | null;
+  featuredImageAlt?: string | null;
 }
 
 /**
@@ -57,6 +58,12 @@ export function getTourImageAlt(tour: TourForAlt, index?: number): string {
 }
 
 export function getPostImageAlt(post: PostForAlt): string {
-  const category = post.category ? ` — ${post.category}` : "";
+  // An admin written alt describes the photograph. The generated fallback below
+  // describes the ARTICLE, which is the best that can be done without one but
+  // is not what a screen reader user needs, so it only applies when the field
+  // is empty.
+  const written = post.featuredImageAlt?.trim();
+  if (written) return written;
+  const category = post.category ? `, ${post.category}` : "";
   return `${post.titleEn}${category}`;
 }

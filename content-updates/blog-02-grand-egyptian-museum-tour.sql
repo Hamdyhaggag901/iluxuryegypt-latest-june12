@@ -20,7 +20,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   'grand-egyptian-museum-tour',
   'Grand Egyptian Museum Tour: A Visitor''s Guide',
@@ -172,7 +172,11 @@ INSERT INTO posts (
   'What a grand egyptian museum tour actually covers, how many hours you need, how it differs from the Tahrir museum, and the times of day worth avoiding.',
   'published',
   '2026-09-24T09:00:00+03:00'::timestamptz,
-  '[{"id":"581c2342-1a77-432a-8efb-af2c226e3487","question":"How long do you need at the Grand Egyptian Museum?","answer":"Half a day is the realistic minimum to see all twelve galleries at a steady pace. Two hours covers the Grand Staircase and the Tutankhamun collection and nothing else. A full day lets you include the solar boat building without rushing."},{"id":"661d70af-3400-43e8-a1df-5a3909b62a43","question":"Is the Grand Egyptian Museum better than the Egyptian Museum in Tahrir?","answer":"They are different rather than ranked. Giza is spacious, well lit and easier to follow, and holds the complete Tutankhamun collection. Tahrir is dense and atmospheric and suits return visitors. If you have one day, go to Giza."},{"id":"29b2673c-8acb-4d07-bc1f-d188943021a4","question":"When is the Grand Egyptian Museum least crowded?","answer":"The first hour after opening on a weekday. Late morning through early afternoon is the busiest window, when coach groups arrive from the pyramids. Fridays and public holidays are busier with local visitors."},{"id":"7b7d1948-8612-4bb4-9969-ab6000127563","question":"Is the full Tutankhamun collection at the Grand Egyptian Museum?","answer":"Yes. For the first time the complete contents of the tomb, over five thousand objects, are displayed together in dedicated galleries rather than as the smaller selection that used to be shown in Tahrir."},{"id":"a701c597-b007-458b-84e2-37de4aa3cb4f","question":"Can you visit the Grand Egyptian Museum and the pyramids in one day?","answer":"Yes, and the order matters. Do the pyramids at sunrise and the museum from mid morning. Doing it the other way round puts you on the plateau in flat midday light after hours of walking indoors."},{"id":"3b7d16b2-1925-4840-8482-21d2f28216fc","question":"Do you need to book Grand Egyptian Museum tickets in advance?","answer":"In high season yes, because entry is timed. Booking ahead also avoids the entry queue. Photography rules vary by gallery and the restricted ones are signed at the door."},{"id":"0ff10f59-b64b-4301-bf84-f502dbe2c960","question":"Is the Grand Egyptian Museum suitable for children?","answer":"It suits children better than most Egyptian museums because the labels are written plainly and there is room to move. The main limit is walking distance, so plan a break and use the seating rather than pushing through in one go."}]'::jsonb
+  '[{"id":"c3b4b490-b484-4f86-85db-8f65cd469dbc","question":"How long do you need at the Grand Egyptian Museum?","answer":"Half a day, about 4 hours, is the realistic minimum for all 12 galleries at a steady pace. 2 hours covers the Grand Staircase and the Tutankhamun collection and nothing else. A full day lets you add the solar boat building and sit with what you liked rather than walking past most of it."},{"id":"9167b7b8-9f2d-4981-8755-f5f0483d874b","question":"Is the Grand Egyptian Museum better than the Egyptian Museum in Tahrir?","answer":"They are different rather than ranked. The Giza building is spacious, well lit and easier to follow, and holds the complete Tutankhamun collection of over 5,000 objects. Tahrir is dense, dim and atmospheric and suits return visitors. If you have 1 day, go to Giza; if you have 2, do both and put Tahrir second."},{"id":"2cb8967d-457d-46e9-9bee-dd9efc02fea6","question":"When is the Grand Egyptian Museum least crowded?","answer":"The first hour after opening on a weekday. The Tutankhamun galleries go from comfortable to congested at around 11am, when coach groups arrive from the pyramids. If you are stuck in that window, start at the far chronological galleries and work back toward Tutankhamun in the late afternoon instead."},{"id":"1a3e97d3-018f-4576-a0ad-203a8fa1aa08","question":"Is the full Tutankhamun collection at the Grand Egyptian Museum?","answer":"Yes. For the first time the complete contents of the tomb, more than 5,000 objects, are displayed together in dedicated galleries. Tahrir used to show a much smaller selection. This is the single reason most visitors travel to the Giza building rather than treating it as an optional extra stop."},{"id":"300e5d1a-ca88-4fd0-b1d4-cc0d644150e9","question":"Can you visit the Grand Egyptian Museum and the pyramids in one day?","answer":"Yes, and the order decides whether it works. Do the pyramids at sunrise and the museum from mid morning, which puts you indoors and air conditioned as the day heats up. Doing it the other way round leaves you on the plateau in flat midday light after 3 or 4 hours of walking."},{"id":"bddf152c-b441-4cce-addf-3bd4e865f80b","question":"Do you need to book Grand Egyptian Museum tickets in advance?","answer":"In high season yes, because entry is timed, which is unusual in Egypt and keeps the entry crush down. Booking ahead also skips the queue. Photography rules vary by gallery and the restricted ones are signed at the door, so check on the day rather than assuming one rule covers all 12 galleries."},{"id":"3af65e71-4095-40bb-9f32-343205a55411","question":"Is the Grand Egyptian Museum worth it for children?","answer":"Yes, more so than most Egyptian museums, because the labels are written plainly and there is room to move. The limit is distance: this is a large building on a sloped site and the default route assumes you can walk for hours. Plan at least 1 sit down break rather than pushing through."},{"id":"368aabb6-ef24-4b16-8066-0572f1e34de6","question":"What should you see first at the Grand Egyptian Museum?","answer":"The Grand Staircase, on foot rather than by lift. It climbs 6 storeys lined with royal statues and sarcophagi arranged chronologically, and the window at the top frames the Giza pyramids directly. Go to the Tutankhamun galleries next, because that is the one room most people regret rushing."}]'::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -186,6 +190,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -199,6 +204,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, 'grand egyptian museum tour', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'grand-egyptian-museum-tour';
 
@@ -206,7 +212,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = 'grand-egyptian-museum-tour' AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = 'grand-egyptian-museum-tour' AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = 'grand-egyptian-museum-tour' AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = 'grand-egyptian-museum-tour'
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = 'grand-egyptian-museum-tour'
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f

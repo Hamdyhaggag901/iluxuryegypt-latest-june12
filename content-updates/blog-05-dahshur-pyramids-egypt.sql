@@ -20,7 +20,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   'dahshur-pyramids-egypt',
   'Dahshur Pyramids Egypt: Saqqara Without the Crowds',
@@ -149,7 +149,11 @@ INSERT INTO posts (
   'The dahshur pyramids egypt visitors skip sit an hour from Giza with almost nobody there, and you can climb inside two of them. Here is how to plan the day.',
   'published',
   '2026-10-02T09:00:00+03:00'::timestamptz,
-  '[{"id":"6bf26aed-f4ca-4c40-8dfd-f30a5a973468","question":"Can you go inside the Dahshur pyramids?","answer":"Yes, both the Bent Pyramid and the Red Pyramid have open interiors, and entry is normally included in site admission. The Red Pyramid has the more impressive interior, with a corbelled chamber about twelve metres high at the end of a long descending passage."},{"id":"1bdc4582-facb-4b6e-9aca-38150f762527","question":"Why is the Bent Pyramid bent?","answer":"The angle changes from roughly 54 degrees to roughly 43 about halfway up. The usual explanation is that cracking appeared during construction and the upper angle was reduced to lighten the mass. It is the only pyramid in Egypt with a visible change of plan in it."},{"id":"030d1c91-21ba-408d-b867-4109d91c8549","question":"Is Dahshur worth visiting if I have already seen Giza?","answer":"Yes, and arguably more so. Giza has the scale and the icons but no quiet. Dahshur gives you two pyramid interiors you can often have to yourself, which is the experience Giza cannot offer at any time of day."},{"id":"8c587d75-855e-4f98-bc82-6945bce91d2b","question":"Can you visit Saqqara and Dahshur in one trip?","answer":"Yes, they are on the same road about ten kilometres apart. Do Saqqara first because it involves more walking and wants the cooler hours, then Dahshur. Allow five hours door to door from central Cairo, or six without rushing."},{"id":"556a43df-bb46-4595-bc02-18b407782ee0","question":"What should I not miss at Saqqara?","answer":"The mastaba tombs of Ti, Mereruka and Kagemni, for relief carving of daily life that is crisper than almost anything in the royal tombs at Luxor, and the Serapeum, an underground gallery of granite sarcophagi cut for sacred bulls."},{"id":"6e956c0e-9d53-4b52-b0eb-c09f4c9e6af3","question":"Do you need a guide for Saqqara and Dahshur?","answer":"You need a driver, because public transport does not serve either site usefully and the Dahshur pyramids are too far apart to walk between in the heat. A guide is optional but adds a lot at Saqqara, where the interesting tombs are unsigned."}]'::jsonb
+  '[{"id":"b7242279-01be-43e5-bb0f-b2ada05d86a1","question":"Can you go inside the Dahshur pyramids?","answer":"Yes, both the Bent Pyramid and the Red Pyramid have open interiors, and entry is normally included in site admission. The Red Pyramid has the better interior: a descent of about 60 metres at a crouch, then 3 chambers, the last with a corbelled ceiling roughly 12 metres high and usually empty of other visitors."},{"id":"da0e0074-0fa7-48b2-9a7b-259db9dc5cc9","question":"Why is the Bent Pyramid bent?","answer":"Its angle changes about halfway up, from roughly 54 degrees to roughly 43. The usual explanation is that cracking appeared during construction and the upper angle was reduced to lighten the mass. It is the only pyramid in Egypt with a visible change of plan in it, and some original casing survives on the lower courses."},{"id":"341ec989-378b-4d13-a625-22d0c992f1e7","question":"Is Dahshur better than Giza if you have already seen the pyramids?","answer":"For a second visit, yes. Giza has the scale and the icons and no quiet. Dahshur gives you 2 pyramid interiors you can often have to yourself on a winter weekday, which is the one thing Giza cannot offer at any hour. If you have never seen the Great Pyramid, do Giza first."},{"id":"f57c7fb7-c1e5-41f8-a918-00c6b97f6df2","question":"Can you visit Saqqara and Dahshur in one trip?","answer":"Yes, they sit about 10 km apart on the same road, roughly 30 and 40 km from central Cairo. Do Saqqara first because it involves far more walking and wants the cooler hours, then Dahshur. Allow about 5 hours door to door, or 6 if you want the Serapeum and both interiors without rushing."},{"id":"3edc70d6-ed41-4092-943e-8159839c2e01","question":"What should you not miss at Saqqara?","answer":"The mastaba tombs of Ti, Mereruka and Kagemni. Their relief carvings of daily life are crisper than almost anything in the royal tombs at Luxor. Then the Serapeum, an underground gallery holding granite sarcophagi of around 70 tonnes each, cut for sacred bulls. All 4 are usually empty, and none of them is signed."},{"id":"cd2a138f-e306-41bb-a1d9-21d8ece80499","question":"Do you need a guide for Saqqara and Dahshur?","answer":"You need a driver, because public transport does not serve either site usefully and the 2 Dahshur pyramids are nearly 2 km apart across open sand. A guide is optional but adds a lot at Saqqara, where the 3 best tombs are unsigned and easy to walk past without knowing they are there."},{"id":"8b4d777c-53b1-4f17-af3f-3adb9b4dfe0e","question":"When is the best time to visit Saqqara and Dahshur?","answer":"A weekday morning between October and April. Friday is the local day off and Saqqara fills with Egyptian families in the afternoon. In summer both sites are open desert and the pyramid interiors are hot and airless rather than cool, so start at opening and be finished before 11am."},{"id":"bb3488bf-64c7-4632-8944-fdb4d865bef0","question":"Is the Black Pyramid at Dahshur worth seeing?","answer":"It is worth about 5 minutes rather than a detour. Amenemhat III built it in mudbrick roughly 600 years after Sneferu, and when the limestone casing was stripped the core slumped; water now pools at its base. You cannot enter or climb it, but it shows what every other pyramid would look like without its stone."}]'::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -163,6 +167,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -176,6 +181,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, 'dahshur pyramids egypt', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'dahshur-pyramids-egypt';
 
@@ -183,7 +189,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = 'dahshur-pyramids-egypt' AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = 'dahshur-pyramids-egypt' AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = 'dahshur-pyramids-egypt' AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = 'dahshur-pyramids-egypt'
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = 'dahshur-pyramids-egypt'
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f

@@ -593,15 +593,19 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       // own for a crawler to pick up before it is live.
       if (!post || !isPostLive(post)) return null;
       const description = truncate(post.metaDescription || post.excerpt || DEFAULT_DESCRIPTION, 160);
-      const image = post.featuredImage || DEFAULT_IMAGE;
+      // og_image overrides the hero for social cards only; the BlogPosting
+      // image stays the hero, which is what the article actually shows.
+      const image = post.ogImage?.trim() || post.featuredImage || DEFAULT_IMAGE;
       // No byline field exists on posts (only `createdBy`, an internal admin
       // user id) — every article is published under this fixed team name.
       const jsonLd = {
         "@context": "https://schema.org",
-        "@type": "BlogPosting",
+        // schema_type lets a post be something more specific than BlogPosting,
+        // e.g. TravelGuide or FAQPage, without touching this file.
+        "@type": post.schemaType?.trim() || "BlogPosting",
         headline: post.titleEn,
         description,
-        image,
+        image: post.featuredImage || DEFAULT_IMAGE,
         url: `${SITE_URL}/blog/${post.slug}`,
         datePublished: (post.publishedAt || post.createdAt).toISOString(),
         dateModified: post.updatedAt.toISOString(),
@@ -649,6 +653,8 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description,
         image,
         type: "article",
+        canonical: post.canonicalUrl?.trim() || undefined,
+        robots: post.robots?.trim() || undefined,
         jsonLd: withBreadcrumbs(graph, [
           { name: "Blog", url: "/blog" },
           { name: post.titleEn, url: `/blog/${post.slug}` },

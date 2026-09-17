@@ -178,7 +178,7 @@ async function processSingleColumn(
   label: string,
   url: string | null | undefined,
   maxWidth: number,
-  onOptimized: (newUrl: string) => Promise<void>
+  onOptimized: (newUrl: string) => Promise<unknown>
 ) {
   const result = await reoptimizeUrl(url, maxWidth);
   if (!result) return;
@@ -192,7 +192,7 @@ async function processGalleryColumn(
   labelPrefix: string,
   urls: string[] | null | undefined,
   maxWidth: number,
-  onChanged: (newUrls: string[]) => Promise<void>
+  onChanged: (newUrls: string[]) => Promise<unknown>
 ) {
   if (!urls || urls.length === 0) return;
   let changed = false;
@@ -221,7 +221,7 @@ async function processJsonbImageArray(
   labelPrefix: string,
   items: Array<Record<string, any>> | null | undefined,
   maxWidth: number,
-  onChanged: (newItems: Array<Record<string, any>>) => Promise<void>
+  onChanged: (newItems: Array<Record<string, any>>) => Promise<unknown>
 ) {
   if (!items || items.length === 0) return;
   let changed = false;

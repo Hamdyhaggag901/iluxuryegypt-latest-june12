@@ -20,7 +20,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   'tombs-in-the-valley-of-kings',
   'Tombs in the Valley of Kings: Which Three to Pick',
@@ -146,7 +146,11 @@ INSERT INTO posts (
   'Your ticket covers three tombs in the valley of kings out of roughly a dozen open. Here is how to choose them, and which separate tickets are worth paying for.',
   'published',
   '2026-09-27T09:00:00+03:00'::timestamptz,
-  '[{"id":"6992e93c-7f9f-4201-9511-b08d136db3ed","question":"How many tombs does the general Valley of the Kings ticket cover?","answer":"Three, chosen by you from whatever is open on the day. Tombs rotate in and out of closure for conservation, so the available list is usually between eight and a dozen and is not published far in advance."},{"id":"42bf711c-ee99-4b3d-bb40-a4e26ce7fca1","question":"How many tombs are in the Valley of the Kings in total?","answer":"Sixty five have been found and numbered, from KV1 to KV65. Only a fraction are open to visitors at any one time, and the open list changes as conservation work moves around the valley."},{"id":"e0ca0d59-73e1-421e-aab1-9a92a4665c24","question":"Which three tombs should I choose?","answer":"Ramesses VI for its astronomical ceiling, Ramesses III for the daily life scenes in its side chambers, and Merenptah for the scale of the descent. If one is closed, Ramesses IV near the entrance is the easiest substitute."},{"id":"af8189e0-53dc-4db7-811d-e420500fc80c","question":"Is the Tutankhamun tomb worth the separate ticket?","answer":"Only if the discovery story matters more to you than the painting. The tomb is small and nearly bare because the contents are now in the Grand Egyptian Museum. What remains is the sarcophagus, the outer coffin and the mummy itself."},{"id":"e0f4250c-7f98-4cf5-a8cc-10f1a86a6095","question":"Is the Seti I tomb worth the extra cost?","answer":"Yes if you are making one splurge and you care about ancient art. KV17 is the deepest and most completely decorated tomb in the valley and the relief carving is better than anything else on the west bank."},{"id":"49b2fd85-2130-4a1a-b884-13a62d2490e3","question":"What is the best time of day to visit?","answer":"Opening time. The valley is a rock bowl with no shade and it holds heat, and the deeper tombs get hot and airless by late morning. Between October and April the timing is more forgiving, but early is still better."},{"id":"4cb87230-6f24-422b-a348-811267e4616a","question":"Do I need a photography permit inside the tombs?","answer":"Usually yes, bought separately at the ticket office, and the rules change from season to season. Ask at the window when you buy your entry rather than finding out at a tomb door."}]'::jsonb
+  '[{"id":"018e63d4-6bfc-4266-867d-bac42e69ed9b","question":"How many tombs does the general Valley of the Kings ticket cover?","answer":"3 tombs, chosen by you at the gate from whatever is open that day. The open list is usually between 8 and 12 and changes as conservation work moves around the valley, because visitor breath and sweat damage painted plaster. It is not published far enough ahead to plan around, so decide from a priority order."},{"id":"d48a6354-a7e3-4d51-9b1a-3485a9d31d6f","question":"How many tombs are in the Valley of the Kings in total?","answer":"65 have been found and numbered, from KV1 to KV65. Only 8 to 12 are open to visitors at any one time. The number has moved before and may move again: KV64 and KV65 were both identified in the 2000s, so the valley is not a closed set even after 2 centuries of excavation."},{"id":"b10ebea8-dbb0-42a0-b74b-4a638754aebc","question":"Which 3 tombs should you choose in the Valley of the Kings?","answer":"Ramesses VI (KV9) for its astronomical ceiling, Ramesses III (KV11) for the daily life scenes in its side chambers, and Merenptah (KV8) for the scale of its descent. If one is closed, Ramesses IV (KV2) near the entrance is the easiest substitute: short, bright and heavily decorated."},{"id":"223918aa-a224-452b-8702-c04096570ce4","question":"Is the Tutankhamun tomb worth the separate ticket?","answer":"Only if the discovery story matters more to you than the painting. KV62 is small, was cut for someone else, and has decoration on 1 wall. Everything famous from it is now in the Grand Egyptian Museum. What remains is the sarcophagus, the outer coffin and the mummy in a climate controlled case."},{"id":"836d2aa8-efee-4d9e-8aa4-ee8067059187","question":"Is the Seti I tomb worth the extra cost?","answer":"Yes, if you are making 1 splurge and you care about ancient art rather than ancient celebrity. KV17 is the deepest and most completely decorated tomb in the valley, and its relief carving is better than anything else on the west bank. It was closed for decades and most visitors still walk past it."},{"id":"5c5b4fc7-ef3d-4412-92d6-5a106a4bbe01","question":"Which is better, Nefertari''s tomb or Tutankhamun''s?","answer":"Nefertari (QV66) for almost everyone. Its painting is the best preserved to survive from the ancient world, largely because the tomb was shut for most of the 20th century and has not been breathed on. Visits are capped at about 10 minutes. Tutankhamun is the more famous name and the plainer room."},{"id":"c9771393-5b4e-42ba-8741-976b096e7ddd","question":"What is the best time of day to visit the Valley of the Kings?","answer":"Opening time, and in summer be finished by 10am. The valley is a rock bowl with no shade that stores heat all day, and the deeper tombs are hot, still and airless rather than cool. Between October and April the timing is more forgiving, but early still means fewer people inside each tomb."},{"id":"a2cd351a-0e07-4e75-8320-05ef9b7fc6ef","question":"Do you need a photography permit inside the tombs?","answer":"Usually yes, bought separately at the ticket office, and the rules change from season to season. Ask at the window when you buy entry rather than finding out at a tomb door, which is a 15 minute walk back. Carry small notes too: the guardian at each of your 3 tombs will often light a ceiling detail you would otherwise miss."}]'::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -160,6 +164,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -173,6 +178,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, 'tombs in the valley of kings', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'tombs-in-the-valley-of-kings';
 
@@ -180,7 +186,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = 'tombs-in-the-valley-of-kings' AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = 'tombs-in-the-valley-of-kings' AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = 'tombs-in-the-valley-of-kings' AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = 'tombs-in-the-valley-of-kings'
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = 'tombs-in-the-valley-of-kings'
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f

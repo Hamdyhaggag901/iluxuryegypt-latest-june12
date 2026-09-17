@@ -739,6 +739,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Posts (CMS - Authenticated Routes)
+
+// Every SEO override on a post falls back to a default when it has no value,
+// and an empty string is a value. A form that posts "" instead of omitting the
+// field would silently disable the fallback, so blanks are normalised to null
+// on the way in, whichever client sent them.
+const POST_NULLABLE_OVERRIDES = [
+  "metaTitle", "metaDescription", "focusKeyword", "canonicalUrl",
+  "robots", "schemaType", "ogImage", "featuredImageAlt", "schemaMarkup",
+  "excerpt", "category", "featuredImage",
+] as const;
+
+function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
+  const out: Record<string, any> = { ...data };
+  for (const key of POST_NULLABLE_OVERRIDES) {
+    if (typeof out[key] === "string" && out[key].trim() === "") out[key] = null;
+  }
+  return out as T;
+}
+
   app.get("/api/cms/posts", requireAuth, requireEditor, async (req, res) => {
     try {
       const posts = await storage.getPosts();
@@ -752,7 +771,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cms/posts", requireAuth, requireEditor, async (req, res) => {
     try {
       const authReq = req as AuthenticatedRequest;
-      const postData = insertPostSchema.parse(req.body);
+      const postData = blankOverridesToNull(insertPostSchema.parse(req.body));
 
       // Sanitize slug - remove leading/trailing spaces, slashes, and special characters
       const sanitizedSlug = postData.slug
@@ -800,7 +819,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update post
   app.put("/api/cms/posts/:id", requireAuth, requireEditor, async (req, res) => {
     try {
-      const postData = insertPostSchema.partial().parse(req.body);
+      const postData = blankOverridesToNull(insertPostSchema.partial().parse(req.body));
 
       // Sanitize slug if provided
       if (postData.slug) {
@@ -2662,6 +2681,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       {
         name: "posts.schema_markup",
         sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS schema_markup text`,
+      },
+      {
+        name: "posts.featured_image_alt",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS featured_image_alt text`,
+      },
+      {
+        // The SEO override set the other content types already have.
+        name: "posts.canonical_url",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS canonical_url text`,
+      },
+      {
+        name: "posts.robots",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS robots text`,
+      },
+      {
+        name: "posts.schema_type",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS schema_type text`,
+      },
+      {
+        name: "posts.og_image",
+        sql: `ALTER TABLE posts ADD COLUMN IF NOT EXISTS og_image text`,
       },
       {
         // Lets the sitemap and the blog list skip the not-yet-due posts

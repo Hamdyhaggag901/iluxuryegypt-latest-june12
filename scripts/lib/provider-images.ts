@@ -138,11 +138,41 @@ export async function search(provider: Provider, query: string): Promise<Candida
 // Relevance guard
 // ---------------------------------------------------------------------------
 export interface Guard {
-  /** All groups must match, each by any one of its tokens. */
+  /**
+   * Tokens that confirm THIS SPECIFIC PLACE or the city it sits in. At least
+   * one must appear in the provider's description.
+   *
+   * This is separate from `require` because of four photos that got through
+   * the first version of this guard. A single group mixing the place name with
+   * "egypt" let any Egyptian photo pass: a shot of Lake Qarun in Faiyum was
+   * accepted for Lake Nasser, and a Luxor temple was accepted for the Luxor
+   * west bank hills. Confirming the country is not confirming the place.
+   */
+  requirePlace: string[];
+  /** Further groups, all of which must match, each by any one of its tokens. */
   require: string[][];
   /** Any match rejects the candidate. */
   deny: string[];
+  /**
+   * Egyptian place names this image is allowed to mention beyond requirePlace.
+   * Anything else from EGYPT_PLACES in the description is a contradiction and
+   * rejects the candidate, which is what catches "from Luxor, Egypt" on a
+   * photo that is supposed to be Saqqara.
+   */
+  allowPlaces?: string[];
 }
+
+// Egyptian place names a description might carry. A description naming one of
+// these that the image is not supposed to be about is describing somewhere
+// else, whatever else it says.
+export const EGYPT_PLACES = [
+  "cairo", "giza", "luxor", "aswan", "alexandria", "hurghada", "sharm",
+  "dahab", "siwa", "dahshur", "saqqara", "sakkara", "faiyum", "fayoum",
+  "fayyum", "abydos", "dendera", "edfu", "esna", "philae", "karnak",
+  "memphis", "sinai", "suez", "damietta", "rosetta", "tanta", "minya",
+  "sohag", "qena", "asyut", "aswan", "nubia", "abu simbel", "qarun",
+  "nasser", "marsa alam", "safaga", "taba", "nuweiba", "bahariya", "farafra",
+];
 
 // Places whose photographs turn up under Egyptian search terms and are not Egypt.
 export const GLOBAL_DENY = [
@@ -163,14 +193,34 @@ export function hasToken(haystack: string, token: string): boolean {
 export function checkRelevance(description: string, guard: Guard): { ok: boolean; reason: string } {
   const text = description.trim();
   if (!text) return { ok: false, reason: "provider gave no description, so the place cannot be confirmed" };
+
   for (const token of [...guard.deny, ...GLOBAL_DENY]) {
     if (hasToken(text, token)) return { ok: false, reason: `description mentions "${token}"` };
   }
+
+  // The place itself, not just the country.
+  if (!guard.requirePlace.some((t) => hasToken(text, t))) {
+    return { ok: false, reason: `description names none of the place itself: ${guard.requirePlace.slice(0, 6).join(", ")}` };
+  }
+
+  // A description naming a different Egyptian place is describing a different
+  // Egyptian place, however well it satisfies everything above.
+  const allowed = new Set(
+    [...guard.requirePlace, ...(guard.allowPlaces ?? [])].map((t) => t.toLowerCase())
+  );
+  for (const place of EGYPT_PLACES) {
+    if (allowed.has(place)) continue;
+    if (hasToken(text, place)) {
+      return { ok: false, reason: `description names "${place}", a different place from the one this image is for` };
+    }
+  }
+
   for (const group of guard.require) {
     if (!group.some((t) => hasToken(text, t))) {
       return { ok: false, reason: `description confirms none of: ${group.slice(0, 6).join(", ")}` };
     }
   }
+
   return { ok: true, reason: "confirmed by the provider's own description" };
 }
 

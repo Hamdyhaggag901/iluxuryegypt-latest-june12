@@ -1,0 +1,13 @@
+{
+  // The main tsconfig only covers client, server and shared, so scripts/ has
+  // never been type checked by `npm run check`. This config covers it, with an
+  // explicit target because the base config leaves it to the bundler and tsx
+  // runs these files on modern Node.
+  "extends": "./tsconfig.json",
+  "include": ["scripts/**/*", "shared/**/*", "server/**/*"],
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true,
+    "target": "es2022"
+  }
+}

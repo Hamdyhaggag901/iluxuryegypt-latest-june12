@@ -163,12 +163,47 @@ ARTICLES.forEach((a, index) => {
   if (keywordAnchors.length > 0) problems.push(`${L}: ${keywordAnchors.length} anchor(s) repeat the primary keyword verbatim`);
   if (new Set(anchors).size !== anchors.length) problems.push(`${L}: duplicate anchor text`);
 
-  // ---- FAQs ----
-  if (a.faqs.length < 5 || a.faqs.length > 7) problems.push(`${L}: ${a.faqs.length} FAQs (want 5-7)`);
+  // ---- FAQs, written for AI answer engines ----
+  // These are the rules that decide whether an answer can be lifted out of the
+  // page and quoted on its own by ChatGPT, Perplexity or an AI Overview.
+  if (a.faqs.length < 7 || a.faqs.length > 8) problems.push(`${L}: ${a.faqs.length} FAQs (want 7-8)`);
+
+  // Comparison questions are the shape AI answers quote most often.
+  const comparative = a.faqs.filter((f) => /\b(better|best|difference|vs|versus|worth|compare|instead)\b/i.test(f.q));
+  if (comparative.length < 2) problems.push(`${L}: only ${comparative.length} comparison question(s) (want at least 2)`);
+
+  const brandMentions = a.faqs.filter((f) => /iluxury|i\.luxury/i.test(f.a));
+  if (brandMentions.length > 1) problems.push(`${L}: brand named in ${brandMentions.length} FAQ answers (max 1)`);
+
+  const seenQ = new Set();
   a.faqs.forEach((f, i) => {
-    if (!f.q.trim() || !f.a.trim()) problems.push(`${L}: FAQ ${i + 1} has an empty half`);
-    if (/[–—]/.test(f.q + f.a)) problems.push(`${L}: FAQ ${i + 1} contains an em or en dash`);
-    if (words(f.a).length < 15) problems.push(`${L}: FAQ ${i + 1} answer is only ${words(f.a).length} words`);
+    const N = `${L}: FAQ ${i + 1}`;
+    if (!f.q.trim() || !f.a.trim()) problems.push(`${N} has an empty half`);
+    if (/[–—]/.test(f.q + f.a)) problems.push(`${N} contains an em or en dash`);
+
+    // 40 to 80 words: shorter carries no information, longer does not get quoted.
+    const n = words(f.a).length;
+    if (n < 40 || n > 80) problems.push(`${N} answer is ${n} words (want 40-80)`);
+
+    // The answer has to open WITH the answer. A first sentence that hedges or
+    // restates the question buries it where an answer engine will not find it.
+    const first = (f.a.split(/(?<=[.!?])\s+/)[0] ?? "").trim();
+    if (/^(it depends|there are|this depends|generally|in general|typically|well,|that is a|the answer)/i.test(first))
+      problems.push(`${N} answer opens with a hedge rather than the answer: "${first.slice(0, 50)}"`);
+    if (words(first).length > 32) problems.push(`${N} first sentence is ${words(first).length} words, too long to be the direct answer`);
+
+    // Self contained: an answer that points at the rest of the page is useless
+    // once it has been lifted off the page.
+    if (/\b(as (mentioned|noted|described) above|see above|as we said|in the section above|this article)\b/i.test(f.a))
+      problems.push(`${N} answer refers to the rest of the page and will not stand alone`);
+
+    // Something concrete. An answer engine prefers a number to an adjective.
+    if (!/\d/.test(f.a)) problems.push(`${N} answer contains no specific number`);
+
+    if (!/\?$/.test(f.q.trim())) problems.push(`${N} question does not end in a question mark`);
+    const key = f.q.trim().toLowerCase();
+    if (seenQ.has(key)) problems.push(`${N} duplicates an earlier question`);
+    seenQ.add(key);
   });
 
   // ---- placeholders ----
@@ -229,7 +264,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   ${pg(a.slug)},
   ${pg(a.titleEn)},
@@ -242,7 +277,11 @@ INSERT INTO posts (
   ${pg(a.metaDescription)},
   'published',
   ${pg(SCHEDULE[index])}::timestamptz,
-  ${pg(faqJson)}::jsonb
+  ${pg(faqJson)}::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -256,6 +295,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -269,6 +309,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, ${pg(a.primary)}, 'gi')) AS primary_hits
 FROM posts WHERE slug = ${pg(a.slug)};
 
@@ -276,7 +317,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = ${pg(a.slug)} AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = ${pg(a.slug)} AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = ${pg(a.slug)} AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = ${pg(a.slug)}
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = ${pg(a.slug)}
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f

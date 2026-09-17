@@ -20,7 +20,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   'abu-simbel-tour-from-aswan',
   'Abu Simbel Tour from Aswan: Flight or Road',
@@ -137,7 +137,11 @@ INSERT INTO posts (
   'An abu simbel tour from aswan runs three hours by road or forty minutes by air. Here is how the two really compare on time, heat, sleep and what you see.',
   'published',
   '2026-09-22T09:00:00+03:00'::timestamptz,
-  '[{"id":"e88f22f9-8cc2-40df-96b1-4ab861111974","question":"How long is the drive from Aswan to Abu Simbel?","answer":"About three to three and a half hours each way, covering roughly 280 kilometres of desert road. Most road trips leave Aswan between 3am and 4am so that visitors reach the temples before the heat builds."},{"id":"fb48ca31-b862-48a6-bb76-e832e3e91b47","question":"Is it better to fly or drive to Abu Simbel?","answer":"Fly if your days are limited or you are travelling with children or older parents, because you will be back in Aswan by late morning. Drive if you want the desert crossing and the early light on the temple facade, and you can function on four hours of sleep."},{"id":"17cf848c-472c-4c89-9fd2-8e59ff39fc62","question":"How much time do you get at Abu Simbel?","answer":"Standard allowance is about two hours on the ground, whichever way you travel. That covers both temples at a steady pace, with a little time left for the walk behind the artificial hill the temples were moved into."},{"id":"9e9e08a3-beb9-4365-8bc7-cc5d7dccb849","question":"When is the Abu Simbel sun festival?","answer":"On 22 February and 22 October, when the sunrise runs down the temple axis and lights three of the four statues in the inner sanctuary. The alignment lasts about twenty minutes and the site is extremely crowded on both dates."},{"id":"9aae60e2-57f3-4e8e-a618-71c30e39d693","question":"Can you visit Abu Simbel without a tour?","answer":"Yes, independent travel is possible by road or on a domestic flight, but almost everyone books transport as a package because there is no public transport worth the trouble and the timings are built around a single early window."},{"id":"e1a763ed-6fe8-431f-81e0-ec63c784096c","question":"Is one day at Abu Simbel enough?","answer":"For most visitors yes. The two temples take about two hours at an unhurried pace. Staying overnight in Abu Simbel village is worth it only if you specifically want the site at opening time with almost nobody else there."}]'::jsonb
+  '[{"id":"d98e57d0-36ab-49b2-b185-92a11b8944d1","question":"How long is the drive from Aswan to Abu Simbel?","answer":"About 3 to 3.5 hours each way, covering roughly 280 km of desert road. Most road trips leave Aswan between 3am and 4am so you reach the temples before the heat builds. There is no railway and no useful public transport on the route, so nearly everyone books the transport as part of a package."},{"id":"98b196c3-66c1-43fd-b86c-d5b0a97b6f6e","question":"Is it better to fly or drive to Abu Simbel from Aswan?","answer":"Fly if your days are short or you are travelling with children or older parents: the flight is about 40 minutes each way and puts you back in Aswan by late morning. Drive if you want the desert crossing and the early light on the temple facade, and you can function on 4 hours of sleep."},{"id":"2df032c1-0df6-4a5e-9550-2058b00d53d6","question":"How much time do you actually get at Abu Simbel?","answer":"About 2 hours on the ground, whichever way you travel. That covers both temples at a steady pace, roughly 70 minutes for the Great Temple of Ramesses II and 15 for the smaller Temple of Hathor and Nefertari, and leaves time to walk behind the artificial hill the 2 temples were moved into."},{"id":"d1f0a04a-17c1-49ab-998e-584ed6b43c53","question":"When is the Abu Simbel sun festival?","answer":"On 22 February and 22 October each year, when sunrise runs straight down the temple axis and lights 3 of the 4 seated statues in the inner sanctuary. The alignment lasts about 20 minutes. Both dates draw very large crowds, and flights and rooms in Abu Simbel village sell out months ahead."},{"id":"f5d863a5-5df3-4be7-bc54-4582db6bc36e","question":"Can you visit Abu Simbel without booking a tour?","answer":"Yes, by road or on a domestic flight, but there is no public transport worth using across the 280 km from Aswan. The whole day is built around one early window, which is hard to hit independently, so most visitors book transport as a package. iLuxury Egypt runs it as a private day trip for that reason."},{"id":"5ffa131d-006c-481b-b875-bddf7b94e7a4","question":"Is one day at Abu Simbel enough, or is an overnight stay worth it?","answer":"One day is enough for most visitors, because the 2 temples take about 2 hours at an unhurried pace. An overnight in Abu Simbel village is worth it only if you want the site at opening time with almost nobody else there, which is the single thing a day trip from Aswan cannot give you."},{"id":"ab600d37-0769-4acb-9178-9643c9f284e1","question":"What is the best time of year to visit Abu Simbel?","answer":"October to April. Between May and September the middle of the day is genuinely difficult, with very little shade on the 10 minute walk between the car park and the temples. The facade faces east, so it is lit from sunrise until about 10am in any season, which is the real argument for arriving early."},{"id":"3b7cfb6a-fb27-4674-89f6-34a107377a6a","question":"Why were the Abu Simbel temples moved?","answer":"To save them from Lake Nasser, which rose behind the Aswan High Dam. Between 1964 and 1968 both temples were cut into more than 1,000 blocks, lifted about 65 metres up and 200 metres back from the original cliff, and rebuilt inside a hollow artificial hill. The cut lines are still visible on the colossi."}]'::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -151,6 +155,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -164,6 +169,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, 'abu simbel tour from aswan', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'abu-simbel-tour-from-aswan';
 
@@ -171,7 +177,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = 'abu-simbel-tour-from-aswan' AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = 'abu-simbel-tour-from-aswan' AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = 'abu-simbel-tour-from-aswan' AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = 'abu-simbel-tour-from-aswan'
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = 'abu-simbel-tour-from-aswan'
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f

@@ -80,6 +80,16 @@ export const posts = pgTable("posts", {
   // Escape hatch for hand-written JSON-LD on a post that needs something the
   // generated BlogPosting and FAQPage do not cover. Unused by default.
   schemaMarkup: text("schema_markup"),
+  // Alt text for featured_image. Nullable: an older post with no value keeps
+  // falling back to the post title, which is what happened before this existed.
+  featuredImageAlt: text("featured_image_alt"),
+  // The same SEO override set tours, categories, destinations and hotels
+  // already carry. Every one falls back to a sensible default when empty, so
+  // an empty string must never be stored in place of NULL.
+  canonicalUrl: text("canonical_url"), // Empty falls back to this page's own URL.
+  robots: text("robots"), // Empty falls back to "index, follow".
+  schemaType: text("schema_type"), // Empty falls back to "BlogPosting".
+  ogImage: text("og_image"), // Empty falls back to featured_image.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   createdBy: varchar("created_by").references(() => users.id),
@@ -675,6 +685,11 @@ export const insertPostSchema = createInsertSchema(posts).omit({
   scheduledAt: z.coerce.date().nullable().optional(),
   faqs: z.array(faqSchema).default([]),
   schemaMarkup: z.string().nullable().optional(),
+  featuredImageAlt: z.string().nullable().optional(),
+  canonicalUrl: z.string().nullable().optional(),
+  robots: z.string().nullable().optional(),
+  schemaType: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional(),
 });
 
 export const insertMediaSchema = createInsertSchema(media).omit({

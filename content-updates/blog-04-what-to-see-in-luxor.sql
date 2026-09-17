@@ -20,7 +20,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, faqs
+  status, scheduled_at, faqs, schema_type
 ) VALUES (
   'what-to-see-in-luxor',
   'What to See in Luxor: Two Days, Two Banks',
@@ -169,7 +169,11 @@ INSERT INTO posts (
   'What to see in Luxor across two days, split by bank and by time of day. West bank mornings, east bank afternoons, and the pairings that actually work.',
   'published',
   '2026-09-29T09:00:00+03:00'::timestamptz,
-  '[{"id":"179cf5ff-6144-45a1-bc64-3f177301f80b","question":"How many days do you need in Luxor?","answer":"Two full days is the honest minimum, one for each bank of the Nile. Three is comfortable and leaves room for the Valley of the Queens or a day trip north to Dendera. One day is a highlights visit rather than a proper look."},{"id":"d8803bf5-3c2d-409c-800e-3375ee7ed543","question":"Should I do the west bank or the east bank first?","answer":"West bank first, starting at first light. It is open desert with no shade and a lot of climbing, so it has to happen early. The east bank temples work better in the late afternoon and evening."},{"id":"9009d9c3-d42d-466b-8000-8eff6fea9d2e","question":"Is Karnak or Luxor Temple better?","answer":"Karnak is larger and more overwhelming and needs about three hours. Luxor Temple is smaller and at its best after dark, when it is lit and sits in the middle of the modern town. See both, and see Luxor Temple at night."},{"id":"01e15dba-0d59-4619-9666-013ecff30412","question":"What is the best thing to do in the middle of the day in Luxor?","answer":"The Luxor Museum. It is air conditioned, beautifully lit, and takes about an hour, which makes it the ideal use of the hours when everything outdoors is too hot. Very few itineraries place it there."},{"id":"61f53478-97cd-437a-b129-4142536312c2","question":"Is a hot air balloon over Luxor worth it?","answer":"Yes, and it is the one thing to book before you arrive because capacity is limited and it sells out in high season. It launches before sunrise, lasts about an hour, and gives you the whole west bank geography at once."},{"id":"d6d66c29-2302-4be0-abd0-0fa1ec42aebd","question":"When is the best time of year to visit Luxor?","answer":"October to April. Between June and September the middle of the day is genuinely difficult and every plan has to shift earlier, with the west bank finished before ten and the east bank left until evening."}]'::jsonb
+  '[{"id":"2a79f24f-8866-426c-a60d-16de251ec23a","question":"How many days do you need in Luxor?","answer":"2 full days is the honest minimum, 1 for each bank of the Nile. 3 is comfortable and leaves room for the Valley of the Queens or a day trip to Dendera. 1 day is a highlights visit: you will see the Valley of the Kings and Karnak, and you will not see Luxor."},{"id":"8d902b4b-4fab-44c8-8df2-d24c61b15574","question":"Should you do the west bank or the east bank first?","answer":"West bank first, starting at first light and ideally finished by 10am. It is open desert with no shade and a lot of climbing, so it has to happen in the cool hours. The east bank temples are flat, walkable and partly shaded by their own columns, which makes them better in the late afternoon and after dark."},{"id":"53b6d9fc-65ee-4bbb-8e38-fcf388efe662","question":"Which is better, Karnak or Luxor Temple?","answer":"Karnak is the larger and more overwhelming of the 2 and needs about 3 hours; its hypostyle hall alone holds 134 columns, the tallest around 21 metres. Luxor Temple is smaller and at its best after dark, lit and sitting in the middle of the modern town. See both, and see Luxor Temple at night."},{"id":"38c0d54c-256c-44b0-8848-76069255479e","question":"What is the best thing to do in the middle of the day in Luxor?","answer":"The Luxor Museum. It is air conditioned, beautifully lit and takes about 1 hour, which makes it the ideal use of the hours when everything outdoors is too hot. It holds 2 royal mummies and a cache of statues found buried under Luxor Temple in 1989. Very few itineraries schedule it there."},{"id":"3bfa25d2-bdf1-40b4-8435-b96f90b92702","question":"Is a hot air balloon over Luxor worth booking?","answer":"Yes, and it is the 1 thing to book before you arrive, because capacity is limited and it sells out in high season. Flights launch before sunrise and last about 1 hour. Seeing the mortuary temples and the green strip of cultivation from above reorganises the whole geography in your head."},{"id":"f44cc6af-da69-4a90-86ac-f10fe52594f4","question":"When is the best time of year to visit Luxor?","answer":"October to April. Between June and September the middle of the day is genuinely difficult for anyone not used to it, and every plan has to shift earlier: west bank finished before 10am, east bank left until evening. Season matters more in Luxor than almost anywhere else in Egypt."},{"id":"5f3ba27a-727e-43f2-8e7f-7b446c99bb6a","question":"How do you cross between the two banks of the Nile in Luxor?","answer":"By the local ferry or a private boat, both of which run frequently and take a few minutes. The road bridge is a long way south of the town, so almost nobody drives across. Budget a few minutes each way rather than planning around it, and expect to cross twice in a 2 day visit."},{"id":"b8601293-d827-439b-bd4e-9bdc4954a348","question":"Is Luxor worth staying overnight or is a cruise stop enough?","answer":"Stay overnight if Luxor is a reason you are coming to Egypt. Most Nile cruises allocate about 1.5 days, which covers Karnak and some tombs and leaves the museum, Medinet Habu and Luxor Temple at night undone. On land you can split the 2 banks across 2 mornings instead of compressing them."}]'::jsonb,
+  -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
+  -- the page's own URL, robots to "index, follow", og_image to the hero. An
+  -- empty string in any of them would defeat that fallback.
+  'BlogPosting'
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
@@ -183,6 +187,7 @@ ON CONFLICT (slug) DO UPDATE SET
   status = EXCLUDED.status,
   scheduled_at = EXCLUDED.scheduled_at,
   faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
   updated_at = now();
 
 COMMIT;
@@ -196,6 +201,7 @@ SELECT slug,
        jsonb_array_length(faqs) AS faq_count,
        array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\s+'), 1) AS body_words,
        scheduled_at,
+       schema_type,
        (SELECT count(*) FROM regexp_matches(body_en, 'what to see in luxor', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'what-to-see-in-luxor';
 
@@ -203,7 +209,19 @@ SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
 WHERE slug = 'what-to-see-in-luxor' AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug = 'what-to-see-in-luxor' AND jsonb_array_length(faqs) NOT BETWEEN 5 AND 7;
+WHERE slug = 'what-to-see-in-luxor' AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug = 'what-to-see-in-luxor'
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug = 'what-to-see-in-luxor'
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f
