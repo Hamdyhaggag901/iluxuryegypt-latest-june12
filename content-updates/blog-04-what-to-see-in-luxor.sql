@@ -1,5 +1,5 @@
 -- What to See in Luxor: Two Days, Two Banks
--- Blog post 4 of 5. Primary keyword: what to see in luxor
+-- Blog post 4 of 13. Primary keyword: what to see in luxor
 --
 -- Scheduled for 2026-09-29T09:00:00+03:00 via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -173,7 +173,7 @@ INSERT INTO posts (
   'What to see in Luxor across two days, split by bank and by time of day. West bank mornings, east bank afternoons, and the pairings that actually work.',
   'published',
   '2026-09-29T09:00:00+03:00'::timestamptz,
-  '[{"id":"3e9571eb-cd74-4991-ae5f-434d7f73ab71","question":"How many days do you need in Luxor?","answer":"2 full days is the honest minimum, 1 for each bank of the Nile. 3 is comfortable and leaves room for the Valley of the Queens or a day trip to Dendera. 1 day is a highlights visit: you will see the Valley of the Kings and Karnak, and you will not see Luxor."},{"id":"636d9a1a-f2ca-434b-8694-8a4e49e92670","question":"Should you do the west bank or the east bank first?","answer":"West bank first, starting at first light and ideally finished by 10am. It is open desert with no shade and a lot of climbing, so it has to happen in the cool hours. The east bank temples are flat, walkable and partly shaded by their own columns, which makes them better in the late afternoon and after dark."},{"id":"4b0362b7-2011-4c5c-ba27-528b84e22b1d","question":"Which is better, Karnak or Luxor Temple?","answer":"Karnak is the larger and more overwhelming of the 2 and needs about 3 hours; its hypostyle hall alone holds 134 columns, the tallest around 21 metres. Luxor Temple is smaller and at its best after dark, lit and sitting in the middle of the modern town. See both, and see Luxor Temple at night."},{"id":"ab2e723c-d173-4d96-b9a6-faeea9ec27bf","question":"What is the best thing to do in the middle of the day in Luxor?","answer":"The Luxor Museum. It is air conditioned, beautifully lit and takes about 1 hour, which makes it the ideal use of the hours when everything outdoors is too hot. It holds 2 royal mummies and a cache of statues found buried under Luxor Temple in 1989. Very few itineraries schedule it there."},{"id":"863244dc-fe3a-4df8-bf69-06b31b19d669","question":"Is a hot air balloon over Luxor worth booking?","answer":"Yes, and it is the 1 thing to book before you arrive, because capacity is limited and it sells out in high season. Flights launch before sunrise and last about 1 hour. Seeing the mortuary temples and the green strip of cultivation from above reorganises the whole geography in your head."},{"id":"c3792dbd-a6d3-41a8-b18f-df7a3b44f351","question":"When is the best time of year to visit Luxor?","answer":"October to April. Between June and September the middle of the day is genuinely difficult for anyone not used to it, and every plan has to shift earlier: west bank finished before 10am, east bank left until evening. Season matters more in Luxor than almost anywhere else in Egypt."},{"id":"9ddf2f0d-9ad6-4cbf-bd59-f3b1a3b0cd4d","question":"How do you cross between the two banks of the Nile in Luxor?","answer":"By the local ferry or a private boat, both of which run frequently and take a few minutes. The road bridge is a long way south of the town, so almost nobody drives across. Budget a few minutes each way rather than planning around it, and expect to cross twice in a 2 day visit."},{"id":"5d75e37c-9fb8-43e2-8712-1e0b050dc6f2","question":"Is Luxor worth staying overnight or is a cruise stop enough?","answer":"Stay overnight if Luxor is a reason you are coming to Egypt. Most Nile cruises allocate about 1.5 days, which covers Karnak and some tombs and leaves the museum, Medinet Habu and Luxor Temple at night undone. On land you can split the 2 banks across 2 mornings instead of compressing them."}]'::jsonb,
+  '[{"id":"92b26484-93c7-517a-bc90-38dcf49260da","question":"How many days do you need in Luxor?","answer":"2 full days is the honest minimum, 1 for each bank of the Nile. 3 is comfortable and leaves room for the Valley of the Queens or a day trip to Dendera. 1 day is a highlights visit: you will see the Valley of the Kings and Karnak, and you will not see Luxor."},{"id":"2216d49c-7403-5e11-ba1c-07ea5a3a0cb6","question":"Should you do the west bank or the east bank first?","answer":"West bank first, starting at first light and ideally finished by 10am. It is open desert with no shade and a lot of climbing, so it has to happen in the cool hours. The east bank temples are flat, walkable and partly shaded by their own columns, which makes them better in the late afternoon and after dark."},{"id":"f6068d7d-fb42-5e41-b88b-508c8505607a","question":"Which is better, Karnak or Luxor Temple?","answer":"Karnak is the larger and more overwhelming of the 2 and needs about 3 hours; its hypostyle hall alone holds 134 columns, the tallest around 21 metres. Luxor Temple is smaller and at its best after dark, lit and sitting in the middle of the modern town. See both, and see Luxor Temple at night."},{"id":"5891f7bc-863f-53e6-b456-35aec09c6199","question":"What is the best thing to do in the middle of the day in Luxor?","answer":"The Luxor Museum. It is air conditioned, beautifully lit and takes about 1 hour, which makes it the ideal use of the hours when everything outdoors is too hot. It holds 2 royal mummies and a cache of statues found buried under Luxor Temple in 1989. Very few itineraries schedule it there."},{"id":"07b5eac8-af97-53ef-8dba-66ebcfa6466c","question":"Is a hot air balloon over Luxor worth booking?","answer":"Yes, and it is the 1 thing to book before you arrive, because capacity is limited and it sells out in high season. Flights launch before sunrise and last about 1 hour. Seeing the mortuary temples and the green strip of cultivation from above reorganises the whole geography in your head."},{"id":"ec2c45b6-2065-5c8a-b1d2-34419b77aca2","question":"When is the best time of year to visit Luxor?","answer":"October to April. Between June and September the middle of the day is genuinely difficult for anyone not used to it, and every plan has to shift earlier: west bank finished before 10am, east bank left until evening. Season matters more in Luxor than almost anywhere else in Egypt."},{"id":"cd0f7819-f9a9-5179-9426-891d8b8ee6f6","question":"How do you cross between the two banks of the Nile in Luxor?","answer":"By the local ferry or a private boat, both of which run frequently and take a few minutes. The road bridge is a long way south of the town, so almost nobody drives across. Budget a few minutes each way rather than planning around it, and expect to cross twice in a 2 day visit."},{"id":"d388d506-2454-5637-bded-29919f9dd08a","question":"Is Luxor worth staying overnight or is a cruise stop enough?","answer":"Stay overnight if Luxor is a reason you are coming to Egypt. Most Nile cruises allocate about 1.5 days, which covers Karnak and some tombs and leaves the museum, Medinet Habu and Luxor Temple at night undone. On land you can split the 2 banks across 2 mornings instead of compressing them."}]'::jsonb,
   -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
   -- the page's own URL, robots to "index, follow", og_image to the hero. An
   -- empty string in any of them would defeat that fallback.
@@ -181,7 +181,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -199,6 +212,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = 'what-to-see-in-luxor';
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,

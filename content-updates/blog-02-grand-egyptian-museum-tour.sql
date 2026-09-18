@@ -1,5 +1,5 @@
 -- Grand Egyptian Museum Tour: A Visitor's Guide
--- Blog post 2 of 5. Primary keyword: grand egyptian museum tour
+-- Blog post 2 of 13. Primary keyword: grand egyptian museum tour
 --
 -- Scheduled for 2026-09-24T09:00:00+03:00 via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -179,7 +179,7 @@ INSERT INTO posts (
   'What a grand egyptian museum tour actually covers, how many hours you need, how it differs from the Tahrir museum, and the times of day worth avoiding.',
   'published',
   '2026-09-24T09:00:00+03:00'::timestamptz,
-  '[{"id":"db8e21ad-b3d9-4852-9287-0728202c6f1d","question":"How long do you need at the Grand Egyptian Museum?","answer":"Half a day, about 4 hours, is the realistic minimum for all 12 galleries at a steady pace. 2 hours covers the Grand Staircase and the Tutankhamun collection and nothing else. A full day lets you add the solar boat building and sit with what you liked rather than walking past most of it."},{"id":"1918842a-5c51-4809-975c-0054989f7b72","question":"Is the Grand Egyptian Museum better than the Egyptian Museum in Tahrir?","answer":"They are different rather than ranked. The Giza building is spacious, well lit and easier to follow, and holds the complete Tutankhamun collection of over 5,000 objects. Tahrir is dense, dim and atmospheric and suits return visitors. If you have 1 day, go to Giza; if you have 2, do both and put Tahrir second."},{"id":"b14f790b-397f-486d-a966-a0a6cdec353d","question":"When is the Grand Egyptian Museum least crowded?","answer":"The first hour after opening on a weekday. The Tutankhamun galleries go from comfortable to congested at around 11am, when coach groups arrive from the pyramids. If you are stuck in that window, start at the far chronological galleries and work back toward Tutankhamun in the late afternoon instead."},{"id":"e73adf0b-fd0f-4d50-bf1d-183129e24d59","question":"Is the full Tutankhamun collection at the Grand Egyptian Museum?","answer":"Yes. For the first time the complete contents of the tomb, more than 5,000 objects, are displayed together in dedicated galleries. Tahrir used to show a much smaller selection. This is the single reason most visitors travel to the Giza building rather than treating it as an optional extra stop."},{"id":"5f52ba9e-dc63-42c5-854b-fdc170bc9640","question":"Can you visit the Grand Egyptian Museum and the pyramids in one day?","answer":"Yes, and the order decides whether it works. Do the pyramids at sunrise and the museum from mid morning, which puts you indoors and air conditioned as the day heats up. Doing it the other way round leaves you on the plateau in flat midday light after 3 or 4 hours of walking."},{"id":"66ea964d-cd3b-4bed-b8db-fd4013b8339e","question":"Do you need to book Grand Egyptian Museum tickets in advance?","answer":"Yes, always, because tickets are sold online only at visit-gem.com for a timed arrival slot. There is no ticket window at the building, so turning up without a booking does not work. Slots run at 9, 11, 1, 3, 5 and 7. Photography rules vary by gallery and the restricted ones are signed at the door."},{"id":"70ec0426-71ff-42f6-8813-6a24c0b2f018","question":"Is the Grand Egyptian Museum worth it for children?","answer":"Yes, more so than most Egyptian museums, because the labels are written plainly and there is room to move. The limit is distance: this is a large building on a sloped site and the default route assumes you can walk for hours. Plan at least 1 sit down break rather than pushing through."},{"id":"4057c259-b88b-4bb3-8131-3d7851304026","question":"What should you see first at the Grand Egyptian Museum?","answer":"The Grand Staircase, on foot rather than by lift. It climbs 6 storeys lined with royal statues and sarcophagi arranged chronologically, and the window at the top frames the Giza pyramids directly. Go to the Tutankhamun galleries next, because that is the one room most people regret rushing."}]'::jsonb,
+  '[{"id":"9a415780-3962-5e67-a5ea-67a4b433e8e5","question":"How long do you need at the Grand Egyptian Museum?","answer":"Half a day, about 4 hours, is the realistic minimum for all 12 galleries at a steady pace. 2 hours covers the Grand Staircase and the Tutankhamun collection and nothing else. A full day lets you add the solar boat building and sit with what you liked rather than walking past most of it."},{"id":"254ec1ad-c686-53ad-8341-ad4a1120042c","question":"Is the Grand Egyptian Museum better than the Egyptian Museum in Tahrir?","answer":"They are different rather than ranked. The Giza building is spacious, well lit and easier to follow, and holds the complete Tutankhamun collection of over 5,000 objects. Tahrir is dense, dim and atmospheric and suits return visitors. If you have 1 day, go to Giza; if you have 2, do both and put Tahrir second."},{"id":"e2c7698a-77d8-5087-add9-b0bd9a27f32a","question":"When is the Grand Egyptian Museum least crowded?","answer":"The first hour after opening on a weekday. The Tutankhamun galleries go from comfortable to congested at around 11am, when coach groups arrive from the pyramids. If you are stuck in that window, start at the far chronological galleries and work back toward Tutankhamun in the late afternoon instead."},{"id":"b24c838e-a2be-5585-9dbe-8d7ae2f56847","question":"Is the full Tutankhamun collection at the Grand Egyptian Museum?","answer":"Yes. For the first time the complete contents of the tomb, more than 5,000 objects, are displayed together in dedicated galleries. Tahrir used to show a much smaller selection. This is the single reason most visitors travel to the Giza building rather than treating it as an optional extra stop."},{"id":"50acee0e-8240-5bde-8c62-ee79414048c6","question":"Can you visit the Grand Egyptian Museum and the pyramids in one day?","answer":"Yes, and the order decides whether it works. Do the pyramids at sunrise and the museum from mid morning, which puts you indoors and air conditioned as the day heats up. Doing it the other way round leaves you on the plateau in flat midday light after 3 or 4 hours of walking."},{"id":"211acd77-72b4-580e-a592-a0c50f6a1a34","question":"Do you need to book Grand Egyptian Museum tickets in advance?","answer":"Yes, always, because tickets are sold online only at visit-gem.com for a timed arrival slot. There is no ticket window at the building, so turning up without a booking does not work. Slots run at 9, 11, 1, 3, 5 and 7. Photography rules vary by gallery and the restricted ones are signed at the door."},{"id":"9b03dd6b-ef46-578d-9755-1f03c034b932","question":"Is the Grand Egyptian Museum worth it for children?","answer":"Yes, more so than most Egyptian museums, because the labels are written plainly and there is room to move. The limit is distance: this is a large building on a sloped site and the default route assumes you can walk for hours. Plan at least 1 sit down break rather than pushing through."},{"id":"98cf7372-4651-5657-b3c9-a3f87515f151","question":"What should you see first at the Grand Egyptian Museum?","answer":"The Grand Staircase, on foot rather than by lift. It climbs 6 storeys lined with royal statues and sarcophagi arranged chronologically, and the window at the top frames the Giza pyramids directly. Go to the Tutankhamun galleries next, because that is the one room most people regret rushing."}]'::jsonb,
   -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
   -- the page's own URL, robots to "index, follow", og_image to the hero. An
   -- empty string in any of them would defeat that fallback.
@@ -187,7 +187,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -205,6 +218,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = 'grand-egyptian-museum-tour';
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,

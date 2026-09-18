@@ -1,5 +1,5 @@
 -- Dahshur Pyramids Egypt: Saqqara Without the Crowds
--- Blog post 5 of 5. Primary keyword: dahshur pyramids egypt
+-- Blog post 5 of 13. Primary keyword: dahshur pyramids egypt
 --
 -- Scheduled for 2026-10-02T09:00:00+03:00 via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -151,7 +151,7 @@ INSERT INTO posts (
   'The dahshur pyramids egypt visitors skip sit an hour from Giza with almost nobody there, and you can climb inside two of them. Here is how to plan the day.',
   'published',
   '2026-10-02T09:00:00+03:00'::timestamptz,
-  '[{"id":"0feeabb0-a17a-4434-bb2e-edb694626cf4","question":"Can you go inside the Dahshur pyramids?","answer":"Yes, both the Bent Pyramid and the Red Pyramid have open interiors, and entry is normally included in site admission. The Red Pyramid has the better interior: a descent of about 60 metres at a crouch, then 3 chambers, the last with a corbelled ceiling roughly 12 metres high and usually empty of other visitors."},{"id":"5621d27c-7d8a-4396-9903-439059e355ee","question":"Why is the Bent Pyramid bent?","answer":"Its angle changes about halfway up, from roughly 54 degrees to roughly 43. The usual explanation is that cracking appeared during construction and the upper angle was reduced to lighten the mass. It is the only pyramid in Egypt with a visible change of plan in it, and some original casing survives on the lower courses."},{"id":"47ea66e6-263c-43e3-b8db-eb1627c77a1e","question":"Is Dahshur better than Giza if you have already seen the pyramids?","answer":"For a second visit, yes. Giza has the scale and the icons and no quiet. Dahshur gives you 2 pyramid interiors you can often have to yourself on a winter weekday, which is the one thing Giza cannot offer at any hour. If you have never seen the Great Pyramid, do Giza first."},{"id":"c28b11fe-e145-40d2-9266-b36a670d5c4f","question":"Can you visit Saqqara and Dahshur in one trip?","answer":"Yes, they sit about 10 km apart on the same road, roughly 30 and 40 km from central Cairo. Do Saqqara first because it involves far more walking and wants the cooler hours, then Dahshur. Allow about 5 hours door to door, or 6 if you want the Serapeum and both interiors without rushing."},{"id":"ffa28d96-bdf9-4a3d-a41d-520ba93d2cc4","question":"What should you not miss at Saqqara?","answer":"The mastaba tombs of Ti, Mereruka and Kagemni. Their relief carvings of daily life are crisper than almost anything in the royal tombs at Luxor. Then the Serapeum, an underground gallery holding granite sarcophagi of around 70 tonnes each, cut for sacred bulls. All 4 are usually empty, and none of them is signed."},{"id":"8f815993-38da-46d1-8cc0-99cc772bebe8","question":"Do you need a guide for Saqqara and Dahshur?","answer":"You need a driver, because public transport does not serve either site usefully and the 2 Dahshur pyramids are nearly 2 km apart across open sand. A guide is optional but adds a lot at Saqqara, where the 3 best tombs are unsigned and easy to walk past without knowing they are there."},{"id":"3d0dc4e8-8513-4f3b-b6fa-313a9b8dbe85","question":"When is the best time to visit Saqqara and Dahshur?","answer":"A weekday morning between October and April. Friday is the local day off and Saqqara fills with Egyptian families in the afternoon. In summer both sites are open desert and the pyramid interiors are hot and airless rather than cool, so start at opening and be finished before 11am."},{"id":"84b08363-3564-4ed7-8891-107c8edcd235","question":"Is the Black Pyramid at Dahshur worth seeing?","answer":"It is worth about 5 minutes rather than a detour. Amenemhat III built it in mudbrick roughly 600 years after Sneferu, and when the limestone casing was stripped the core slumped; water now pools at its base. You cannot enter or climb it, but it shows what every other pyramid would look like without its stone."}]'::jsonb,
+  '[{"id":"22e3846e-210f-566c-8def-e38dcc409aaa","question":"Can you go inside the Dahshur pyramids?","answer":"Yes, both the Bent Pyramid and the Red Pyramid have open interiors, and entry is normally included in site admission. The Red Pyramid has the better interior: a descent of about 60 metres at a crouch, then 3 chambers, the last with a corbelled ceiling roughly 12 metres high and usually empty of other visitors."},{"id":"1562eba2-153d-567a-a5a2-915ba0fd2174","question":"Why is the Bent Pyramid bent?","answer":"Its angle changes about halfway up, from roughly 54 degrees to roughly 43. The usual explanation is that cracking appeared during construction and the upper angle was reduced to lighten the mass. It is the only pyramid in Egypt with a visible change of plan in it, and some original casing survives on the lower courses."},{"id":"a29f211a-ee7e-5446-881e-9f14a28d461e","question":"Is Dahshur better than Giza if you have already seen the pyramids?","answer":"For a second visit, yes. Giza has the scale and the icons and no quiet. Dahshur gives you 2 pyramid interiors you can often have to yourself on a winter weekday, which is the one thing Giza cannot offer at any hour. If you have never seen the Great Pyramid, do Giza first."},{"id":"1336c1e1-8400-5672-8c27-4050db18b11f","question":"Can you visit Saqqara and Dahshur in one trip?","answer":"Yes, they sit about 10 km apart on the same road, roughly 30 and 40 km from central Cairo. Do Saqqara first because it involves far more walking and wants the cooler hours, then Dahshur. Allow about 5 hours door to door, or 6 if you want the Serapeum and both interiors without rushing."},{"id":"2a324e05-67a4-580f-a804-75ec551dceaa","question":"What should you not miss at Saqqara?","answer":"The mastaba tombs of Ti, Mereruka and Kagemni. Their relief carvings of daily life are crisper than almost anything in the royal tombs at Luxor. Then the Serapeum, an underground gallery holding granite sarcophagi of around 70 tonnes each, cut for sacred bulls. All 4 are usually empty, and none of them is signed."},{"id":"bc478868-f621-5020-838f-0354ad44f5e1","question":"Do you need a guide for Saqqara and Dahshur?","answer":"You need a driver, because public transport does not serve either site usefully and the 2 Dahshur pyramids are nearly 2 km apart across open sand. A guide is optional but adds a lot at Saqqara, where the 3 best tombs are unsigned and easy to walk past without knowing they are there."},{"id":"5d40c8a5-4e3c-53c2-b837-23fc6b68a3bd","question":"When is the best time to visit Saqqara and Dahshur?","answer":"A weekday morning between October and April. Friday is the local day off and Saqqara fills with Egyptian families in the afternoon. In summer both sites are open desert and the pyramid interiors are hot and airless rather than cool, so start at opening and be finished before 11am."},{"id":"eba033b2-37df-5308-9f7a-a5cb2509056c","question":"Is the Black Pyramid at Dahshur worth seeing?","answer":"It is worth about 5 minutes rather than a detour. Amenemhat III built it in mudbrick roughly 600 years after Sneferu, and when the limestone casing was stripped the core slumped; water now pools at its base. You cannot enter or climb it, but it shows what every other pyramid would look like without its stone."}]'::jsonb,
   -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
   -- the page's own URL, robots to "index, follow", og_image to the hero. An
   -- empty string in any of them would defeat that fallback.
@@ -159,7 +159,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -177,6 +190,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = 'dahshur-pyramids-egypt';
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,

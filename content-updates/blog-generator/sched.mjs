@@ -1,7 +1,5 @@
 import { writeFileSync, readFileSync } from "node:fs";
-import a1 from "./a1.mjs"; import a2 from "./a2.mjs"; import a3 from "./a3.mjs";
-import a4 from "./a4.mjs"; import a5 from "./a5.mjs";
-const A = [a1,a2,a3,a4,a5];
+import { ARTICLES as A } from "./articles.mjs";
 const S = JSON.parse(readFileSync(new URL("./schedule.json", import.meta.url),"utf8"));
 const P = JSON.parse(readFileSync(new URL("./placeholders.json", import.meta.url),"utf8"));
 const fmt = (iso) => {
@@ -9,10 +7,10 @@ const fmt = (iso) => {
   return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Africa/Cairo"})
     + ", " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"Africa/Cairo"}) + " Cairo time";
 };
-let md = `# Publishing schedule: five SEO articles
+let md = `# Publishing schedule: ${A.length} SEO articles
 
-Five articles across two weeks, one every two to three days. Publishing all
-five at once is an unnatural pattern for a site this young, which is the only
+${A.length} articles across five weeks, one every two to three days. Publishing a
+batch at once is an unnatural pattern for a site this young, which is the only
 reason they are spread out rather than shipped together.
 
 Each one is already loaded with \`status = 'published'\` and a \`scheduled_at\`
@@ -52,7 +50,7 @@ A.forEach((a,i)=>{
   md += `- **Meta description:** ${S[i].meta} chars\n`;
   md += `- **Length:** ${S[i].words} words, ${S[i].h2} H2 sections\n`;
   md += `- **FAQs:** ${S[i].faqs}, rendered on the page and emitted as FAQPage structured data\n`;
-  md += `- **SQL file:** \`content-updates/blog-0${i+1}-${a.slug}.sql\`\n`;
+  md += `- **SQL file:** \`content-updates/blog-${String(i+1).padStart(2,"0")}-${a.slug}.sql\`\n`;
   md += `- **Internal links:**\n`;
   for (const h of hrefs) {
     const kind = h.href.startsWith("/blog/") ? "article"
@@ -68,21 +66,19 @@ A.forEach((a,i)=>{
 
 md += `## Placeholders
 
-Nothing below was invented. Every price and opening hour in the five articles is
-a marked placeholder instead of a number that might be wrong. Search the body
-for \`data-placeholder\` to find them, or use the list here.
+Nothing here was invented. Where a price or an opening hour could not be
+verified, the article says so in a sentence a reader can act on rather than
+carrying a number that might be wrong.
 
-| Article | Key | What to fill in |
-|---|---|---|
 `;
-for (const p of P) md += `| \`${p.slug}\` | \`${p.key}\` | ${p.text} |\n`;
+if (P.length === 0) {
+  md += `There are none. Every article is publishable as written.\n`;
+} else {
+  md += `| Article | Key | What to fill in |\n|---|---|---|\n`;
+  for (const p of P) md += `| \`${p.slug}\` | \`${p.key}\` | ${p.text} |\n`;
+}
 
 md += `
-Two of these are not prices. \`RELATED_POST_SLUG\` and \`RELATED_POST_ANCHOR\` in
-article 1 are a link to one of the 25 articles already on the site: article 1
-publishes first, so it has no earlier sibling of these five to point at, and
-this session could not read the live post list to choose one. Pick a Nile or
-Luxor piece and replace both tokens.
 
 ## Checks worth running after each goes live
 

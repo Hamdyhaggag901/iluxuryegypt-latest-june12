@@ -1,5 +1,5 @@
 -- Abu Simbel Tour from Aswan: Flight or Road
--- Blog post 1 of 5. Primary keyword: abu simbel tour from aswan
+-- Blog post 1 of 13. Primary keyword: abu simbel tour from aswan
 --
 -- Scheduled for 2026-09-22T09:00:00+03:00 via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -141,7 +141,7 @@ INSERT INTO posts (
   'An abu simbel tour from aswan runs three hours by road or forty minutes by air. Here is how the two really compare on time, heat, sleep and what you see.',
   'published',
   '2026-09-22T09:00:00+03:00'::timestamptz,
-  '[{"id":"60b4fca6-3952-4925-b871-f9994bb9c430","question":"How long is the drive from Aswan to Abu Simbel?","answer":"About 3 to 3.5 hours each way, covering roughly 280 km of desert road. Most road trips leave Aswan between 3am and 4am so you reach the temples before the heat builds. There is no railway and no useful public transport on the route, so nearly everyone books the transport as part of a package."},{"id":"88389e89-6948-4937-aa30-6deffb05fbd6","question":"Is it better to fly or drive to Abu Simbel from Aswan?","answer":"Fly if your days are short or you are travelling with children or older parents: the flight is about 40 minutes each way and puts you back in Aswan by late morning. Drive if you want the desert crossing and the early light on the temple facade, and you can function on 4 hours of sleep."},{"id":"4949be2d-accb-43f6-a265-07349634031e","question":"How much time do you actually get at Abu Simbel?","answer":"About 2 hours on the ground, whichever way you travel. That covers both temples at a steady pace, roughly 70 minutes for the Great Temple of Ramesses II and 15 for the smaller Temple of Hathor and Nefertari, and leaves time to walk behind the artificial hill the 2 temples were moved into."},{"id":"94ec1200-bc1d-426f-95f8-2662125c8475","question":"When is the Abu Simbel sun festival?","answer":"On 22 February and 22 October each year, when sunrise runs straight down the temple axis and lights 3 of the 4 seated statues in the inner sanctuary. The alignment lasts about 20 minutes. Entry on those 2 days carries an extra charge of around 1,200 Egyptian pounds, and flights and rooms in the village sell out months ahead."},{"id":"377f8289-9867-4277-b2bb-5d834a906172","question":"Can you visit Abu Simbel without booking a tour?","answer":"Yes, by road or on a domestic flight, but there is no public transport worth using across the 280 km from Aswan. The whole day is built around one early window, which is hard to hit independently, so most visitors book transport as a package. iLuxury Egypt runs it as a private day trip for that reason."},{"id":"8c0ad310-510d-449e-b7cb-09413954baf3","question":"Is one day at Abu Simbel enough, or is an overnight stay worth it?","answer":"One day is enough for most visitors, because the 2 temples take about 2 hours at an unhurried pace. An overnight in Abu Simbel village is worth it only if you want the site at opening time with almost nobody else there, which is the single thing a day trip from Aswan cannot give you."},{"id":"74956236-231d-4475-bb72-53d45eaf5e4a","question":"What is the best time of year to visit Abu Simbel?","answer":"October to April. Between May and September the middle of the day is genuinely difficult, with very little shade on the 10 minute walk between the car park and the temples. The facade faces east, so it is lit from sunrise until about 10am in any season, which is the real argument for arriving early."},{"id":"914f0fb6-2206-4352-aab1-ef7780421e1a","question":"Why were the Abu Simbel temples moved?","answer":"To save them from Lake Nasser, which rose behind the Aswan High Dam. Between 1964 and 1968 both temples were cut into more than 1,000 blocks, lifted about 65 metres up and 200 metres back from the original cliff, and rebuilt inside a hollow artificial hill. The cut lines are still visible on the colossi."}]'::jsonb,
+  '[{"id":"31681b4f-863c-508f-bded-a21e34165ba8","question":"How long is the drive from Aswan to Abu Simbel?","answer":"About 3 to 3.5 hours each way, covering roughly 280 km of desert road. Most road trips leave Aswan between 3am and 4am so you reach the temples before the heat builds. There is no railway and no useful public transport on the route, so nearly everyone books the transport as part of a package."},{"id":"82f69476-f3b9-5ddb-9ee5-f1b1e6f891f5","question":"Is it better to fly or drive to Abu Simbel from Aswan?","answer":"Fly if your days are short or you are travelling with children or older parents: the flight is about 40 minutes each way and puts you back in Aswan by late morning. Drive if you want the desert crossing and the early light on the temple facade, and you can function on 4 hours of sleep."},{"id":"a9b1ac71-5b46-5b9f-ab71-3978d62a241b","question":"How much time do you actually get at Abu Simbel?","answer":"About 2 hours on the ground, whichever way you travel. That covers both temples at a steady pace, roughly 70 minutes for the Great Temple of Ramesses II and 15 for the smaller Temple of Hathor and Nefertari, and leaves time to walk behind the artificial hill the 2 temples were moved into."},{"id":"6cf13658-19ae-5e45-b14f-5e46f7ea3904","question":"When is the Abu Simbel sun festival?","answer":"On 22 February and 22 October each year, when sunrise runs straight down the temple axis and lights 3 of the 4 seated statues in the inner sanctuary. The alignment lasts about 20 minutes. Entry on those 2 days carries an extra charge of around 1,200 Egyptian pounds, and flights and rooms in the village sell out months ahead."},{"id":"da5f761f-75da-56b8-a276-7cee40d2b4c7","question":"Can you visit Abu Simbel without booking a tour?","answer":"Yes, by road or on a domestic flight, but there is no public transport worth using across the 280 km from Aswan. The whole day is built around one early window, which is hard to hit independently, so most visitors book transport as a package. iLuxury Egypt runs it as a private day trip for that reason."},{"id":"52a6aa56-e6e7-5ac5-ae13-49ee22be104f","question":"Is one day at Abu Simbel enough, or is an overnight stay worth it?","answer":"One day is enough for most visitors, because the 2 temples take about 2 hours at an unhurried pace. An overnight in Abu Simbel village is worth it only if you want the site at opening time with almost nobody else there, which is the single thing a day trip from Aswan cannot give you."},{"id":"d5a49db0-8cc5-55b6-bfd1-1b508522cd56","question":"What is the best time of year to visit Abu Simbel?","answer":"October to April. Between May and September the middle of the day is genuinely difficult, with very little shade on the 10 minute walk between the car park and the temples. The facade faces east, so it is lit from sunrise until about 10am in any season, which is the real argument for arriving early."},{"id":"21cc0841-b20d-51d1-a544-f0f231365a97","question":"Why were the Abu Simbel temples moved?","answer":"To save them from Lake Nasser, which rose behind the Aswan High Dam. Between 1964 and 1968 both temples were cut into more than 1,000 blocks, lifted about 65 metres up and 200 metres back from the original cliff, and rebuilt inside a hollow artificial hill. The cut lines are still visible on the colossi."}]'::jsonb,
   -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
   -- the page's own URL, robots to "index, follow", og_image to the hero. An
   -- empty string in any of them would defeat that fallback.
@@ -149,7 +149,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -167,6 +180,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = 'abu-simbel-tour-from-aswan';
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,

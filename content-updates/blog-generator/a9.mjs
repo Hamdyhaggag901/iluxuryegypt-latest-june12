@@ -1,0 +1,121 @@
+export default {
+  slug: "medinet-habu",
+  primary: "medinet habu",
+  secondary: ["medinet habu luxor", "medinet habu temple", "temple of medinet habu"],
+  category: "Culture & History",
+  tags: ["Medinet Habu", "Luxor", "West Bank", "Ramesses III"],
+  titleEn: "Medinet Habu: The Luxor Temple Almost Everyone Drives Past",
+  metaTitle: "Medinet Habu: The Luxor Temple People Drive Past",
+  metaDescription:
+    "Medinet habu keeps more original paint than anywhere else in Luxor and is usually half empty. What to look for on the walls, and the best hour to be there.",
+  excerpt:
+    "The colour on these walls is the real thing, not a reconstruction, and you will often have a courtyard to yourself. It is the strongest argument on the west bank for a second morning.",
+  wordRange: [1400, 1620],
+  body: `
+<p>You can still see the paint.</p>
+
+<p>Not a trace of pigment in a protected corner. Actual colour, on actual walls, at eye level, in rooms you can stand in: reds and blues and yellows that were put on in the twelfth century BC and are still doing their job. Medinet habu holds more of its original decoration than anywhere else open in Luxor, and on most mornings there are more guardians than visitors inside it.</p>
+
+<p>It sits about two kilometres from the Colossi of Memnon, on the same road as everything else on the west bank. Almost every itinerary drives past the gate.</p>
+
+<h2>What Medinet Habu Actually Is</h2>
+
+<p>A mortuary temple built by Ramesses III in the early twelfth century BC, on a scale that makes sense only when you are standing in the second court and realise the enclosure wall is a fortification.</p>
+
+<p>Mortuary temple is a slightly misleading label. These buildings were not tombs; they were where the cult of a dead king was maintained, funded by estates, staffed by priests and running for as long as the money held out. The king himself was buried across the valley in the rock.</p>
+
+<p>The complex is large: an outer enclosure, a fortified gatehouse modelled on a Syrian fort, a small earlier temple of the Eighteenth Dynasty, palace remains against the south side of the first court, and the main temple running back through two courts to the sanctuary.</p>
+
+<h2>Why the Colour Survived Here</h2>
+
+<p>Three things. The temple was built late enough that its decoration was cut deep rather than in fine raised relief, which protects pigment in the shadow of the cut. It was buried for centuries under the Coptic town of Djeme, which grew inside the walls. And it faces away from the prevailing wind.</p>
+
+<p>Cleaning and consolidation over the last two decades have brought a great deal of it back. The ceilings of the columned halls and the upper registers on the inner walls are where to look, because those are the surfaces nobody could reach to scrub.</p>
+
+<p>This is the closest most visitors will get to seeing what Karnak looked like when it was finished. Karnak is bigger and it is bare stone; the temple of medinet habu is the one that still tells you these buildings were painted from floor to ceiling.</p>
+
+<h2>The Sea Peoples Wall</h2>
+
+<p>On the exterior of the north wall is a long sequence of battle reliefs recording Ramesses III's campaigns against a confederation the texts call the Sea Peoples, around 1175 BC.</p>
+
+<p>These reliefs are one of the main historical sources for the collapse that ended the Bronze Age across the eastern Mediterranean. Ships with bird head prows, warriors in feathered headdresses, a naval battle in the Nile Delta, and beside it a scene of scribes counting severed hands to tally the dead.</p>
+
+<p>Whatever you think of the arithmetic, this is a contemporary account of an event that brought down several civilisations, carved by the side that survived it. Very little else on the west bank is doing anything comparable.</p>
+
+<p>Walk the whole wall. It takes ten minutes and most groups stop at the first panel.</p>
+
+<h2>The Gatehouse</h2>
+
+<p>The entrance building, usually called the migdol, is modelled on a Levantine fortress gate, complete with towers and a narrow passage. Egypt did not build like this; Ramesses III copied a form he had seen abroad.</p>
+
+<p>Upstairs were private royal apartments, and their reliefs are a considerable change of register from the battles outside: the king relaxed, with women of the household, in scenes carved with real delicacy.</p>
+
+<p>Access to the upper rooms depends on the day. Ask at the gate rather than assuming, and if they are open, take the stairs.</p>
+
+<p>The passage through the gate is worth a moment on its own. It is narrow, it turns, and the walls carry the king smiting foreigners on both sides, which is what everyone arriving on business had to walk between. The building is making an argument before you are through the door.</p>
+
+<h2>The Christian Town Nobody Mentions</h2>
+
+<p>For several hundred years after the temple stopped functioning, a Coptic town called Djeme filled the enclosure. Houses, churches, streets, a working community living inside a pharaonic monument.</p>
+
+<p>It was cleared by excavators in the early twentieth century, which is why the courts are empty now. You can still find Coptic crosses cut into pharaonic columns, and in the second court the bases where a basilica once stood.</p>
+
+<p>The papyri from Djeme are one of the richest sources we have for daily life in Byzantine Egypt: contracts, letters, complaints about neighbours. The building has two lives and the second one is barely signposted.</p>
+
+<h2>How Long to Allow, and When</h2>
+
+<p>Ninety minutes is right. An hour if you are moving, two if you walk the battle reliefs properly and go up the gatehouse.</p>
+
+<p>That makes it the cheapest addition on the west bank in time terms. Hatshepsut needs an hour, the tombs need two and a half, and this fits after both without pushing anyone past lunch.</p>
+
+<p>Go last on a west bank morning rather than first. The Valley of the Kings is unbearable after nine and this site is not, because the courts hold shade and the inner halls stay cool. Tombs at opening, Hatshepsut next, this at ten or eleven.</p>
+
+<p>The other option is the late afternoon, an hour before closing, when the low sun comes in through the courts from the west and lights the columns along their length. Fewer people still. This is the better photograph by a distance.</p>
+
+<h2>How It Compares with the Ramesseum</h2>
+
+<p>They invite comparison, because Ramesses III built his temple with the Ramesseum of Ramesses II in front of him as the model, and the plans are close.</p>
+
+<p>The difference is what is left. The Ramesseum is a romantic ruin with a fallen colossus, the one that prompted Shelley's poem, and it is largely roofless and bare. Medinet habu luxor keeps its walls, its colour and its enclosure.</p>
+
+<p>If you have one slot, take this one. If you have two mornings on the west bank, do both and do them back to back, because the same plan in two states of preservation teaches you more than either does alone.</p>
+
+<h2>Tickets and Getting There</h2>
+
+<p>Medinet habu temple has its own ticket, bought at the site rather than at the central west bank office, which is unusual and catches people out. Entry prices here change yearly and are card only. Check the current rate before you go, or ask your operator to confirm it with your itinerary.</p>
+
+<p>It is a five minute drive from the Colossi of Memnon and about fifteen from the Valley of the Kings. Any west bank driver knows it, though you may have to insist, because it is not on the default circuit and some will try to talk you into Deir el Medina instead.</p>
+
+<p>There is a cafe opposite the entrance with shade and cold drinks, which is more than most west bank sites offer.</p>
+
+<p>Bring water anyway. The walk from the car park through the enclosure to the far end of the battle wall and back is close to a kilometre on open ground, and there is nothing to buy once you are inside the gate.</p>
+
+<h2>What to Look at First</h2>
+
+<p>Go through the migdol without stopping, cross the first court, and stand in the second court with your back to the sanctuary. That is where the colour is best and where the scale of the place lands.</p>
+
+<p>Then work outward: the second court ceilings, the inner halls, the north exterior wall for the battles, the gatehouse last. Doing it in that order means you see the painted surfaces while your eyes are still fresh and the crowds, such as they are, have not arrived.</p>
+
+<p>For how the west bank fits together across a stay, the <a href="/egypt-travel-guide/attractions-in-luxor">Luxor area guide</a> covers the two bank split, and the <a href="/blog/tombs-in-the-valley-of-kings">tomb choosing guide</a> covers the morning before this one. Our <a href="/best-luxury-egypt-tours">longer Egypt itineraries</a> put the west bank across two mornings rather than one, which is the only way this temple gets the time it deserves.</p>
+
+<p>One thing to carry: a torch, or a phone with a good one. The painted ceilings are high and the inner rooms are dim, and the difference between a torch and no torch here is the difference between grey stone and a blue and gold ceiling.</p>
+`,
+  faqs: [
+    { q: "Is Medinet Habu worth visiting?",
+      a: "Yes, and it is the most under visited major site on the Luxor west bank. It keeps more original paint than anywhere else open in the city, its north exterior wall carries the main historical record of the Sea Peoples invasion of about 1175 BC, and you will often have a courtyard to yourself." },
+    { q: "Why is the paint at Medinet Habu so well preserved?",
+      a: "Three reasons. The decoration was cut deep rather than in fine raised relief, which shelters pigment inside the cut. A Coptic town called Djeme buried much of the complex for centuries. And the temple faces away from the prevailing wind. Cleaning over the last 2 decades has recovered a great deal more." },
+    { q: "Which is better, Medinet Habu or the Ramesseum?",
+      a: "Medinet Habu, if you are choosing 1. Ramesses III used the Ramesseum as his model so the 2 plans are close, but the Ramesseum is largely roofless and bare while Medinet Habu keeps its walls, its colour and its enclosure. See both back to back if you have 2 west bank mornings." },
+    { q: "What are the Sea Peoples reliefs at Medinet Habu?",
+      a: "A sequence of battle scenes on the outer north wall recording Ramesses III's campaigns against a confederation the texts call the Sea Peoples, around 1175 BC. They are a main source for the Bronze Age collapse, showing ships with bird head prows, a naval battle in the Delta and scribes tallying severed hands." },
+    { q: "How long do you need at Medinet Habu?",
+      a: "About 90 minutes. An hour covers the courts and inner halls at a steady pace, and 2 hours lets you walk the full battle wall and climb the gatehouse if its upper rooms are open that day. Most groups that stop here allow 40 minutes, which is enough to see the scale and none of the detail." },
+    { q: "When is the best time of day to visit Medinet Habu?",
+      a: "Late in a west bank morning, around 10 or 11, or the last hour before closing. The tombs have to be done at opening because the valley is unbearable after 9, and this site is not: the courts hold shade. The late afternoon sun comes in from the west along the columns and is the better photograph." },
+    { q: "Where do you buy tickets for Medinet Habu?",
+      a: "At the site itself, not at the central west bank ticket office where most Luxor tickets are sold. This is unusual and catches people out, especially anyone who has already bought a stack of tickets on the road in. Payment is by card across the west bank, with no cash desk. Prices change most years, so confirm the current rate within 1 month of travelling." },
+    { q: "What was the Coptic town inside the temple?",
+      a: "Djeme, a Christian settlement that filled the temple enclosure for around 500 years with houses, streets and churches. Excavators cleared it in the early 20th century, which is why the courts are empty today. Its papyri are among the richest sources for daily life in Byzantine Egypt, and Coptic crosses are still cut into pharaonic columns." },
+  ],
+};

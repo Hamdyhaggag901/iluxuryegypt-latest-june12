@@ -1,40 +1,15 @@
 import { writeFileSync } from "node:fs";
-import { randomUUID } from "node:crypto";
-import a1 from "./a1.mjs";
-import a2 from "./a2.mjs";
-import a3 from "./a3.mjs";
-import a4 from "./a4.mjs";
-import a5 from "./a5.mjs";
+import { createHash } from "node:crypto";
+import {
+  ARTICLES, SCHEDULE, TOUR_SLUGS, DESTINATION_SLUGS,
+  EXISTING_POST_SLUGS, RESERVED_KEYWORDS,
+} from "./articles.mjs";
 
 const OUT = "/home/user/iluxuryegypt-latest-june12/content-updates";
-const ARTICLES = [a1, a2, a3, a4, a5];
-
-// Two weeks, one article every two to three days. A new site publishing five
-// pieces at once is an unnatural pattern; this spreads them out.
-const SCHEDULE = [
-  "2026-09-22T09:00:00+03:00",
-  "2026-09-24T09:00:00+03:00",
-  "2026-09-27T09:00:00+03:00",
-  "2026-09-29T09:00:00+03:00",
-  "2026-10-02T09:00:00+03:00",
-];
-
-// Real slugs, verified earlier in this session. Tours live at the site ROOT.
-const TOUR_SLUGS = new Set([
-  "7-day-egypt-tour", "10-day-egypt-tour", "12-days-egypt-tour",
-  "family-tours-egypt", "egypt-family-vacation-packages", "egypt-tours-family",
-  "egypt-small-group-tour", "egypt-private-tours", "egypt-private-tour-packages",
-  "egypt-nile-cruise-packages", "best-luxury-egypt-tours", "luxury-small-group-tours-egypt",
-]);
-const DESTINATION_SLUGS = new Set([
-  "cairo-travel-guide", "attractions-in-luxor", "aswan-egypt-attractions",
-  "alexandria-egypt-attractions", "things-to-do-in-hurghada", "siwa-oasis-egypt",
-]);
 
 // Mirrors shared/post-categories.ts. A category outside this list is not a
 // cosmetic problem: client/src/pages/blog.tsx filters on exact string equality,
-// so an unrecognised value makes the post appear under no filter at all. That
-// is what "Travel Guides" would have done to all five of these.
+// so an unrecognised value makes the post appear under no filter at all.
 const POST_CATEGORIES = [
   "Culture & History", "Travel Tips", "Destinations",
   "Food & Culture", "Travel Planning", "Responsible Travel",
@@ -47,12 +22,17 @@ const BANNED_PHRASES = [
   "dive into", "embark on a journey", "at the end of the day",
 ];
 
-// Keywords owned by another page. Using them here would compete with it.
-const RESERVED_KEYWORDS = {
-  "what-to-see-in-luxor": ["attractions in luxor"],
-  "grand-egyptian-museum-tour": [],
-  "dahshur-pyramids-egypt": ["step pyramid of djoser"],
-};
+// FAQ ids are derived from the slug and the question rather than generated
+// fresh each run. A random id per run rewrote every id in every file on every
+// regeneration, which buried the real change in the diff and, because the
+// upsert always assigns faqs, silently replaced the ids in the live rows too.
+// Same question, same id, forever.
+function faqId(slug, question) {
+  const h = createHash("sha1").update(`${slug}|${question}`).digest("hex");
+  return [h.slice(0, 8), h.slice(8, 12), "5" + h.slice(13, 16),
+          ((parseInt(h.slice(16, 17), 16) & 0x3) | 0x8).toString(16) + h.slice(17, 20),
+          h.slice(20, 32)].join("-");
+}
 
 const pg = (s) => `'${String(s).replace(/'/g, "''")}'`;
 const strip = (html) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
@@ -171,8 +151,9 @@ ARTICLES.forEach((a, index) => {
   for (const href of postLinks) {
     const target = href.replace("/blog/", "");
     if (target.includes("{{")) continue;
+    if (EXISTING_POST_SLUGS.has(target)) continue; // already live, cannot 404
     const targetIndex = ARTICLES.findIndex((x) => x.slug === target);
-    if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is not one of these five (verify it exists)`);
+    if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is neither in this batch nor a known live article`);
     else if (targetIndex >= index)
       problems.push(`${L}: links to /blog/${target}, scheduled at or after it, so the link would 404 on publication`);
   }
@@ -261,11 +242,11 @@ for (const r of report) {
 // SQL
 // ---------------------------------------------------------------------------
 ARTICLES.forEach((a, index) => {
-  const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: randomUUID(), question: f.q, answer: f.a })));
+  const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
   const tags = `ARRAY[${a.tags.map(pg).join(", ")}]::text[]`;
 
   const sql = `-- ${a.titleEn}
--- Blog post ${index + 1} of 5. Primary keyword: ${a.primary}
+-- Blog post ${index + 1} of ${ARTICLES.length}. Primary keyword: ${a.primary}
 --
 -- Scheduled for ${SCHEDULE[index]} via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -307,7 +288,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -325,6 +319,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = ${pg(a.slug)};
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,

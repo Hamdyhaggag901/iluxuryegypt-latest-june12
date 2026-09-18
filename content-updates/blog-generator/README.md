@@ -1,11 +1,38 @@
 # Blog post generator
 
-Source for the five articles in `content-updates/blog-0*.sql` and for
+Source for the articles in `content-updates/blog-*.sql` and for
 `content-updates/publishing-schedule.md`.
 
-The content lives in `a1.mjs` through `a5.mjs`. `gen.mjs` enforces every rule
-and refuses to write anything if one fails, which is the point of having it:
-editing the SQL by hand loses the checks.
+The content lives in `a1.mjs` onwards, one file per article. `articles.mjs` is
+the single list that `gen.mjs`, `sched.mjs` and `apply-patches.mjs` all read:
+add a new article there and in nothing else, alongside its publication date, its
+reserved keywords and the slugs it is allowed to link to.
+
+`gen.mjs` enforces every rule and refuses to write anything if one fails, which
+is the point of having it: editing the SQL by hand loses the checks.
+
+## Adding an article
+
+1. Write `aN.mjs`, copying the shape of an existing one.
+2. Add the import, the entry and a publication date in `articles.mjs`. The date
+   decides the order, and the order decides what the article is allowed to link
+   to: an article may link back to one published earlier or to one of the
+   `EXISTING_POST_SLUGS`, never forward to one still scheduled.
+3. Add its four image positions to `scripts/lib/post-image-specs.ts`. The
+   `afterH2` index is 1 based and must be less than the article's H2 count;
+   `fill-post-images.ts` checks that against the live body before it downloads
+   anything.
+4. Run `node gen.mjs && node sched.mjs`.
+
+Two keyword rules are worth knowing before you write, because both have bitten:
+
+- The primary keyword is counted as a raw substring, so a secondary that
+  **contains** the primary spends one of the primary's 3 to 5 slots every time
+  it appears. `medinet habu` with three secondaries all containing it leaves
+  room for only one bare use.
+- A secondary that is contained **inside** the primary has the primary's count
+  subtracted from its own, so it needs standalone uses that are not part of the
+  longer phrase.
 
 ```bash
 cd content-updates/blog-generator
@@ -31,14 +58,18 @@ ever invented.
 
 ## Changing an article that is already in the database
 
-Do not re-run `blog-0*.sql` against a live row. Those files insert with
-`ON CONFLICT (slug) DO UPDATE SET body_en = EXCLUDED.body_en`, so re-running one
-overwrites the body, and the body in the database is no longer the body those
-files wrote: `scripts/fill-post-images.ts` and `scripts/fetch-wikimedia-image.ts`
-have since inserted `<figure>` elements into it. A re-run deletes every one of
-them.
+The article files are now safe to re-run. `body_en` is assigned through a CASE
+that keeps whatever is in the row once it contains a `<figure>`, so re-running a
+file after `scripts/fill-post-images.ts` or `scripts/fetch-wikimedia-image.ts`
+has illustrated it refreshes the title, the SEO fields and the FAQs and leaves
+the body alone. The verification block prints which of the two happened.
 
-Instead, put the change in a patch file as `[old text, new text]` pairs and run
+That guard was added after the first version wiped every figure from a row and
+reported success. It also means a re-run is not how you change the prose of an
+illustrated post: the file will be ignored for the body.
+
+To change the prose of a row that already has images, put the change in a patch
+file as `[old text, new text]` pairs and run
 the applier. It edits the `a*.mjs` sources so a regeneration keeps the change,
 and writes a surgical `UPDATE ... replace()` for the rows already live.
 

@@ -1,5 +1,5 @@
 -- Tombs in the Valley of Kings: Which Three to Pick
--- Blog post 3 of 5. Primary keyword: tombs in the valley of kings
+-- Blog post 3 of 13. Primary keyword: tombs in the valley of kings
 --
 -- Scheduled for 2026-09-27T09:00:00+03:00 via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -159,7 +159,7 @@ INSERT INTO posts (
   'Your ticket covers three tombs in the valley of kings out of roughly a dozen open. Here is how to choose them, and which separate tickets are worth paying for.',
   'published',
   '2026-09-27T09:00:00+03:00'::timestamptz,
-  '[{"id":"c831bd8a-3ba3-4d72-bfcd-8d8e871f9da1","question":"How many tombs does the general Valley of the Kings ticket cover?","answer":"3 tombs, chosen by you at the gate from whatever is open that day, for 750 Egyptian pounds as of September 2026. The open list is usually between 8 and 12 and changes as conservation work moves around the valley, because visitor breath and sweat damage painted plaster. Payment at the office is by card only, with no cash desk."},{"id":"015bd907-c701-4893-89a5-cacb495a5fe6","question":"How many tombs are in the Valley of the Kings in total?","answer":"65 have been found and numbered, from KV1 to KV65. Only 8 to 12 are open to visitors at any one time. The number has moved before and may move again: KV64 and KV65 were both identified in the 2000s, so the valley is not a closed set even after 2 centuries of excavation."},{"id":"a93874b5-55b5-4574-9235-953a9d232295","question":"Which 3 tombs should you choose in the Valley of the Kings?","answer":"Thutmose III (KV34), Ramesses III (KV11) and Merenptah (KV8), if all 3 are open. KV34 has an oval burial chamber and a cursive Amduat, KV11 has side chambers of daily life scenes, and KV8 has the most dramatic descent. Ramesses VI (KV9) is often recommended but cannot be one of your three: it carries its own 220 pound ticket."},{"id":"d728ca68-0ca6-41dc-9e96-e795bc63be9b","question":"Is the Tutankhamun tomb worth the separate ticket?","answer":"Only if the discovery story matters more to you than the painting. KV62 costs 700 Egyptian pounds on top of general entry, about 13 US dollars, and it is small: cut for someone else, adapted in a hurry, with decoration on 1 wall. Everything famous from it is in the Grand Egyptian Museum. Cameras of any kind are banned inside."},{"id":"ffedd4e7-cd62-4dca-b6c3-76bae15fc3e6","question":"Is the Seti I tomb worth the extra cost?","answer":"Yes, if you are making 1 splurge and you care about ancient art rather than ancient celebrity. KV17 costs 2,000 Egyptian pounds, about 42 US dollars, which is why most visitors walk past it. It is the deepest and most completely decorated tomb in the valley, and its relief carving beats anything else on the west bank. Buy that ticket at the visitor centre."},{"id":"f4704ff4-d0ae-46be-a62e-e04a0a747f28","question":"Which is better, Nefertari''s tomb or Tutankhamun''s?","answer":"Nefertari (QV66) for almost everyone, but the 2 are not in the same place. QV66 is in the Valley of the Queens, a separate site about 2 km away, and costs 1,700 Egyptian pounds on top of that valley''s own 220 pound ticket. Its painting is the best preserved to survive from the ancient world, and visits are capped at about 10 minutes."},{"id":"e200c02b-7e45-40f9-a54c-7792f203d629","question":"What is the best time of day to visit the Valley of the Kings?","answer":"Opening time, and in summer be finished by 10am. The valley is a rock bowl with no shade that stores heat all day, and the deeper tombs are hot, still and airless rather than cool. Between October and April the timing is more forgiving, but early still means fewer people inside each tomb."},{"id":"8f09f864-5039-4511-a500-99644b1a3851","question":"Do you need a photography permit inside the tombs?","answer":"Only for a proper camera. A phone is free as long as the flash is off, a DSLR needs a 300 pound permit bought at the ticket office, and inside Tutankhamun''s tomb no camera of any kind is allowed. Carry small notes as well: the guardian at each of your 3 tombs will often light a ceiling detail you would otherwise miss."}]'::jsonb,
+  '[{"id":"a781126f-0a2b-5008-9cd1-fc1d7f0e14e8","question":"How many tombs does the general Valley of the Kings ticket cover?","answer":"3 tombs, chosen by you at the gate from whatever is open that day, for 750 Egyptian pounds as of September 2026. The open list is usually between 8 and 12 and changes as conservation work moves around the valley, because visitor breath and sweat damage painted plaster. Payment at the office is by card only, with no cash desk."},{"id":"ec395ddb-1aec-5f3c-bea9-da6ab820efc7","question":"How many tombs are in the Valley of the Kings in total?","answer":"65 have been found and numbered, from KV1 to KV65. Only 8 to 12 are open to visitors at any one time. The number has moved before and may move again: KV64 and KV65 were both identified in the 2000s, so the valley is not a closed set even after 2 centuries of excavation."},{"id":"359608e9-68c7-50c4-a5f1-e95defb78113","question":"Which 3 tombs should you choose in the Valley of the Kings?","answer":"Thutmose III (KV34), Ramesses III (KV11) and Merenptah (KV8), if all 3 are open. KV34 has an oval burial chamber and a cursive Amduat, KV11 has side chambers of daily life scenes, and KV8 has the most dramatic descent. Ramesses VI (KV9) is often recommended but cannot be one of your three: it carries its own 220 pound ticket."},{"id":"75c67af2-cf2b-55ea-9bf2-805102480c4b","question":"Is the Tutankhamun tomb worth the separate ticket?","answer":"Only if the discovery story matters more to you than the painting. KV62 costs 700 Egyptian pounds on top of general entry, about 13 US dollars, and it is small: cut for someone else, adapted in a hurry, with decoration on 1 wall. Everything famous from it is in the Grand Egyptian Museum. Cameras of any kind are banned inside."},{"id":"b571fb1b-bc2c-5274-bd19-8f3d4583049d","question":"Is the Seti I tomb worth the extra cost?","answer":"Yes, if you are making 1 splurge and you care about ancient art rather than ancient celebrity. KV17 costs 2,000 Egyptian pounds, about 42 US dollars, which is why most visitors walk past it. It is the deepest and most completely decorated tomb in the valley, and its relief carving beats anything else on the west bank. Buy that ticket at the visitor centre."},{"id":"19ee991e-b5ee-50b0-84b1-5ffea2738d22","question":"Which is better, Nefertari''s tomb or Tutankhamun''s?","answer":"Nefertari (QV66) for almost everyone, but the 2 are not in the same place. QV66 is in the Valley of the Queens, a separate site about 2 km away, and costs 1,700 Egyptian pounds on top of that valley''s own 220 pound ticket. Its painting is the best preserved to survive from the ancient world, and visits are capped at about 10 minutes."},{"id":"f483ce20-98b4-512e-9bbc-d3859339525e","question":"What is the best time of day to visit the Valley of the Kings?","answer":"Opening time, and in summer be finished by 10am. The valley is a rock bowl with no shade that stores heat all day, and the deeper tombs are hot, still and airless rather than cool. Between October and April the timing is more forgiving, but early still means fewer people inside each tomb."},{"id":"9ca5fbde-379d-52ad-b4fc-8b990177ca3f","question":"Do you need a photography permit inside the tombs?","answer":"Only for a proper camera. A phone is free as long as the flash is off, a DSLR needs a 300 pound permit bought at the ticket office, and inside Tutankhamun''s tomb no camera of any kind is allowed. Carry small notes as well: the guardian at each of your 3 tombs will often light a ceiling detail you would otherwise miss."}]'::jsonb,
   -- The other SEO overrides stay NULL on purpose: canonical_url falls back to
   -- the page's own URL, robots to "index, follow", og_image to the hero. An
   -- empty string in any of them would defeat that fallback.
@@ -167,7 +167,20 @@ INSERT INTO posts (
 )
 ON CONFLICT (slug) DO UPDATE SET
   title_en = EXCLUDED.title_en,
-  body_en = EXCLUDED.body_en,
+  -- The body is NOT overwritten once images are in it.
+  --
+  -- This file used to assign EXCLUDED.body_en unconditionally, and re-running
+  -- it after scripts/fill-post-images.ts deleted every <figure> that script had
+  -- inserted. Silently, with the file reporting success. The CASE makes a
+  -- re-run safe: a row that has already been illustrated keeps its body, and
+  -- the verification below says which rows were kept so it is never a surprise.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
   excerpt = EXCLUDED.excerpt,
   category = EXCLUDED.category,
   tags = EXCLUDED.tags,
@@ -185,6 +198,16 @@ COMMIT;
 -- ---------------------------------------------------------------------------
 -- Verification. Every "bad" column below must read 0.
 -- ---------------------------------------------------------------------------
+
+-- Not a failure. On a first run this reads "body written". On a re-run against
+-- a row that already has images it reads "body kept, it has figures in it",
+-- which is the guard above doing its job rather than something going wrong.
+SELECT CASE
+         WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+         ELSE 'body written from this file'
+       END AS body_en_outcome,
+       (length(body_en) - length(replace(body_en, '<figure', ''))) / 7 AS figures
+FROM posts WHERE slug = 'tombs-in-the-valley-of-kings';
 SELECT slug,
        length(meta_title) AS title_len,
        length(meta_description) AS meta_len,
