@@ -61,6 +61,7 @@ export default {
 <tr><td>Feel</td><td>Spacious, lit, modern</td><td>Dense, dim, historic</td></tr>
 <tr><td>Tutankhamun</td><td>The complete tomb contents</td><td>No longer the main display</td></tr>
 <tr><td>Time needed</td><td>Half a day minimum</td><td>2 to 3 hours</td></tr>
+<tr><td>Foreign adult entry</td><td>1,450 EGP, about 30 USD</td><td>550 EGP</td></tr>
 <tr><td>Best for</td><td>First visit, families, anyone who wants context</td><td>Return visitors, anyone who likes old museums</td></tr>
 </tbody>
 </table>
@@ -75,7 +76,7 @@ export default {
 
 <p>Fridays and public holidays are busier with local visitors. That is not a reason to avoid them, and the atmosphere on a Friday afternoon is one of the nicer things about the place, but do not expect a quiet Tutankhamun gallery.</p>
 
-<p>Current opening hours are <mark data-placeholder="gem-hours">FILL IN: current Grand Egyptian Museum opening hours, including any late evening</mark>.</p>
+<p>The galleries are open 9am to 6pm daily, and until 9pm on Wednesdays and Saturdays. The wider complex, meaning the shops and the restaurants, runs 8:30am to 7pm. Those two late evenings are the quietest hours the building has and almost nobody uses them.</p>
 
 <h2>The Galleries Worth Choosing if You Must Choose</h2>
 
@@ -91,11 +92,17 @@ export default {
 
 <h2>Tickets and What They Cover</h2>
 
-<p>Tickets are timed, which is unusual in Egypt and works in your favour: it keeps the entry crush down. Book ahead in high season rather than turning up.</p>
+<p>All prices below were checked in September 2026 and change without much warning, so treat them as a guide rather than a quote.</p>
 
-<p>Entry is <mark data-placeholder="gem-ticket">FILL IN: current general entry ticket price, and the separate Tutankhamun gallery supplement if one applies</mark>. Photography rules vary by gallery, and the ones that restrict it are signed.</p>
+<p>Tickets are sold online only, at visit-gem.com, for a specific arrival slot. There is no ticket window at the building, so turning up without a booking does not work. Slots run at 9, 11, 1, 3, 5 and 7.</p>
 
-<p>The solar boat building is a separate structure and sometimes carries a separate charge. Check when you book rather than at the gate.</p>
+<p>Entry is 1,450 Egyptian pounds for a foreign adult, roughly 30 US dollars, and 730 for a foreign student or a child aged 6 to 12. Under sixes go free. One ticket covers everything, including the Tutankhamun galleries: there is no supplement for them, whatever an older article may tell you.</p>
+
+<p>If you are travelling from November onwards, budget more. An increase has been announced from 1 November 2026 that takes the foreign adult rate to about 35 US dollars.</p>
+
+<p>One figure to ignore: 550 pounds circulates widely as the price of this museum. That is the Egyptian Museum in Tahrir, a different building with a different collection.</p>
+
+<p>Photography rules vary by gallery, and the ones that restrict it are signed. The solar boat building is a separate structure and sometimes carries a separate charge, so check when you book rather than at the gate.</p>
 
 <h2>What Grand Egyptian Museum Reviews Get Right, and Wrong</h2>
 
@@ -165,7 +172,7 @@ export default {
     { q: "Can you visit the Grand Egyptian Museum and the pyramids in one day?",
       a: "Yes, and the order decides whether it works. Do the pyramids at sunrise and the museum from mid morning, which puts you indoors and air conditioned as the day heats up. Doing it the other way round leaves you on the plateau in flat midday light after 3 or 4 hours of walking." },
     { q: "Do you need to book Grand Egyptian Museum tickets in advance?",
-      a: "In high season yes, because entry is timed, which is unusual in Egypt and keeps the entry crush down. Booking ahead also skips the queue. Photography rules vary by gallery and the restricted ones are signed at the door, so check on the day rather than assuming one rule covers all 12 galleries." },
+      a: "Yes, always, because tickets are sold online only at visit-gem.com for a timed arrival slot. There is no ticket window at the building, so turning up without a booking does not work. Slots run at 9, 11, 1, 3, 5 and 7. Photography rules vary by gallery and the restricted ones are signed at the door." },
     { q: "Is the Grand Egyptian Museum worth it for children?",
       a: "Yes, more so than most Egyptian museums, because the labels are written plainly and there is room to move. The limit is distance: this is a large building on a sloped site and the default route assumes you can walk for hours. Plan at least 1 sit down break rather than pushing through." },
     { q: "What should you see first at the Grand Egyptian Museum?",

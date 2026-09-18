@@ -25,6 +25,15 @@ import { optimizeUploadedImage } from "../../server/image-optimize";
 export type Provider = "pexels" | "pixabay" | "unsplash";
 export const PROVIDER_ORDER: Provider[] = ["pexels", "pixabay", "unsplash"];
 
+/**
+ * Where a candidate came from. Wikimedia Commons is deliberately NOT a
+ * `Provider`: it needs no API key, it is searched by a different endpoint, and
+ * putting it in PROVIDER_ORDER would silently change what the existing scripts
+ * fetch. fetch-wikimedia-image.ts builds its own candidates and hands them to
+ * the same guard, composer and download path.
+ */
+export type Source = Provider | "wikimedia";
+
 export const UPLOAD_DIR = path.resolve(import.meta.dirname, "..", "..", "attached_assets", "uploads");
 export const UPLOAD_URL_PREFIX = "/api/assets/uploads/";
 const CONTENT_MAX_WIDTH = 1600;
@@ -48,7 +57,7 @@ const BASES: Record<Provider, string> = {
 };
 
 export interface Candidate {
-  provider: Provider;
+  provider: Source;
   id: string;
   fullUrl: string;
   /** The provider's OWN description. The guard and the alt read only this. */
@@ -335,7 +344,15 @@ const SUBJECTS: Entry[] = [
   { match: ["lake", "pool", "spring", "water"], phrase: "water" },
   { match: ["palm", "palms"], phrase: "palms" },
   { match: ["tree", "trees", "grove"], phrase: "trees" },
-  { match: ["cliff", "cliffs", "mountain", "mountains", "hill", "hills"], phrase: "cliffs" },
+  // Three entries rather than one. The single entry that used to cover all of
+  // these emitted "cliffs" for a description that said "hills", which is the
+  // exact failure the no-invention rule exists to stop: the vocabulary audit
+  // was satisfied, because "cliffs" was in the entry's own match list, while
+  // the alt still claimed something the photograph had not been described as
+  // showing. A trigger word has to mean what the phrase it emits means.
+  { match: ["cliff", "cliffs"], phrase: "cliffs" },
+  { match: ["mountain", "mountains"], phrase: "mountains" },
+  { match: ["hill", "hills"], phrase: "hills" },
   { match: ["building", "buildings", "house", "houses", "architecture"], phrase: "buildings" },
   { match: ["wall", "walls"], phrase: "walls" },
   { match: ["stone", "rock", "granite", "limestone", "sandstone"], phrase: "stone" },

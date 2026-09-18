@@ -61,6 +61,7 @@ const countOf = (haystack, needle) =>
   (haystack.toLowerCase().match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length;
 
 const problems = [];
+const notes = [];
 const report = [];
 const placeholders = [];
 
@@ -153,7 +154,13 @@ ARTICLES.forEach((a, index) => {
   const postLinks = hrefs.filter((h) => h.startsWith("/blog/"));
   if (tourLinks.length === 0) problems.push(`${L}: no link to a tour`);
   if (destLinks.length === 0) problems.push(`${L}: no link to a destination page`);
-  if (postLinks.length === 0) problems.push(`${L}: no link to another article`);
+  // The first article to publish has no earlier sibling to link to, and a
+  // forward link would 404 between its date and the target's. That is why a1
+  // carried a {{RELATED_POST_SLUG}} token for so long. Exempt it and say so,
+  // rather than papering over a broken link.
+  if (postLinks.length === 0 && index > 0) problems.push(`${L}: no link to another article`);
+  if (postLinks.length === 0 && index === 0)
+    notes.push(`${L}: publishes first, so it links to no other article. Add a backlink once a sibling is live.`);
 
   for (const href of hrefs) {
     if (href.startsWith("/egypt-travel-guide/") && !DESTINATION_SLUGS.has(href.split("/")[2]))
@@ -237,6 +244,8 @@ if (problems.length > 0) {
   console.error("GUARD FAILURES:\n  " + problems.join("\n  "));
   process.exit(1);
 }
+
+if (notes.length > 0) console.log("NOTES:\n  " + notes.join("\n  ") + "\n");
 
 console.log("slug".padEnd(30), "words", "kw", "h2", "title", "meta", "faq", "links", "sd", " scheduled");
 for (const r of report) {

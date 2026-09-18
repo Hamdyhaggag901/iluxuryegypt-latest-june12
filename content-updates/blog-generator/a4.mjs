@@ -126,7 +126,11 @@ export default {
 
 <h2>Practical Notes</h2>
 
-<p>Tickets are bought per site, mostly at the entrance, and there is no single pass. Most west bank tickets are sold at a central office on the road in, not at the monuments, which catches people out. Current prices are <mark data-placeholder="luxor-tickets">FILL IN: current ticket prices for Valley of the Kings, Hatshepsut, Medinet Habu, Karnak and Luxor Temple</mark>.</p>
+<p>Tickets are bought per site. Most west bank tickets are sold at a central office on the road in rather than at the monuments themselves, which catches people out, and payment across the west bank is by card only.</p>
+
+<p>Prices move every year or two, so check the current rate before you go or ask your operator to confirm it alongside your itinerary. As a reference point checked in September 2026, the Valley of the Kings was 750 Egyptian pounds for three tombs, about 16 US dollars.</p>
+
+<p>There is a pass, and whether it pays depends on your appetite. The standard Luxor Pass is about 130 US dollars and covers most sites on both banks, but not Seti I and not Nefertari. The premium version is around 250 and includes both. At four or five sites it is roughly a wash; if you intend to see everything including those two tombs, the premium pass wins comfortably.</p>
 
 <p>Crossing the river is easy. The bridge is a long way south, so most people use the local ferry or a private boat, and both run frequently.</p>
 

@@ -37,7 +37,7 @@ export default {
 <tr><td>Typical departure</td><td>Between 3am and 4am</td><td>Early morning, hotel pickup around dawn</td></tr>
 <tr><td>Time at the site</td><td>Usually 2 hours</td><td>Usually 2 hours, sometimes less</td></tr>
 <tr><td>Back in Aswan</td><td>Early afternoon</td><td>Late morning</td></tr>
-<tr><td>Cost</td><td><mark data-placeholder="abu-simbel-road-cost">FILL IN: typical road trip cost per person</mark></td><td><mark data-placeholder="abu-simbel-air-cost">FILL IN: typical flight package cost per person</mark></td></tr>
+<tr><td>Typical shared trip cost</td><td>About 57 to 90 US dollars per person</td><td>Higher, and it moves with the airfare on the day</td></tr>
 <tr><td>Suits</td><td>Anyone who wants the desert and the early light</td><td>Anyone short on days, or travelling with children or older parents</td></tr>
 </tbody>
 </table>
@@ -104,9 +104,13 @@ export default {
 
 <h2>Practical Notes Before You Book</h2>
 
-<p>Tickets are bought at the site and prices change; check the current rate rather than trusting a figure in an article. Current entry cost is <mark data-placeholder="abu-simbel-ticket">FILL IN: current Abu Simbel entry ticket price</mark>, and the site opens at <mark data-placeholder="abu-simbel-hours">FILL IN: current opening hours</mark>.</p>
+<p>All prices below were checked in September 2026 and change without much warning, so treat them as a guide rather than a quote.</p>
 
-<p>If you are already planning time in the south, the <a href="/egypt-travel-guide/aswan-egypt-attractions">Aswan area guide</a> covers Philae, the quarries and the Nubian villages, which is what most people fill the rest of an Aswan stay with. For the wider region, the <a href="/egypt-travel-guide/attractions-in-luxor">Luxor guide</a> is the natural next stop north, and <a href="/blog/{{RELATED_POST_SLUG}}">{{RELATED_POST_ANCHOR}}</a> covers the Nile stretch between them.</p>
+<p>Entry is 822 Egyptian pounds for a foreign adult, roughly 17 US dollars, and 445.50 with a valid ISIC student card. One thing to know before you book: the ministry information page has been showing 750 pounds while the official booking portal charges 822. The figure at checkout is the one you pay.</p>
+
+<p>The site opens at 6am with last entry at 4pm, every day of the year. During Ramadan that shifts to 7am with last entry at 3pm. On 22 February and 22 October, the two sun festival dates, there is an additional charge of around 1,200 pounds.</p>
+
+<p>If you are already planning time in the south, the <a href="/egypt-travel-guide/aswan-egypt-attractions">Aswan area guide</a> covers Philae, the quarries and the Nubian villages, which is what most people fill the rest of an Aswan stay with. For the wider region, the <a href="/egypt-travel-guide/attractions-in-luxor">Luxor guide</a> is the natural next stop north, and the stretch of river between the two cities is easiest to see from the water rather than the road.</p>
 
 <h2>What to Bring, and What to Leave</h2>
 
@@ -126,7 +130,7 @@ export default {
     { q: "How much time do you actually get at Abu Simbel?",
       a: "About 2 hours on the ground, whichever way you travel. That covers both temples at a steady pace, roughly 70 minutes for the Great Temple of Ramesses II and 15 for the smaller Temple of Hathor and Nefertari, and leaves time to walk behind the artificial hill the 2 temples were moved into." },
     { q: "When is the Abu Simbel sun festival?",
-      a: "On 22 February and 22 October each year, when sunrise runs straight down the temple axis and lights 3 of the 4 seated statues in the inner sanctuary. The alignment lasts about 20 minutes. Both dates draw very large crowds, and flights and rooms in Abu Simbel village sell out months ahead." },
+      a: "On 22 February and 22 October each year, when sunrise runs straight down the temple axis and lights 3 of the 4 seated statues in the inner sanctuary. The alignment lasts about 20 minutes. Entry on those 2 days carries an extra charge of around 1,200 Egyptian pounds, and flights and rooms in the village sell out months ahead." },
     { q: "Can you visit Abu Simbel without booking a tour?",
       a: "Yes, by road or on a domestic flight, but there is no public transport worth using across the 280 km from Aswan. The whole day is built around one early window, which is hard to hit independently, so most visitors book transport as a package. iLuxury Egypt runs it as a private day trip for that reason." },
     { q: "Is one day at Abu Simbel enough, or is an overnight stay worth it?",

@@ -643,6 +643,140 @@
     font-weight: 600;
     color: hsl(var(--primary));
   }
+
+  /* Article figures. The body images are written into body_en by the image
+     scripts with width="1600" on the tag, which is what tells the browser the
+     aspect ratio before the file loads. Left at that intrinsic width they also
+     set the column's minimum size, so the width below pins them to the column
+     and the height keeps the ratio. */
+  .prose-xl figure {
+    margin: 2.5rem 0;
+  }
+
+  .prose-xl figure img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+  }
+
+  .prose-xl figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Article tables.
+     These arrive as raw HTML inside body_en and are rendered through
+     dangerouslySetInnerHTML into a .prose container, so every rule here has to
+     out-specify the typography plugin. It does: the plugin wraps its own
+     selectors in :where(), which contributes no specificity, so .prose :where(table)
+     scores 0,1,0 while .prose-xl table scores 0,1,1 and wins without !important.
+
+     Colours and fonts are the existing tokens only. --primary is Nile Deep Blue
+     in light mode and Pharaoh Gold in dark, and --primary-foreground flips with
+     it, so the header row stays legible in both without a second definition. */
+  .prose-xl table {
+    /* display:block is what makes the table scroll inside itself instead of
+       pushing the page sideways on a phone. min-width keeps it filling the
+       column on a wide screen, where there is nothing to scroll. */
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 2.5rem 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    background-color: hsl(var(--card));
+  }
+
+  .prose-xl table caption {
+    caption-side: bottom;
+    padding-top: 0.75rem;
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    text-align: left;
+  }
+
+  .prose-xl table thead th {
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.875rem 1.25rem;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  .prose-xl table thead th:first-child { border-top-left-radius: calc(var(--radius) - 1px); }
+  .prose-xl table thead th:last-child { border-top-right-radius: calc(var(--radius) - 1px); }
+
+  .prose-xl table td {
+    padding: 0.875rem 1.25rem;
+    vertical-align: top;
+    color: hsl(var(--foreground));
+    border-top: 1px solid hsl(var(--border));
+  }
+
+  /* Light shading on alternate rows. Kept under half strength so it reads as a
+     guide for the eye rather than as a second colour in the page. */
+  .prose-xl table tbody tr:nth-child(odd) td {
+    background-color: hsl(var(--muted) / 0.45);
+  }
+
+  .prose-xl table tbody tr:first-child td {
+    border-top: none;
+  }
+
+  /* First column is the name of the thing, so it carries the weight.
+     width:1% with nowrap is the old trick for "as narrow as your content":
+     auto table layout hands the leftover width to the columns that wrap, which
+     is where prose belongs. */
+  .prose-xl table tbody td:first-child {
+    font-weight: 600;
+    color: hsl(var(--primary));
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  /* Add class="price" to a price th and its td cells. Numbers right aligned and
+     tabular so the digits line up down the column. */
+  .prose-xl table th.price,
+  .prose-xl table td.price {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    width: 1%;
+  }
+
+  .prose-xl table strong {
+    color: inherit;
+  }
+
+  @media (max-width: 640px) {
+    .prose-xl table {
+      margin: 2rem 0;
+      font-size: 0.9375rem;
+    }
+
+    .prose-xl table thead th,
+    .prose-xl table td {
+      padding: 0.75rem 0.875rem;
+    }
+  }
 }
 
 /* TipTap WYSIWYG Editor Styles */

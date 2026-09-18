@@ -605,7 +605,11 @@ export default function BlogPost() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col xl:flex-row gap-16">
             {/* Main Content */}
-            <article className="xl:flex-1 max-w-4xl xl:max-w-none">
+            {/* min-w-0 matters: without it the flex item cannot shrink below its
+                content's min-content width, and the body figures carry width="1600",
+                which stretched this column to 1600px and scrolled the whole page
+                sideways at the xl breakpoint. */}
+            <article className="xl:flex-1 min-w-0 max-w-4xl xl:max-w-none">
               <div className="mb-12">
                 <div className="w-24 h-px bg-accent mb-8"></div>
                 <div className="text-lg text-muted-foreground leading-relaxed mb-8">

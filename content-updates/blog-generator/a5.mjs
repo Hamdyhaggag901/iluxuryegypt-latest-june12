@@ -106,7 +106,9 @@ export default {
 
 <h2>Practical Notes</h2>
 
-<p>Tickets are per site and the pyramid interiors at Dahshur are normally included in site entry rather than charged separately, though this changes. Current prices are <mark data-placeholder="saqqara-dahshur-tickets">FILL IN: current Saqqara and Dahshur entry prices, plus any separate Serapeum or mastaba charges</mark>, and opening hours are <mark data-placeholder="saqqara-dahshur-hours">FILL IN: current opening hours for both sites</mark>.</p>
+<p>Tickets are per site, and the pyramid interiors at Dahshur are normally included in site entry rather than charged separately, though the Serapeum and some of the Saqqara mastabas have carried their own charge at times.</p>
+
+<p>Entry prices at Saqqara and Dahshur change most years and are card only, as they are across the Cairo sites. Check the current rate before you go, or ask your operator to confirm it alongside your itinerary. The same goes for opening hours, which shift with the season and again during Ramadan.</p>
 
 <p>There is very little shade and almost no food at either site. Bring water. There is a cafeteria at Saqqara and effectively nothing at Dahshur.</p>
 
