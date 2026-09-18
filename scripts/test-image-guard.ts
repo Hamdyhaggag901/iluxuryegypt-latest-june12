@@ -332,7 +332,10 @@ console.log("\nI. \"West bank\" only counts when something says Egypt\n");
 {
   // Babylon is the Roman fortress Coptic Cairo is built inside, and a city in
   // Iraq. Both readings have to work.
-  const coptic: Guard = { requirePlace: ["coptic", "babylon"], allowPlaces: ["cairo"], require: [], deny: [] };
+  const coptic: Guard = {
+    requirePlace: ["coptic cairo", "babylon"],
+    allowPlaces: ["cairo", "coptic cairo", "old cairo"], require: [], deny: [],
+  };
   const good = checkRelevance("the towers of Babylon Fortress in Coptic Cairo, Egypt", coptic);
   ok("\"Babylon Fortress, Cairo\" passes", good.ok, good.ok ? "" : `WRONGLY REJECTED (${good.reason})`);
   const bad = checkRelevance("the reconstructed gate of Babylon", coptic);
@@ -344,9 +347,9 @@ console.log("\nJ. Egyptian words are not collateral damage\n");
 
 for (const [what, text, guard] of [
   ["Roman, in Alexandria", "the Roman theatre at Kom el Dikka in Alexandria, Egypt",
-   { requirePlace: ["alexandria"], allowPlaces: ["alexandria"], require: [["roman", "theatre"]], deny: [] }],
+   { requirePlace: ["alexandria"], allowPlaces: ["alexandria", "kom el dikka"], require: [["roman", "theatre"]], deny: [] }],
   ["Greco Roman, at Dendera", "a Greco Roman temple ceiling at Dendera in Qena, Egypt",
-   { requirePlace: ["dendera"], allowPlaces: ["qena", "dendera"], require: [["temple", "ceiling"]], deny: [] }],
+   { requirePlace: ["dendera"], allowPlaces: ["qena", "dendera", "denderah"], require: [["temple", "ceiling"]], deny: [] }],
   ["Mediterranean, at Alexandria", "the Mediterranean seafront corniche at Alexandria, Egypt",
    { requirePlace: ["alexandria"], allowPlaces: ["alexandria"], require: [["sea", "corniche"]], deny: [] }],
   ["Nubian, at Aswan", "a painted Nubian house in a village near Aswan, Egypt",
@@ -366,22 +369,26 @@ console.log("\nK. A guard that cannot fail is refused before the run starts\n");
     { slug: "x", position: "after H2 #9", place: "Theban hills",
       guard: { requirePlace: ["hill", "hills", "cliff", "valley", "desert"], require: [], deny: [] } },
   ]);
-  ok("a requirePlace of landforms is rejected", problems.length === 1, problems.join(" | "));
-  ok("and the message says what to do", problems[0]?.includes("Move them to require"), problems[0]);
+  ok("a requirePlace of landforms is rejected", problems.length > 0, problems.join(" | "));
+  ok("every offending token is named", problems.filter((x) => x.includes("describes a subject")).length === 5,
+     problems.join(" | "));
+  ok("and the message says what to do", problems.some((x) => x.includes("Move it to require")), problems[0]);
 }
 {
   const problems = auditPlaceGuards([
     { slug: "x", position: "hero", place: "Theban hills",
       guard: { requirePlace: ["theban", "west bank"], require: [], deny: [] } },
   ]);
-  ok("a requirePlace containing \"west bank\" is rejected", problems.length === 1, problems.join(" | "));
+  ok("a requirePlace containing \"west bank\" is rejected",
+     problems.some((x) => x.includes("names somewhere outside Egypt")), problems.join(" | "));
 }
 {
   const problems = auditPlaceGuards([
     { slug: "x", position: "hero", place: "Nowhere",
       guard: { requirePlace: [], require: [], deny: [] } },
   ]);
-  ok("an empty requirePlace is rejected", problems.length === 1, problems.join(" | "));
+  ok("an empty requirePlace is rejected",
+     problems.some((x) => x.includes("requirePlace is empty")), problems.join(" | "));
 }
 {
   const problems = auditPlaceGuards([
@@ -407,6 +414,128 @@ console.log("\nK. A guard that cannot fail is refused before the run starts\n");
   );
   ok(`all ${POSTS.reduce((n, p) => n + p.images.length, 0)} shipped guards name a real place`,
      problems.length === 0, problems.join("\n        "));
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nL. A contradiction beats a confirmation\n");
+
+// The photograph that started this section. Unsplash returned it for
+// "temple of Seti I Abydos carving", the Abydos guard had "seti" in
+// requirePlace, and the description says in as many words that it is the Valley
+// of the Kings, 200 km from Abydos.
+const SETI_KV17 = "Hieroglyphics in Tomb of Seti I in Valley of the Kings.. text";
+const abydosGuard: Guard = {
+  requirePlace: ["abydos"],
+  allowPlaces: ["abydos", "sohag"],
+  require: [["temple", "relief", "carving", "carved", "hieroglyph", "hieroglyphs", "wall"]],
+  deny: ["pyramid", "luxor", "karnak", "dendera"],
+};
+{
+  const v = checkRelevance(SETI_KV17, abydosGuard);
+  ok("the KV17 photograph is refused for Abydos", !v.ok, v.reason);
+  ok("and the reason names the place it actually is",
+     !v.ok && v.reason.includes("valley of the kings"), v.reason);
+}
+{
+  // Even with "seti" back in requirePlace, the contradiction now wins. This is
+  // the property the user asked for: confirmation cannot outvote a clash.
+  const loose: Guard = { ...abydosGuard, requirePlace: ["abydos", "seti"] };
+  const v = checkRelevance(SETI_KV17, loose);
+  ok("a confirming token does not rescue a contradicting description", !v.ok, v.reason);
+}
+{
+  const good = "Carved relief of Seti I on a temple wall at Abydos in Sohag, Egypt";
+  const v = checkRelevance(good, abydosGuard);
+  ok("the real Abydos temple still passes", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+{
+  // And the same photograph is correct for the Valley of the Kings position.
+  const vokGuard: Guard = {
+    requirePlace: ["valley of the kings", "luxor", "thebes", "theban"],
+    allowPlaces: ["luxor", "thebes", "theban", "valley of the kings"],
+    require: [["tomb", "hieroglyph", "hieroglyphs", "painted", "wall", "relief"]],
+    deny: ["pyramid", "cairo"],
+  };
+  const v = checkRelevance(SETI_KV17, vokGuard);
+  ok("the same photograph passes for the Valley of the Kings", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
+for (const [what, text] of [
+  ["Karnak offered for Luxor Temple", "columns of the hypostyle hall at Karnak, Luxor, Egypt"],
+  ["Medinet Habu offered for the Ramesseum", "painted columns at Medinet Habu on the Luxor west bank, Egypt"],
+  ["Philae offered for Kom Ombo", "the temple of Isis at Philae near Aswan, Egypt"],
+  ["Dendera offered for Abydos", "the painted ceiling of the temple at Dendera, Egypt"],
+] as Array<[string, string]>) {
+  const guard: Guard = {
+    requirePlace: ["abydos"], allowPlaces: ["abydos", "sohag"],
+    require: [], deny: [],
+  };
+  const v = checkRelevance(text, guard);
+  ok(`${what} is refused`, !v.ok, v.ok ? "ACCEPTED" : v.reason);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nM. Kings and gods are not places\n");
+
+for (const person of ["seti", "hathor", "horus", "isis", "sobek", "ramesses", "khufu", "djoser", "sneferu", "hatshepsut"]) {
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Somewhere", city: "Luxor",
+      guard: { requirePlace: ["abydos", person], require: [], deny: [], allowPlaces: ["abydos", "luxor"] } },
+  ]);
+  ok(`"${person}" is refused in requirePlace`,
+     problems.some((x) => x.includes("a king or a god")), problems.join(" | ") || "NO PROBLEM REPORTED");
+}
+{
+  // A name that in practice means one building is not caught by that rule.
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Ibn Tulun Mosque", city: "Cairo",
+      guard: { requirePlace: ["ibn tulun", "tulun"], allowPlaces: ["cairo", "ibn tulun"], require: [], deny: [] } },
+  ]);
+  ok("\"ibn tulun\" is allowed, since nobody uses it to mean the person",
+     problems.length === 0, problems.join(" | "));
+}
+{
+  // Every alternative has to confirm, because requirePlace is an OR. A list
+  // holding one real name and one loose word is still no guard.
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Karnak Temple", city: "Luxor",
+      guard: { requirePlace: ["karnak", "hypostyle", "temple"], allowPlaces: ["luxor", "karnak"], require: [], deny: [] } },
+  ]);
+  ok("a real name does not excuse a loose alternative beside it",
+     problems.filter((x) => x.includes("describes a subject")).length === 2, problems.join(" | "));
+}
+{
+  // The shipped specs, so a future edit that reintroduces either shape fails
+  // here as well as at the start of a run.
+  const problems = auditPlaceGuards(
+    POSTS.flatMap((post) =>
+      post.images.map((img) => ({
+        slug: post.slug,
+        position: img.role === "featured" ? "hero" : `after H2 #${img.afterH2}`,
+        place: img.place,
+        city: img.city,
+        guard: img.guard,
+      }))
+    )
+  );
+  ok("no shipped guard names a king, a god or a subject as its place",
+     problems.length === 0, problems.join("\n        "));
+}
+{
+  // And no shipped guard contradicts its own place, which became possible the
+  // moment EGYPT_PLACES learned monument names.
+  const selfClash: string[] = [];
+  for (const post of POSTS) {
+    for (const img of post.images) {
+      const text = `a photograph of ${img.place} in ${img.city}, Egypt`;
+      const v = checkRelevance(text, img.guard);
+      if (!v.ok && v.reason.includes("a different place")) {
+        selfClash.push(`${post.slug} ${img.place}: ${v.reason}`);
+      }
+    }
+  }
+  ok("no shipped guard rejects a description of its own place",
+     selfClash.length === 0, selfClash.join("\n        "));
 }
 
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);

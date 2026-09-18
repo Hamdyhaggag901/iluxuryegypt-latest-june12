@@ -330,12 +330,36 @@ export interface Guard {
 // these that the image is not supposed to be about is describing somewhere
 // else, whatever else it says.
 export const EGYPT_PLACES = [
+  // Cities and regions.
   "cairo", "giza", "luxor", "aswan", "alexandria", "hurghada", "sharm",
   "dahab", "siwa", "dahshur", "saqqara", "sakkara", "faiyum", "fayoum",
-  "fayyum", "abydos", "dendera", "edfu", "esna", "philae", "karnak",
+  "fayyum", "abydos", "dendera", "denderah", "edfu", "esna", "philae", "karnak",
   "memphis", "sinai", "suez", "damietta", "rosetta", "tanta", "minya",
-  "sohag", "qena", "asyut", "aswan", "nubia", "abu simbel", "qarun",
+  "sohag", "qena", "asyut", "nubia", "abu simbel", "qarun",
   "nasser", "marsa alam", "safaga", "taba", "nuweiba", "bahariya", "farafra",
+  "kharga", "dakhla", "amarna", "beni hasan", "meidum", "hawara", "elephantine",
+  "kom ombo", "thebes", "theban", "port said", "ismailia", "el alamein",
+
+  // Named monuments and sites.
+  //
+  // These were missing, and that is the whole of the Seti failure: a
+  // photograph captioned "Tomb of Seti I in Valley of the Kings" was accepted
+  // for the temple of Seti I at Abydos, 200 km away, because "valley of the
+  // kings" was not a place this list knew about and so contradicted nothing.
+  // A contradiction can only be detected against a name the checker holds.
+  "valley of the kings", "valley of the queens", "medinet habu", "ramesseum",
+  "deir el bahari", "deir el-bahari", "hatshepsut temple", "luxor temple",
+  "colossi of memnon", "deir el medina", "howard carter", "tutankhamun tomb",
+  "step pyramid", "bent pyramid", "red pyramid", "black pyramid", "serapeum",
+  "great pyramid", "sphinx", "solar boat", "grand egyptian museum",
+  "egyptian museum", "coptic cairo", "islamic cairo", "old cairo",
+  "hanging church", "ben ezra", "ibn tulun", "al azhar", "bab zuweila",
+  "bab zuwayla", "bab al futuh", "khan el khalili", "khan al khalili",
+  "al muizz", "citadel of saladin", "qaitbay", "kom el dikka", "kom al dikka",
+  "bibliotheca alexandrina", "pompey's pillar", "montazah",
+  "unfinished obelisk", "gharb soheil", "nubian museum", "high dam",
+  "white desert", "black desert", "wadi el hitan", "mount sinai",
+  "saint catherine", "ras mohammed",
 ];
 
 /**
@@ -422,55 +446,110 @@ export const OUTSIDE_EGYPT = [
 
 /**
  * Words that say what is in a photograph, never where it was taken.
- *
- * A requirePlace built only from these confirms nothing: "hill, cliff, valley,
- * desert" is satisfied by a hillside anywhere on earth. That is the second half
- * of the Bethlehem failure and the half that would have gone on to bite other
- * positions, so auditPlaceGuards below refuses to let a spec ship that way.
  */
 const NOT_A_PLACE_NAME = new Set([
   "hill", "hills", "cliff", "cliffs", "valley", "mountain", "mountains",
   "desert", "dune", "dunes", "sand", "rock", "stone", "water", "lake", "river",
   "sea", "shore", "island", "sky", "ruins", "ruin", "temple", "temples", "tomb",
-  "tombs", "church", "mosque", "minaret", "museum", "gallery", "market",
-  "bazaar", "street", "alley", "lane", "gate", "wall", "walls", "column",
-  "columns", "statue", "statues", "relief", "carving", "building", "buildings",
-  "house", "houses", "village", "city", "town", "quarry", "obelisk", "pyramid",
-  "pyramids", "boat", "felucca", "library", "fort", "fortress", "citadel",
-  "theatre", "theater", "courtyard", "dome", "domes", "arch", "arches",
-  "ceiling", "painting", "paintings", "icon", "icons", "west bank", "east bank",
+  "tombs", "burial", "chamber", "sarcophagus", "church", "mosque", "minaret",
+  "museum", "gallery", "exhibit", "exhibition", "market", "bazaar", "souk",
+  "street", "alley", "lane", "gate", "wall", "walls", "column", "columns",
+  "statue", "statues", "relief", "carving", "building", "buildings", "house",
+  "houses", "village", "city", "town", "quarry", "obelisk", "pyramid",
+  "pyramids", "boat", "boats", "barque", "bark", "ship", "vessel", "felucca",
+  "library", "fort", "fortress", "citadel", "theatre", "theater", "courtyard",
+  "dome", "domes", "arch", "arches", "ceiling", "painting", "paintings",
+  "icon", "icons", "king", "kings", "queen", "queens", "pharaoh", "hypostyle",
+  "terrace", "terraces", "mastaba", "step", "stepped", "bent", "necropolis",
+  "west bank", "east bank", "bab",
+]);
+
+/**
+ * Kings and gods. Not places, however strongly a name is associated with one.
+ *
+ * This is the Abydos failure. The guard for the temple of Seti I at Abydos had
+ * "seti" in requirePlace, so a photograph captioned "Hieroglyphics in Tomb of
+ * Seti I in Valley of the Kings" confirmed the place and was written into the
+ * article. Seti I has a temple at Abydos AND a tomb at Luxor, 200 km apart, and
+ * the same is true of every name below: Hathor has temples at Dendera, Philae,
+ * Abu Simbel and Deir el Bahari, Horus at Edfu and Kom Ombo, Isis at Philae and
+ * half of Egypt. A god is evidence about the subject, never about the location.
+ *
+ * Names that in practice identify one building, such as "ibn tulun" or
+ * "qaitbay", are not here: nobody uses them to mean the person.
+ */
+const NOT_A_PLACE_PERSON = new Set([
+  "seti", "sety", "ramesses", "ramses", "rameses", "horus", "sobek", "hathor",
+  "isis", "osiris", "anubis", "amun", "amon", "ptah", "sekhmet", "thoth",
+  "khufu", "cheops", "khafre", "menkaure", "djoser", "zoser", "sneferu",
+  "snefru", "hatshepsut", "thutmose", "tuthmosis", "tutankhamun", "tutankhamen",
+  "akhenaten", "nefertiti", "nefertari", "cleopatra", "ptolemy", "amenhotep",
+  "merenptah", "meneptah", "imhotep", "nefertari's",
 ]);
 
 /**
  * Checks that every image spec's requirePlace actually names a place.
  *
- * Run before any network call, next to auditVocabulary, because a guard that
- * cannot fail is worse than no guard: it reports success on the wrong picture.
+ * requirePlace is a disjunction: one matching token is enough to confirm the
+ * place. So EVERY token has to name the place on its own, and a single loose
+ * alternative disables the whole check. The first version of this audit only
+ * asked for one good token among them, which let "karnak, hypostyle, temple"
+ * and "abydos, seti" through: both hold a real name and both were satisfied by
+ * a photograph of somewhere else.
+ *
+ * It also checks that a spec cannot contradict itself, which became possible
+ * once EGYPT_PLACES learned the names of monuments: a guard for Luxor Temple
+ * whose allowed set does not contain "luxor" rejects every photograph that
+ * says "Luxor Temple, Luxor".
  */
 export function auditPlaceGuards(
-  specs: Array<{ slug: string; position: string; place: string; guard: Guard }>
+  specs: Array<{ slug: string; position: string; place: string; city?: string; guard: Guard }>
 ): string[] {
   const problems: string[] = [];
-  for (const { slug, position, place, guard } of specs) {
+  for (const { slug, position, place, city, guard } of specs) {
+    const where = `${slug} ${position} (${place})`;
+
     if (guard.requirePlace.length === 0) {
-      problems.push(`${slug} ${position} (${place}): requirePlace is empty, so nothing confirms the place`);
+      problems.push(`${where}: requirePlace is empty, so nothing confirms the place`);
       continue;
     }
-    const named = guard.requirePlace.filter((t) => !NOT_A_PLACE_NAME.has(t.trim().toLowerCase()));
-    if (named.length === 0) {
-      problems.push(
-        `${slug} ${position} (${place}): requirePlace is only generic words ` +
-          `(${guard.requirePlace.join(", ")}), which any photograph of that subject anywhere satisfies. ` +
-          `Move them to require and put a real place name in requirePlace.`
-      );
+
+    for (const raw of guard.requirePlace) {
+      const token = raw.trim().toLowerCase();
+      if (NOT_A_PLACE_NAME.has(token)) {
+        problems.push(
+          `${where}: requirePlace contains "${token}", which describes a subject rather than a place. ` +
+            `requirePlace is an OR, so that one word is enough to confirm any photograph of that subject ` +
+            `anywhere. Move it to require.`
+        );
+      }
+      if (NOT_A_PLACE_PERSON.has(token)) {
+        problems.push(
+          `${where}: requirePlace contains "${token}", which is a king or a god, not a place. ` +
+            `Those names appear at several sites, so the token confirms nothing. Move it to require.`
+        );
+      }
+      if (AMBIGUOUS_PLACES.some((a) => a.phrase === token)) {
+        problems.push(
+          `${where}: requirePlace contains "${token}", which also names somewhere outside Egypt ` +
+            `and cannot confirm this place.`
+        );
+      }
     }
-    const ambiguous = guard.requirePlace.filter((t) =>
-      AMBIGUOUS_PLACES.some((a) => a.phrase === t.trim().toLowerCase())
+
+    // Self contradiction: a name in this spec's own place or city that the
+    // contradiction check knows about, and that the spec does not allow.
+    const allowed = new Set(
+      [...guard.requirePlace, ...(guard.allowPlaces ?? [])].map((t) => t.trim().toLowerCase())
     );
-    if (ambiguous.length > 0) {
+    const own = `${place} ${city ?? ""}`.toLowerCase();
+    for (const known of EGYPT_PLACES) {
+      if (!hasToken(own, known)) continue;
+      if (allowed.has(known)) continue;
       problems.push(
-        `${slug} ${position} (${place}): requirePlace contains ${ambiguous.map((a) => `"${a}"`).join(", ")}, ` +
-          `which also names somewhere outside Egypt and cannot confirm this place.`
+        `${where}: its own place or city names "${known}", which EGYPT_PLACES knows, but the guard ` +
+          `neither requires nor allows it. Any description saying "${known}" would be rejected as a ` +
+          `contradiction. Add it to allowPlaces.`
       );
     }
   }
@@ -567,13 +646,16 @@ export function checkRelevance(description: string, guard: Guard): { ok: boolean
     if (hasToken(text, token)) return { ok: false, reason: `description mentions "${token}"` };
   }
 
-  // The place itself, not just the country.
-  if (!guard.requirePlace.some((t) => hasToken(text, t))) {
-    return { ok: false, reason: `description names none of the place itself: ${guard.requirePlace.slice(0, 6).join(", ")}` };
-  }
-
+  // CONTRADICTION BEATS CONFIRMATION, and it is checked first so that the
+  // precedence is in the code rather than in the reader's head.
+  //
   // A description naming a different Egyptian place is describing a different
-  // Egyptian place, however well it satisfies everything above.
+  // Egyptian place, whatever else it also says. "Tomb of Seti I in Valley of
+  // the Kings" was accepted for the temple of Seti I at Abydos because the
+  // confirmation ran first, found "seti", and the contradiction check did not
+  // know "valley of the kings" was a place. Both halves of that are fixed: the
+  // names are in EGYPT_PLACES and the check that uses them runs before anything
+  // can confirm.
   const allowed = new Set(
     [...guard.requirePlace, ...(guard.allowPlaces ?? [])].map((t) => t.toLowerCase())
   );
@@ -582,6 +664,11 @@ export function checkRelevance(description: string, guard: Guard): { ok: boolean
     if (hasToken(text, place)) {
       return { ok: false, reason: `description names "${place}", a different place from the one this image is for` };
     }
+  }
+
+  // Only then, the place itself, not just the country.
+  if (!guard.requirePlace.some((t) => hasToken(text, t))) {
+    return { ok: false, reason: `description names none of the place itself: ${guard.requirePlace.slice(0, 6).join(", ")}` };
   }
 
   for (const group of guard.require) {

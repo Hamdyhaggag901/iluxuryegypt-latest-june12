@@ -394,6 +394,7 @@ async function run(): Promise<void> {
         slug: post.slug,
         position: img.role === "featured" ? "hero" : `after H2 #${img.afterH2}`,
         place: img.place,
+        city: img.city,
         guard: img.guard,
       }))
     )
