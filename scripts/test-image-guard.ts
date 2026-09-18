@@ -10,8 +10,9 @@
 //   npx tsx scripts/test-image-guard.ts
 
 import {
-  checkRelevance, composeAlt, hasToken, unsplashDescription, type Guard,
+  checkRelevance, composeAlt, hasToken, unsplashDescription, auditPlaceGuards, type Guard,
 } from "./lib/provider-images";
+import { POSTS } from "./lib/post-image-specs";
 import { isPinnedFigure, isPinnedUrl, pinnedImagesLost } from "./lib/pinned-images";
 import {
   decideAction, outcomeFor, replaceFigureAfterH2, figureHtmlFor, composeAltForPosition,
@@ -267,6 +268,145 @@ console.log("\nG. One alt per post carries the focus keyword\n");
   const post = { focusKeyword: "kom ombo temple", keywordSuffix: " at kom ombo temple" };
   const thin = composeAltForPosition(post, { place: "Kom Ombo", city: "Aswan" }, "", false);
   ok("an empty description is refused", "refused" in thin);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nH. Nowhere outside Egypt gets through\n");
+
+// The photograph that started this section. Pixabay returned it for the query
+// "Theban hills Luxor west bank desert", the guard's requirePlace contained
+// "west bank", the description named no Egyptian place so it contradicted
+// nothing, and it was accepted and written to the article.
+const BETHLEHEM = "bethlehem city houses hill view west bank bethlehem bethlehem palestine";
+const thebanGuard: Guard = {
+  requirePlace: ["theban", "thebes", "luxor", "valley of the kings"],
+  allowPlaces: ["luxor", "thebes"],
+  require: [["hill", "hills", "cliff", "cliffs", "desert", "rock", "mountain", "mountains"]],
+  deny: ["pyramid", "cairo", "aswan"],
+};
+{
+  const v = checkRelevance(BETHLEHEM, thebanGuard);
+  ok("the Bethlehem photograph is refused", !v.ok, v.reason);
+  ok("and the reason says it is not in Egypt", !v.ok && v.reason.includes("not in Egypt"), v.reason);
+}
+{
+  // Even against the old loose guard, the country check alone stops it now.
+  const loose: Guard = { requirePlace: ["west bank", "hill"], require: [], deny: [] };
+  const v = checkRelevance(BETHLEHEM, loose);
+  ok("it is refused even by a guard that would otherwise confirm it", !v.ok, v.reason);
+}
+
+for (const [where, text] of [
+  ["Jerusalem", "the old city walls of Jerusalem at sunset"],
+  ["Petra", "the treasury carved into rock at Petra, Jordan"],
+  ["Wadi Rum", "red sand dunes in Wadi Rum under a clear sky"],
+  ["Meroe", "pyramids of Meroe in the desert, Sudan"],
+  ["Palmyra", "colonnaded street and ancient ruins at Palmyra, Syria"],
+  ["Chichen Itza", "the stepped pyramid at Chichen Itza, Mexico"],
+  ["Marrakech", "a market alley in Marrakech, Morocco"],
+  ["Istanbul", "domes and minarets of a mosque in Istanbul"],
+  ["Lalibela", "rock cut church at Lalibela, Ethiopia"],
+  ["Memphis Tennessee", "a riverside street in Memphis, Tennessee"],
+  ["Alexandria Virginia", "the waterfront at Alexandria, Virginia"],
+  ["Monument Valley", "sandstone buttes at Monument Valley, Utah"],
+] as Array<[string, string]>) {
+  const v = checkRelevance(text, { requirePlace: ["pyramid", "temple", "market", "street", "dune", "church", "waterfront", "hill", "rock"], require: [], deny: [] });
+  ok(`${where} is refused`, !v.ok, v.ok ? "ACCEPTED" : v.reason);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nI. \"West bank\" only counts when something says Egypt\n");
+
+{
+  const v = checkRelevance("bare hills above the west bank at sunrise", thebanGuard);
+  ok("\"west bank\" with no Egyptian anchor is refused", !v.ok, v.reason);
+}
+{
+  const v = checkRelevance("bare desert hills on the Luxor west bank, Egypt", thebanGuard);
+  ok("\"Luxor west bank\" passes", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+{
+  const v = checkRelevance("the Theban hills above the west bank of the Nile", thebanGuard);
+  ok("\"Theban ... west bank ... Nile\" passes", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+{
+  // Babylon is the Roman fortress Coptic Cairo is built inside, and a city in
+  // Iraq. Both readings have to work.
+  const coptic: Guard = { requirePlace: ["coptic", "babylon"], allowPlaces: ["cairo"], require: [], deny: [] };
+  const good = checkRelevance("the towers of Babylon Fortress in Coptic Cairo, Egypt", coptic);
+  ok("\"Babylon Fortress, Cairo\" passes", good.ok, good.ok ? "" : `WRONGLY REJECTED (${good.reason})`);
+  const bad = checkRelevance("the reconstructed gate of Babylon", coptic);
+  ok("\"Babylon\" with no Egyptian anchor is refused", !bad.ok, bad.reason);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nJ. Egyptian words are not collateral damage\n");
+
+for (const [what, text, guard] of [
+  ["Roman, in Alexandria", "the Roman theatre at Kom el Dikka in Alexandria, Egypt",
+   { requirePlace: ["alexandria"], allowPlaces: ["alexandria"], require: [["roman", "theatre"]], deny: [] }],
+  ["Greco Roman, at Dendera", "a Greco Roman temple ceiling at Dendera in Qena, Egypt",
+   { requirePlace: ["dendera"], allowPlaces: ["qena", "dendera"], require: [["temple", "ceiling"]], deny: [] }],
+  ["Mediterranean, at Alexandria", "the Mediterranean seafront corniche at Alexandria, Egypt",
+   { requirePlace: ["alexandria"], allowPlaces: ["alexandria"], require: [["sea", "corniche"]], deny: [] }],
+  ["Nubian, at Aswan", "a painted Nubian house in a village near Aswan, Egypt",
+   { requirePlace: ["nubian"], allowPlaces: ["aswan", "nubia"], require: [["house", "village"]], deny: [] }],
+  ["Sahara, in the Western Desert", "sand dunes of the Sahara in the Western Desert of Egypt",
+   { requirePlace: ["sahara", "desert"], allowPlaces: [], require: [["dune", "sand"]], deny: [] }],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(text, guard);
+  ok(`${what} still passes`, v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nK. A guard that cannot fail is refused before the run starts\n");
+
+{
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "after H2 #9", place: "Theban hills",
+      guard: { requirePlace: ["hill", "hills", "cliff", "valley", "desert"], require: [], deny: [] } },
+  ]);
+  ok("a requirePlace of landforms is rejected", problems.length === 1, problems.join(" | "));
+  ok("and the message says what to do", problems[0]?.includes("Move them to require"), problems[0]);
+}
+{
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Theban hills",
+      guard: { requirePlace: ["theban", "west bank"], require: [], deny: [] } },
+  ]);
+  ok("a requirePlace containing \"west bank\" is rejected", problems.length === 1, problems.join(" | "));
+}
+{
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Nowhere",
+      guard: { requirePlace: [], require: [], deny: [] } },
+  ]);
+  ok("an empty requirePlace is rejected", problems.length === 1, problems.join(" | "));
+}
+{
+  const problems = auditPlaceGuards([
+    { slug: "x", position: "hero", place: "Medinet Habu",
+      guard: { requirePlace: ["medinet habu", "habu"], require: [], deny: [] } },
+    { slug: "y", position: "after H2 #5", place: "Unfinished Obelisk",
+      guard: { requirePlace: ["aswan", "unfinished obelisk"], require: [["obelisk", "quarry"]], deny: [] } },
+  ]);
+  ok("a guard naming a real place passes the audit", problems.length === 0, problems.join(" | "));
+}
+{
+  // The real specs, so a future edit that reintroduces this is caught here as
+  // well as at the start of a run.
+  const problems = auditPlaceGuards(
+    POSTS.flatMap((post) =>
+      post.images.map((img) => ({
+        slug: post.slug,
+        position: img.role === "featured" ? "hero" : `after H2 #${img.afterH2}`,
+        place: img.place,
+        guard: img.guard,
+      }))
+    )
+  );
+  ok(`all ${POSTS.reduce((n, p) => n + p.images.length, 0)} shipped guards name a real place`,
+     problems.length === 0, problems.join("\n        "));
 }
 
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);

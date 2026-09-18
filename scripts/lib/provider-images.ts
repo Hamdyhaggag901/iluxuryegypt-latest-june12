@@ -338,14 +338,165 @@ export const EGYPT_PLACES = [
   "nasser", "marsa alam", "safaga", "taba", "nuweiba", "bahariya", "farafra",
 ];
 
-// Places whose photographs turn up under Egyptian search terms and are not Egypt.
-export const GLOBAL_DENY = [
-  "paris", "france", "french", "rome", "italy", "italian", "athens", "turkey",
-  "turkish", "istanbul", "cappadocia", "jordan", "petra", "morocco", "marrakech",
-  "tunisia", "dubai", "uae", "abu dhabi", "qatar", "saudi", "india", "mexico",
-  "peru", "thailand", "bali", "indonesia", "spain", "portugal", "prague",
-  "vienna", "budapest", "china", "japan", "vietnam", "israel", "jerusalem",
-  "malta", "cyprus", "sicily", "odessa",
+/**
+ * Somewhere that is not Egypt. Naming one of these rejects a candidate outright.
+ *
+ * The old version of this list held about forty entries and was framed as
+ * "places whose photographs turn up under Egyptian search terms". That framing
+ * is what let a photograph of Bethlehem through for the Theban hills: the guard
+ * checked that a description did not name a DIFFERENT EGYPTIAN place, and had
+ * nothing to say about a description naming somewhere outside Egypt entirely.
+ * A picture of the Palestinian West Bank satisfied a place list containing
+ * "west bank", contradicted no Egyptian place because it named none, and was
+ * accepted.
+ *
+ * So the rule is now the other way round: a description that names any country,
+ * city or landmark outside Egypt is refused, whatever else it says. Being
+ * generous here costs an occasional correct photograph. Being thin here costs
+ * an article a picture of the wrong country, which is worse.
+ *
+ * Three groups are deliberately NOT here, because they belong to Egypt and
+ * denying them would reject correct photographs: "nubia" and "nubian", which
+ * span Egypt and Sudan and are the subject of two articles; "sahara", which is
+ * the Egyptian Western Desert as much as anyone else's; and the adjectives
+ * "roman", "greek", "byzantine", "ottoman" and "mediterranean", which describe
+ * Egyptian buildings and the coast Alexandria sits on.
+ */
+export const OUTSIDE_EGYPT = [
+  // The Levant and its neighbours. This block is the one that was missing.
+  "israel", "israeli", "jerusalem", "tel aviv", "bethlehem", "palestine",
+  "palestinian", "gaza", "ramallah", "hebron", "nablus", "jericho", "masada",
+  "galilee", "nazareth", "dead sea", "golan",
+  "jordan", "jordanian", "petra", "amman", "wadi rum", "jerash", "aqaba",
+  "lebanon", "beirut", "baalbek", "byblos",
+  "syria", "syrian", "damascus", "palmyra", "aleppo",
+  "iraq", "iraqi", "baghdad", "samarra", "nineveh",
+  "iran", "iranian", "persepolis", "isfahan", "shiraz", "tehran",
+  "turkey", "turkish", "istanbul", "cappadocia", "ephesus", "pamukkale",
+  "cyprus", "malta",
+
+  // The Arabian peninsula.
+  "saudi", "riyadh", "jeddah", "alula", "hegra",
+  "uae", "dubai", "abu dhabi", "sharjah",
+  "qatar", "doha", "oman", "muscat", "yemen", "bahrain", "kuwait",
+
+  // Africa outside Egypt. Meroe and Lalibela turn up constantly under
+  // "pyramid" and "rock cut" searches.
+  "morocco", "moroccan", "marrakech", "fez", "casablanca", "chefchaouen",
+  "atlas mountains",
+  "tunisia", "tunisian", "carthage", "tunis", "dougga",
+  "algeria", "libya", "leptis magna", "sabratha",
+  "sudan", "sudanese", "khartoum", "meroe",
+  "ethiopia", "lalibela", "axum", "aksum",
+  "kenya", "tanzania", "zanzibar", "namibia", "senegal",
+
+  // Europe.
+  "paris", "france", "french", "louvre", "rome", "italy", "italian", "venice",
+  "florence", "pompeii", "sicily", "athens", "greece", "santorini", "acropolis",
+  "delphi", "parthenon", "spain", "spanish", "portugal", "lisbon", "seville",
+  "granada", "alhambra", "barcelona", "madrid", "germany", "berlin", "munich",
+  "prague", "vienna", "budapest", "london", "britain", "british", "england",
+  "scotland", "ireland", "amsterdam", "netherlands", "belgium", "switzerland",
+  "norway", "sweden", "iceland", "croatia", "dubrovnik", "russia", "moscow",
+  "odessa", "ukraine", "poland", "romania", "stonehenge", "colosseum",
+
+  // Asia.
+  "india", "indian", "taj mahal", "rajasthan", "jaipur", "agra", "varanasi",
+  "nepal", "tibet", "china", "chinese", "beijing", "shanghai", "japan",
+  "japanese", "tokyo", "kyoto", "vietnam", "thailand", "bangkok", "cambodia",
+  "angkor", "myanmar", "bagan", "bali", "indonesia", "malaysia", "singapore",
+  "korea", "philippines", "sri lanka",
+
+  // The Americas and Oceania. The Mesoamerican pyramids are the risk here.
+  "mexico", "mexican", "chichen itza", "teotihuacan", "tulum", "guatemala",
+  "tikal", "peru", "machu picchu", "cusco", "bolivia", "brazil", "argentina",
+  "chile", "cuba", "havana", "canada", "australia", "sydney", "new zealand",
+  "monument valley", "death valley",
+
+  // United States places that share a name with an Egyptian one. Memphis,
+  // Alexandria and Cairo all exist there, and a photograph of one of them
+  // satisfies a place check looking for the Egyptian original.
+  "tennessee", "virginia", "illinois", "graceland",
+  "california", "new york", "texas", "florida", "arizona", "nevada", "utah",
+];
+
+/**
+ * Words that say what is in a photograph, never where it was taken.
+ *
+ * A requirePlace built only from these confirms nothing: "hill, cliff, valley,
+ * desert" is satisfied by a hillside anywhere on earth. That is the second half
+ * of the Bethlehem failure and the half that would have gone on to bite other
+ * positions, so auditPlaceGuards below refuses to let a spec ship that way.
+ */
+const NOT_A_PLACE_NAME = new Set([
+  "hill", "hills", "cliff", "cliffs", "valley", "mountain", "mountains",
+  "desert", "dune", "dunes", "sand", "rock", "stone", "water", "lake", "river",
+  "sea", "shore", "island", "sky", "ruins", "ruin", "temple", "temples", "tomb",
+  "tombs", "church", "mosque", "minaret", "museum", "gallery", "market",
+  "bazaar", "street", "alley", "lane", "gate", "wall", "walls", "column",
+  "columns", "statue", "statues", "relief", "carving", "building", "buildings",
+  "house", "houses", "village", "city", "town", "quarry", "obelisk", "pyramid",
+  "pyramids", "boat", "felucca", "library", "fort", "fortress", "citadel",
+  "theatre", "theater", "courtyard", "dome", "domes", "arch", "arches",
+  "ceiling", "painting", "paintings", "icon", "icons", "west bank", "east bank",
+]);
+
+/**
+ * Checks that every image spec's requirePlace actually names a place.
+ *
+ * Run before any network call, next to auditVocabulary, because a guard that
+ * cannot fail is worse than no guard: it reports success on the wrong picture.
+ */
+export function auditPlaceGuards(
+  specs: Array<{ slug: string; position: string; place: string; guard: Guard }>
+): string[] {
+  const problems: string[] = [];
+  for (const { slug, position, place, guard } of specs) {
+    if (guard.requirePlace.length === 0) {
+      problems.push(`${slug} ${position} (${place}): requirePlace is empty, so nothing confirms the place`);
+      continue;
+    }
+    const named = guard.requirePlace.filter((t) => !NOT_A_PLACE_NAME.has(t.trim().toLowerCase()));
+    if (named.length === 0) {
+      problems.push(
+        `${slug} ${position} (${place}): requirePlace is only generic words ` +
+          `(${guard.requirePlace.join(", ")}), which any photograph of that subject anywhere satisfies. ` +
+          `Move them to require and put a real place name in requirePlace.`
+      );
+    }
+    const ambiguous = guard.requirePlace.filter((t) =>
+      AMBIGUOUS_PLACES.some((a) => a.phrase === t.trim().toLowerCase())
+    );
+    if (ambiguous.length > 0) {
+      problems.push(
+        `${slug} ${position} (${place}): requirePlace contains ${ambiguous.map((a) => `"${a}"`).join(", ")}, ` +
+          `which also names somewhere outside Egypt and cannot confirm this place.`
+      );
+    }
+  }
+  return problems;
+}
+
+/** Kept under the old name so nothing that imported it has to change. */
+export const GLOBAL_DENY = OUTSIDE_EGYPT;
+
+/**
+ * Words that name somewhere outside Egypt UNLESS the description anchors itself
+ * in Egypt as well.
+ *
+ * "West Bank" is the reason this exists. It is the Palestinian territory and it
+ * is also how every guidebook refers to the Luxor side of the Nile that holds
+ * the tombs, so it can neither be denied outright nor treated as evidence of
+ * Luxor. It is only acceptable when something else in the description places it
+ * in Egypt.
+ *
+ * "Babylon" is the same shape from the other direction: it is a Mesopotamian
+ * city and it is also the Roman fortress that Coptic Cairo is built inside, so
+ * a photograph captioned "Babylon Fortress, Cairo" must pass.
+ */
+export const AMBIGUOUS_PLACES: Array<{ phrase: string; anchors: string[] }> = [
+  { phrase: "west bank", anchors: ["luxor", "thebes", "theban", "egypt", "egyptian", "nile"] },
+  { phrase: "babylon", anchors: ["cairo", "egypt", "egyptian", "coptic"] },
 ];
 
 // Plurals a suffix rule cannot reach, all of them words these searches actually
@@ -396,7 +547,23 @@ export function checkRelevance(description: string, guard: Guard): { ok: boolean
   const text = description.trim();
   if (!text) return { ok: false, reason: "provider gave no description, so the place cannot be confirmed" };
 
-  for (const token of [...guard.deny, ...GLOBAL_DENY]) {
+  // Outside Egypt first, because it is the strongest signal and the clearest
+  // thing to say when it fires.
+  for (const token of OUTSIDE_EGYPT) {
+    if (hasToken(text, token)) {
+      return { ok: false, reason: `description names "${token}", which is not in Egypt` };
+    }
+  }
+  for (const { phrase, anchors } of AMBIGUOUS_PLACES) {
+    if (hasToken(text, phrase) && !anchors.some((a) => hasToken(text, a))) {
+      return {
+        ok: false,
+        reason: `description says "${phrase}" without naming anywhere in Egypt, so it is probably not the Egyptian one`,
+      };
+    }
+  }
+
+  for (const token of guard.deny) {
     if (hasToken(text, token)) return { ok: false, reason: `description mentions "${token}"` };
   }
 

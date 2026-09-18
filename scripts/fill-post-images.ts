@@ -51,7 +51,7 @@ import fs from "fs/promises";
 import { pool } from "../server/db";
 import {
   KEYS, ALL_PROVIDERS, DEFAULT_SOURCE_ORDER,
-  type Source, type Candidate, auditVocabulary, composeAlt, findInventedWords,
+  type Source, type Candidate, auditVocabulary, auditPlaceGuards, composeAlt, findInventedWords,
   findConfirmed, downloadAndOptimise, creditLine, isProvider,
   resolveSourceOrder, retiredProviders, requestsUsed,
 } from "./lib/provider-images";
@@ -381,6 +381,25 @@ async function run(): Promise<void> {
   const vocabProblems = auditVocabulary();
   if (vocabProblems.length > 0) {
     console.error("VOCABULARY GUARD FAILED:\n  " + vocabProblems.join("\n  "));
+    process.exit(1);
+  }
+
+  // A guard whose requirePlace names no place cannot reject anything, and a run
+  // that starts with one will happily illustrate an article with the wrong
+  // country. Checked before the first network call, for every spec, not just
+  // the ones this run touches.
+  const guardProblems = auditPlaceGuards(
+    POSTS.flatMap((post) =>
+      post.images.map((img) => ({
+        slug: post.slug,
+        position: img.role === "featured" ? "hero" : `after H2 #${img.afterH2}`,
+        place: img.place,
+        guard: img.guard,
+      }))
+    )
+  );
+  if (guardProblems.length > 0) {
+    console.error("PLACE GUARD AUDIT FAILED:\n  " + guardProblems.join("\n  "));
     process.exit(1);
   }
 

@@ -67,6 +67,7 @@ import fs from "fs/promises";
 import { randomUUID } from "crypto";
 import { pool } from "../server/db";
 import { optimizeUploadedImage } from "../server/image-optimize";
+import { OUTSIDE_EGYPT as GLOBAL_DENY } from "./lib/provider-images";
 
 // ---------------------------------------------------------------------------
 // The 58 days, as fill-itinerary-images.ts left them
@@ -168,16 +169,13 @@ interface Guard {
   deny: string[];
 }
 
-// Applies to every day on top of its own guard. These are the places whose
-// photographs turn up under Egyptian search terms and are not Egypt.
-const GLOBAL_DENY = [
-  "paris", "france", "french", "rome", "italy", "italian", "greece", "greek island",
-  "athens", "turkey", "turkish", "istanbul", "cappadocia", "jordan", "petra",
-  "morocco", "marrakech", "tunisia", "dubai", "uae", "abu dhabi", "qatar",
-  "saudi", "india", "mexico", "peru", "thailand", "bali", "indonesia", "spain",
-  "portugal", "prague", "vienna", "budapest", "china", "japan", "vietnam",
-  "israel", "jerusalem", "malta", "cyprus", "sicily", "odessa",
-];
+// Applies to every day on top of its own guard: anywhere that is not Egypt.
+//
+// This was a local copy of a forty entry list, and it had the same hole as the
+// one in lib/provider-images.ts, which let a photograph of Bethlehem through
+// for the Theban hills. The list is now shared, so a place added there is
+// refused here too. It is the only change to this file since it ran, and it can
+// only reject more, never accept more. See the import at the top of the file.
 
 // Every day gets this unless it overrides `require`: the photo has to be
 // claimed by its own metadata as being in Egypt, or to name the site itself.

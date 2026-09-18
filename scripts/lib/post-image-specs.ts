@@ -132,9 +132,13 @@ export const POSTS: PostSpec[] = [
       // denied, so only a landscape can pass.
       { role: "body", afterH2: 9, place: "Theban hills", city: "Luxor",
         queries: ["Theban hills Luxor desert landscape", "Luxor west bank desert hills Egypt", "arid rocky hills desert valley Egypt"],
-        guard: { requirePlace: ["hill", "hills", "cliff", "cliffs", "valley", "mountain", "desert"],
+        // requirePlace used to be a list of landforms, which confirmed nothing:
+        // any hillside anywhere satisfied "the Theban hills". The landforms
+        // belong in `require`, where they describe the subject; requirePlace is
+        // for names that mean this place and nowhere else.
+        guard: { requirePlace: ["theban", "thebes", "luxor", "valley of the kings"],
                  allowPlaces: ["luxor", "thebes", "theban"],
-                 require: [["egypt", "egyptian", "desert", "rock", "sand"]],
+                 require: [["hill", "hills", "cliff", "cliffs", "valley", "mountain", "mountains", "desert", "rock", "sand"]],
                  deny: ["temple", "karnak", "column", "columns", "hypostyle", "pylon", "statue", "obelisk", "pyramid"] } },
     ],
   },
@@ -308,7 +312,12 @@ export const POSTS: PostSpec[] = [
                  deny: ["pyramid", "karnak", "valley of the kings"] } },
       { role: "body", afterH2: 6, place: "Theban hills", city: "Luxor",
         queries: ["Theban hills Luxor west bank desert", "Luxor west bank cliffs Egypt", "Theban necropolis hills landscape"],
-        guard: { requirePlace: ["theban", "thebes", "west bank", "luxor"], allowPlaces: ["luxor", "thebes"],
+        // "west bank" used to be in requirePlace here. It let through a
+        // photograph of Bethlehem, in the Palestinian West Bank, whose
+        // description contradicted no Egyptian place because it named none.
+        // Only a name that means Luxor confirms Luxor.
+        guard: { requirePlace: ["theban", "thebes", "luxor", "valley of the kings"],
+                 allowPlaces: ["luxor", "thebes"],
                  require: [["hill", "hills", "cliff", "cliffs", "desert", "rock", "mountain", "mountains"]],
                  deny: ["pyramid", "cairo", "aswan", "temple interior"] } },
     ],
@@ -335,7 +344,10 @@ export const POSTS: PostSpec[] = [
                  deny: ["pyramid", "cairo", "luxor", "cruise ship"] } },
       { role: "body", afterH2: 5, place: "Unfinished Obelisk", city: "Aswan",
         queries: ["unfinished obelisk Aswan Egypt quarry", "Aswan granite quarry obelisk", "unfinished obelisk granite Aswan"],
-        guard: { requirePlace: ["obelisk", "quarry"], allowPlaces: ["aswan"],
+        // Found by auditPlaceGuards: "obelisk, quarry" named no place, and
+        // there are Egyptian obelisks standing in Rome, Paris, London and New
+        // York. The subject words belong in require.
+        guard: { requirePlace: ["aswan", "unfinished obelisk"], allowPlaces: ["aswan"],
                  require: [["granite", "quarry", "stone", "rock", "obelisk"]],
                  deny: ["temple", "pyramid", "cairo", "luxor", "karnak"] } },
     ],
