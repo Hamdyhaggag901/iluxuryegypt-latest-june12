@@ -67,7 +67,7 @@
 // Needs DATABASE_URL. No API key: Commons is open, but it does require a real
 // User-Agent, which is set below.
 
-import "dotenv/config";
+import { ENV_REPORT, printEnvReport } from "./lib/script-env";
 import fs from "fs/promises";
 import { pool } from "../server/db";
 import {
@@ -80,8 +80,9 @@ import {
   PREFER_WIDTH, findOnCommons, commonsCaption, titleToWords,
 } from "./lib/wikimedia-commons";
 import {
-  POSTS, figureExistsAfterH2, insertFigureAfterH2, removeFigureAfterH2,
+  POSTS, figureExistsAfterH2, insertFigureAfterH2, removeFigureAfterH2, figureAtAfterH2,
 } from "./lib/post-image-specs";
+import { isPinnedUrl, isPinnedFigure } from "./lib/pinned-images";
 
 // ---------------------------------------------------------------------------
 // CLI
@@ -95,6 +96,28 @@ const flag = (name: string): string | undefined =>
   argv.filter((a) => a.startsWith(`--${name}=`)).map((a) => a.slice(name.length + 3))[0];
 const flags = (name: string): string[] =>
   argv.filter((a) => a.startsWith(`--${name}=`)).map((a) => a.slice(name.length + 3));
+
+/**
+ * Posts this run may touch.
+ *
+ * --only was documented and never parsed, so every run processed all thirteen
+ * posts whatever was on the command line. That is how a run meant to fix one
+ * position spent the hour's request allowance, hit a 429, and rolled back
+ * everything it had already done. An unknown slug is now an error rather than
+ * a silent widening of the job.
+ */
+const ONLY = flags("only");
+function postsInScope() {
+  if (ONLY.length === 0) return POSTS;
+  const unknown = ONLY.filter((s) => !POSTS.some((p) => p.slug === s));
+  if (unknown.length > 0) {
+    console.error(
+      `Unknown --only slug(s): ${unknown.join(", ")}\nKnown slugs:\n  ${POSTS.map((p) => p.slug).join("\n  ")}`
+    );
+    process.exit(1);
+  }
+  return POSTS.filter((p) => ONLY.includes(p.slug));
+}
 
 interface Job {
   slug: string;
@@ -155,7 +178,7 @@ const notes: string[] = [];
 /** Jobs from --fill-missing: every spec position with nothing in it yet. */
 async function missingJobs(client: TxClient): Promise<Job[]> {
   const jobs: Job[] = [];
-  for (const post of POSTS) {
+  for (const post of postsInScope()) {
     const { rows } = await client.query(
       `SELECT body_en, featured_image FROM posts WHERE slug = $1`, [post.slug]
     );
@@ -165,6 +188,14 @@ async function missingJobs(client: TxClient): Promise<Job[]> {
       const filled = img.role === "featured"
         ? Boolean(rows[0].featured_image)
         : figureExistsAfterH2(body, img.afterH2!);
+      const fig = img.role === "body" ? figureAtAfterH2(body, img.afterH2!) : null;
+      const pinned = img.role === "featured"
+        ? isPinnedUrl(rows[0].featured_image)
+        : Boolean(fig && isPinnedFigure(fig.html));
+      if (pinned) {
+        notes.push(`${post.slug} ${img.role === "featured" ? "hero" : `after H2 #${img.afterH2}`}: pinned by hand, not touched.`);
+        continue;
+      }
       if (filled && !REPLACE) continue;
       jobs.push({
         slug: post.slug, role: img.role, afterH2: img.afterH2,
@@ -244,6 +275,9 @@ async function run(): Promise<void> {
     console.error("VOCABULARY GUARD FAILED:\n  " + vocabProblems.join("\n  "));
     process.exit(1);
   }
+
+  printEnvReport(ENV_REPORT, { DATABASE_URL: process.env.DATABASE_URL ? "set" : "" });
+  if (ONLY.length > 0) console.log(`Restricted to: ${ONLY.join(", ")}`);
 
   const client = await connectable.connect();
   let committed = false;

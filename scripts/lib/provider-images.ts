@@ -23,7 +23,48 @@ import { randomUUID } from "crypto";
 import { optimizeUploadedImage } from "../../server/image-optimize";
 
 export type Provider = "pexels" | "pixabay" | "unsplash";
-export const PROVIDER_ORDER: Provider[] = ["pexels", "pixabay", "unsplash"];
+export const ALL_PROVIDERS: Provider[] = ["unsplash", "pixabay", "pexels"];
+
+/**
+ * Priority order, best first.
+ *
+ * Unsplash and Pixabay return modern photographs of these sites. Pexels is
+ * thinner on named Egyptian monuments, and Wikimedia Commons, which is a
+ * `Source` rather than a `Provider` and sits last of all, keeps offering
+ * nineteenth century engravings and scanned book plates. Those are correctly
+ * licensed and correctly of the place, and they are not what a travel article
+ * should be illustrated with.
+ */
+export const PROVIDER_ORDER: Provider[] = ["unsplash", "pixabay", "pexels"];
+
+/** The full order including Wikimedia, which is only ever a last resort. */
+export const DEFAULT_SOURCE_ORDER: Source[] = [...PROVIDER_ORDER, "wikimedia"];
+
+export function isProvider(value: string): value is Provider {
+  return (ALL_PROVIDERS as string[]).includes(value);
+}
+export function isSource(value: string): value is Source {
+  return isProvider(value) || value === "wikimedia";
+}
+
+/**
+ * Parses a --provider-order= value into a source list, so the order can be
+ * changed for one run without a code change.
+ */
+export function resolveSourceOrder(flag: string | undefined): { order: Source[]; error?: string } {
+  if (!flag?.trim()) return { order: DEFAULT_SOURCE_ORDER };
+  const parts = flag.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean);
+  const bad = parts.filter((p) => !isSource(p));
+  if (bad.length > 0) {
+    return {
+      order: DEFAULT_SOURCE_ORDER,
+      error: `unknown source(s) in --provider-order: ${bad.join(", ")}. Known: ${[...ALL_PROVIDERS, "wikimedia"].join(", ")}`,
+    };
+  }
+  const seen = new Set<string>();
+  const order = parts.filter((p): p is Source => isSource(p) && !seen.has(p) && (seen.add(p), true));
+  return { order };
+}
 
 /**
  * Where a candidate came from. Wikimedia Commons is deliberately NOT a
@@ -42,19 +83,35 @@ const PER_PAGE = 20;
 // Matches the throttles server/routes.ts already applies to these APIs.
 const SPACING_MS: Record<Provider, number> = { pexels: 1100, pixabay: 1100, unsplash: 1400 };
 
-export const KEYS: Record<Provider, string> = {
-  pexels: (process.env.PEXELS_API_KEY ?? "").trim(),
-  pixabay: (process.env.PIXABAY_API_KEY ?? "").trim(),
-  unsplash: (process.env.UNSPLASH_ACCESS_KEY ?? "").trim(),
+export const ENV_VAR: Record<Provider, string> = {
+  pexels: "PEXELS_API_KEY",
+  pixabay: "PIXABAY_API_KEY",
+  unsplash: "UNSPLASH_ACCESS_KEY",
 };
+
+/**
+ * Keys are read on every access, not captured at import time.
+ *
+ * As plain consts these were evaluated when this module was first imported,
+ * which made every caller depend on having loaded its .env before the import
+ * statement that pulls this file in. Nothing enforced that and nothing warned
+ * when it was wrong: the object simply held empty strings and every run
+ * reported the provider as unconfigured. Getters remove the ordering question
+ * entirely, and cost one property read per search.
+ */
+export const KEYS: Record<Provider, string> = {
+  get pexels() { return (process.env.PEXELS_API_KEY ?? "").trim(); },
+  get pixabay() { return (process.env.PIXABAY_API_KEY ?? "").trim(); },
+  get unsplash() { return (process.env.UNSPLASH_ACCESS_KEY ?? "").trim(); },
+} as Record<Provider, string>;
 
 // Overridable only so the whole path can be exercised against a local receiver
 // during testing. All three are unset in production.
 const BASES: Record<Provider, string> = {
-  pexels: process.env.PEXELS_API_BASE?.trim() || "https://api.pexels.com/v1",
-  pixabay: process.env.PIXABAY_API_BASE?.trim() || "https://pixabay.com/api",
-  unsplash: process.env.UNSPLASH_API_BASE?.trim() || "https://api.unsplash.com",
-};
+  get pexels() { return process.env.PEXELS_API_BASE?.trim() || "https://api.pexels.com/v1"; },
+  get pixabay() { return process.env.PIXABAY_API_BASE?.trim() || "https://pixabay.com/api"; },
+  get unsplash() { return process.env.UNSPLASH_API_BASE?.trim() || "https://api.unsplash.com"; },
+} as Record<Provider, string>;
 
 export interface Candidate {
   provider: Source;
@@ -65,6 +122,38 @@ export interface Candidate {
   photographer: string;
   pageUrl: string;
   downloadLocation?: string;
+  /** Pixel width of the source file where the provider reports it. */
+  width?: number;
+  height?: number;
+  /** The photographer's own page, which Unsplash attribution requires. */
+  photographerUrl?: string;
+  /** Licence label, where the source has one to state. Wikimedia always does. */
+  licence?: string;
+}
+
+/** Thrown on HTTP 429 so a caller can stop cleanly instead of failing a run. */
+export class RateLimitError extends Error {
+  constructor(public readonly provider: Provider) {
+    super(`${provider} returned HTTP 429`);
+    this.name = "RateLimitError";
+  }
+}
+
+/**
+ * Unsplash gives two texts and either may be null. The photographer's own
+ * `description` is the better evidence about the photograph, so it leads and
+ * `alt_description` fills in when it is missing, which is most of the time.
+ */
+export function unsplashDescription(u: {
+  description?: string | null;
+  alt_description?: string | null;
+  tags?: Array<{ title?: string }> | null;
+}): string {
+  const tags = (u.tags ?? []).map((t) => t?.title).filter(Boolean).join(" ");
+  return [u.description, u.alt_description, tags]
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean)
+    .join(". ");
 }
 
 const lastCall: Record<Provider, number> = { pexels: 0, pixabay: 0, unsplash: 0 };
@@ -74,6 +163,46 @@ async function throttle(provider: Provider): Promise<void> {
   lastCall[provider] = Date.now();
 }
 
+// ---------------------------------------------------------------------------
+// Request budget
+// ---------------------------------------------------------------------------
+// An Unsplash demo key allows 50 requests an hour. A thirteen post run asks for
+// four positions each with up to three queries, which is 156 searches: enough
+// to burn the hour's allowance inside the first few posts and get 429s for the
+// rest. The budget stops the run asking for more than it is allowed, and a 429
+// retires the provider for the remainder of the run rather than being retried
+// into a longer ban.
+
+const BUDGET: Record<Provider, number> = {
+  unsplash: 45, // of 50 an hour, leaving headroom for anything else using the key
+  pixabay: 100,
+  pexels: 100,
+};
+
+const spent: Record<Provider, number> = { pexels: 0, pixabay: 0, unsplash: 0 };
+const retired = new Map<Provider, string>();
+
+/** Providers that stopped early this run, and why. Empty when all is well. */
+export function retiredProviders(): Array<{ provider: Provider; reason: string }> {
+  return [...retired].map(([provider, reason]) => ({ provider, reason }));
+}
+
+/** True once a provider has been rate limited or has used its budget. */
+export function isRetired(provider: Provider): boolean {
+  return retired.has(provider);
+}
+
+export function requestsUsed(): Record<Provider, number> {
+  return { ...spent };
+}
+
+/** Test seam: forget budgets and retirements between cases. */
+export function resetBudgets(): void {
+  for (const p of ALL_PROVIDERS) spent[p] = 0;
+  retired.clear();
+  searchCache.clear();
+}
+
 const searchCache = new Map<string, Candidate[]>();
 
 export async function search(provider: Provider, query: string): Promise<Candidate[]> {
@@ -81,8 +210,15 @@ export async function search(provider: Provider, query: string): Promise<Candida
   const cached = searchCache.get(cacheKey);
   if (cached) return cached;
   if (!KEYS[provider]) return [];
+  if (retired.has(provider)) return [];
+  if (spent[provider] >= BUDGET[provider]) {
+    retired.set(provider, `request budget of ${BUDGET[provider]} for this run is spent`);
+    console.warn(`  ! ${provider}: ${retired.get(provider)}. Skipping it for the rest of the run.`);
+    return [];
+  }
 
   await throttle(provider);
+  spent[provider] += 1;
   let out: Candidate[] = [];
   try {
     if (provider === "pexels") {
@@ -122,20 +258,39 @@ export async function search(provider: Provider, query: string): Promise<Candida
       url.searchParams.set("per_page", String(PER_PAGE));
       url.searchParams.set("orientation", "landscape");
       const r = await fetch(url, { headers: { Authorization: `Client-ID ${KEYS.unsplash}` } });
+      if (r.status === 429) throw new RateLimitError("unsplash");
       if (!r.ok) throw new Error(`Unsplash responded with ${r.status}`);
       out = (((await r.json()) as { results?: any[] }).results ?? []).map((u) => ({
         provider, id: String(u.id),
-        fullUrl: u.urls?.regular,
-        description: [u.alt_description, u.description, (u.tags ?? []).map((t: any) => t?.title).join(" ")]
-          .filter(Boolean).join(" "),
+        // urls.raw is the unresized original and urls.full is a large JPEG of
+        // it. Either is bigger than the 1600px the optimiser outputs, so take
+        // the best available and let sharp do the resizing.
+        fullUrl: u.urls?.raw || u.urls?.full || u.urls?.regular,
+        // `description` is what the photographer wrote and `alt_description`
+        // is Unsplash's own generated caption. The photographer's text is the
+        // better evidence, so it leads; alt_description carries the load when
+        // description is null, which it very often is.
+        description: unsplashDescription(u),
+        width: Number(u.width ?? 0),
+        height: Number(u.height ?? 0),
         photographer: String(u.user?.name ?? ""),
+        photographerUrl: String(u.user?.links?.html ?? ""),
         pageUrl: String(u.links?.html ?? ""),
         downloadLocation: u.links?.download_location,
       }));
     }
   } catch (error) {
-    console.warn(`  ! ${provider} search failed for "${query}": ${error instanceof Error ? error.message : error}`);
-    out = [];
+    if (error instanceof RateLimitError) {
+      retired.set(provider, "rate limited by the provider (HTTP 429)");
+      console.warn(
+        `  ! ${provider}: rate limited (HTTP 429) after ${spent[provider]} request(s). ` +
+          `Skipping it for the rest of the run; work already done is kept.`
+      );
+      out = [];
+    } else {
+      console.warn(`  ! ${provider} search failed for "${query}": ${error instanceof Error ? error.message : error}`);
+      out = [];
+    }
   }
 
   out = out.filter((c) => c.fullUrl);
@@ -272,31 +427,80 @@ export function checkRelevance(description: string, guard: Guard): { ok: boolean
 }
 
 /** First candidate the guard confirms, or the rejection reasons if none. */
+/** The site serves images at 1600px. Anything narrower is being enlarged. */
+export const MIN_SOURCE_WIDTH = 1600;
+
+/**
+ * A search for a source this module does not own. fill-post-images passes one
+ * for Wikimedia so Commons can sit at the end of the same priority list without
+ * this file importing the Commons module, which imports this one.
+ */
+export type SourceSearch = (source: Source, query: string) => Promise<Candidate[]>;
+
+export interface FindOptions {
+  /** Priority order, best first. Defaults to the providers, Wikimedia last. */
+  order?: Source[];
+  /** Handles any source in `order` that is not a keyed provider. */
+  search?: SourceSearch;
+  /** Ids to refuse even though they pass the guard, for a replacement run. */
+  exclude?: Set<string>;
+}
+
 export async function findConfirmed(
   queries: string[],
   guard: Guard,
-  usedIds: Set<string>
+  usedIds: Set<string>,
+  opts: FindOptions = {}
 ): Promise<{ candidate: Candidate; query: string } | { rejections: string[]; tried: number }> {
+  const order = opts.order ?? PROVIDER_ORDER;
   const rejections: string[] = [];
   let tried = 0;
-  for (const provider of PROVIDER_ORDER) {
-    if (!KEYS[provider]) {
-      rejections.push(`${provider}: no API key configured, skipped`);
+
+  for (const source of order) {
+    if (isProvider(source)) {
+      if (!KEYS[source]) {
+        rejections.push(
+          `${source}: no API key configured, skipped. Set ${ENV_VAR[source]} in a .env this script reads.`
+        );
+        continue;
+      }
+      if (isRetired(source)) {
+        rejections.push(`${source}: ${retired.get(source)}`);
+        continue;
+      }
+    } else if (!opts.search) {
+      rejections.push(`${source}: no searcher supplied for this source, skipped`);
       continue;
     }
+
     for (const query of queries) {
-      for (const candidate of await search(provider, query)) {
-        if (usedIds.has(`${candidate.provider}:${candidate.id}`)) continue;
+      const found = isProvider(source) ? await search(source, query) : await opts.search!(source, query);
+      for (const candidate of found) {
+        const id = `${candidate.provider}:${candidate.id}`;
+        if (usedIds.has(id)) continue;
+        if (opts.exclude?.has(id)) continue;
         tried++;
+
+        // Width is only enforced where the provider reports it. Pexels and
+        // Pixabay serve a sized file rather than the original, so there is
+        // nothing to check; Unsplash and Commons both give the real number.
+        if (candidate.width && candidate.width < MIN_SOURCE_WIDTH) {
+          if (rejections.length < 12) {
+            rejections.push(`${source} ${candidate.id}: ${candidate.width}px wide, under the ${MIN_SOURCE_WIDTH}px minimum`);
+          }
+          continue;
+        }
+
         const verdict = checkRelevance(candidate.description, guard);
         if (verdict.ok) {
-          usedIds.add(`${candidate.provider}:${candidate.id}`);
+          usedIds.add(id);
           return { candidate, query };
         }
         if (rejections.length < 12) {
-          rejections.push(`${provider} ${candidate.id}: ${verdict.reason} ("${candidate.description.slice(0, 70)}")`);
+          rejections.push(`${source} ${candidate.id}: ${verdict.reason} ("${candidate.description.slice(0, 70)}")`);
         }
       }
+      if (isProvider(source) && isRetired(source)) break; // a 429 mid query list
     }
   }
   return { rejections, tried };
@@ -353,6 +557,21 @@ const SUBJECTS: Entry[] = [
   { match: ["cliff", "cliffs"], phrase: "cliffs" },
   { match: ["mountain", "mountains"], phrase: "mountains" },
   { match: ["hill", "hills"], phrase: "hills" },
+  // Added with the Cairo and Alexandria articles. Without a word for what these
+  // photographs are of, the composer had nothing to say about a church, a gate
+  // or a bazaar and refused perfectly good pictures as "too thin to describe".
+  { match: ["church", "churches", "basilica", "chapel"], phrase: "a church" },
+  { match: ["icon", "icons"], phrase: "icons" },
+  { match: ["dome", "domes"], phrase: "domes" },
+  { match: ["courtyard", "courtyards"], phrase: "a courtyard" },
+  { match: ["arch", "arches", "arcade", "arcades"], phrase: "arches" },
+  { match: ["gate", "gates", "gateway"], phrase: "a gate" },
+  { match: ["fortress", "fort", "citadel"], phrase: "a fortress" },
+  { match: ["market", "markets", "bazaar", "souk"], phrase: "a market" },
+  { match: ["lantern", "lanterns"], phrase: "lanterns" },
+  { match: ["library"], phrase: "a library" },
+  { match: ["theatre", "theater", "amphitheatre", "amphitheater"], phrase: "a theatre" },
+  { match: ["quarry", "quarries"], phrase: "a quarry" },
   { match: ["building", "buildings", "house", "houses", "architecture"], phrase: "buildings" },
   { match: ["wall", "walls"], phrase: "walls" },
   { match: ["stone", "rock", "granite", "limestone", "sandstone"], phrase: "stone" },
@@ -435,7 +654,7 @@ export function composeAlt(
   description: string,
   place: string,
   city: string,
-  opts: { suffix?: string; placeConfirmed?: boolean } = {}
+  opts: { suffix?: string; placeConfirmed?: boolean; avoidPlaceName?: boolean } = {}
 ): { alt: string; tier: Tier } | null {
   // No description means no evidence, and the place name fallback below must
   // not become a way to caption a photograph nobody has described. In practice
@@ -496,7 +715,17 @@ export function composeAlt(
   // reach eight honest words instead of being thrown away one word short.
   const egyptAttested = tokens.has("egypt") || tokens.has("egyptian");
   const country = egyptAttested ? ", Egypt" : "";
-  const locationClause = tier === "PLACE"
+  // `avoidPlaceName` locates the photograph by city instead of by name.
+  //
+  // It exists for the posts whose focus keyword IS the place name: medinet
+  // habu, coptic cairo, islamic cairo, kom ombo temple, dendera temple egypt.
+  // There the natural alt for every position contains the keyword, which
+  // breaks the one-alt-per-post rule, and the previous behaviour was to
+  // compose all of them and then reject the batch, losing the whole post. One
+  // position keeps the name and the rest say where they are instead.
+  const locationClause = opts.avoidPlaceName
+    ? `in ${city}, Egypt`
+    : tier === "PLACE"
     ? (cityInPlace ? `at ${place}${egyptAttested ? " in Egypt" : ""}` : `at ${place} in ${city}${country}`)
     : tier === "CITY" ? `in ${city}, Egypt` : "";
 
@@ -515,7 +744,7 @@ export function composeAlt(
   const build = (o: { colour: boolean; nouns: number; angle: boolean; light: boolean; sky: boolean; location: boolean }) => {
     const nouns = chosen.slice(0, o.nouns).map((e, i) => withColour(e, colours[i], o.colour)).filter(Boolean);
     const head = nouns.length === 0
-      ? (locationClause.replace(/^at /, "").replace(/^in /, "") || place)
+      ? (locationClause.replace(/^at /, "").replace(/^in /, "") || (opts.avoidPlaceName ? "" : place))
       : nouns.length === 1 ? nouns[0]
       : `${nouns.slice(0, -1).join(", ")} and ${nouns[nouns.length - 1]}`;
     const extras = [
@@ -528,7 +757,15 @@ export function composeAlt(
     return sentence.charAt(0).toUpperCase() + sentence.slice(1);
   };
 
-  const o = { colour: true, nouns: 4, angle: true, light: true, sky: true, location: true };
+  // When the keyword suffix already names the place, the location clause repeats
+  // it: "a church at Coptic Cairo in Egypt in coptic cairo". Dropping it up
+  // front rather than only when the sentence runs long is what keeps the one
+  // keyword-bearing alt on each post readable.
+  const suffixNamesPlace = Boolean(suffix) && contentWords(place)
+    .filter((w) => w.length > 3)
+    .every((w) => suffix.toLowerCase().includes(w.toLowerCase()));
+
+  const o = { colour: true, nouns: 4, angle: true, light: true, sky: true, location: !suffixNamesPlace };
   let alt = build(o);
   while (wordCount(alt) > maxWords && o.nouns > 3) { o.nouns--; alt = build(o); }
   // The keyword suffix usually names the place already, so the location clause
@@ -551,7 +788,9 @@ export function composeAlt(
   // Still too short, and the place is confirmed: name the place. This claims
   // nothing about what is in the frame beyond what the guard already
   // established, which is why it is only reachable at PLACE tier.
-  if (tier === "PLACE" && length < floor) {
+  // The place name fallback is exactly what avoidPlaceName is here to prevent,
+  // so under it a thin description is a refusal rather than a naming.
+  if (tier === "PLACE" && length < floor && !opts.avoidPlaceName) {
     const named = placeNameAlt(place, city, placeWords);
     const withSuffix = suffix ? named + suffix : named;
     if (wordCount(withSuffix) <= 15) return { alt: withSuffix, tier };
@@ -617,7 +856,21 @@ export async function downloadAndOptimise(
   return { url: `${UPLOAD_URL_PREFIX}${optimised.filename}`, filename: optimised.filename, size: optimised.size };
 }
 
+/**
+ * What goes in media.caption, and therefore what an admin reads in the Media
+ * Library when they need to know where a picture came from.
+ *
+ * Unsplash's licence requires the photographer to be credited with a link to
+ * their profile as well as to the photo, so its line carries both. The others
+ * get the photographer and the photo page, which is what they ask for.
+ */
 export function creditLine(candidate: Candidate): string {
   const name = candidate.provider[0].toUpperCase() + candidate.provider.slice(1);
-  return `Photo by ${candidate.photographer} on ${name}${candidate.pageUrl ? ` (${candidate.pageUrl})` : ""}`;
+  const who = candidate.photographer || "an uncredited photographer";
+  if (candidate.provider === "unsplash") {
+    const profile = candidate.photographerUrl ? ` (${candidate.photographerUrl})` : "";
+    const photo = candidate.pageUrl ? ` Photo: ${candidate.pageUrl}` : "";
+    return `Photo by ${who}${profile} on Unsplash.${photo}`;
+  }
+  return `Photo by ${who} on ${name}${candidate.pageUrl ? ` (${candidate.pageUrl})` : ""}`;
 }

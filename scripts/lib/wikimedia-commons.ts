@@ -200,9 +200,18 @@ export async function searchCommons(query: string): Promise<CommonsCandidate[]> 
 // ---------------------------------------------------------------------------
 export interface Rejection { title: string; reason: string }
 
-export function screen(
-  c: CommonsCandidate & { _meta?: Record<string, { value?: string }> },
-  guard: Guard
+/**
+ * Everything that can be decided about a file without knowing what it is
+ * supposed to be of: licence, format, size, and whether it is a photograph at
+ * all rather than an engraving, a map or a scanned plate.
+ *
+ * Split out from screen() so fill-post-images.ts can use Commons as the last
+ * source in its priority list: it applies the relevance guard itself, once, to
+ * candidates from every source, and only needs Commons to hand it files that
+ * are usable in the first place.
+ */
+export function screenSource(
+  c: CommonsCandidate & { _meta?: Record<string, { value?: string }> }
 ): { ok: true; licence: string } | { ok: false; reason: string } {
   if (!c.fullUrl) return { ok: false, reason: "no file URL" };
   if (!ALLOWED_MIME.has(c.mime)) return { ok: false, reason: `${c.mime || "unknown type"} is not a photograph format` };
@@ -219,10 +228,49 @@ export function screen(
     if (haystack.includes(term)) return { ok: false, reason: `looks like a ${term} rather than a photograph` };
   }
 
+  return { ok: true, licence: licence.label };
+}
+
+export function screen(
+  c: CommonsCandidate & { _meta?: Record<string, { value?: string }> },
+  guard: Guard
+): { ok: true; licence: string } | { ok: false; reason: string } {
+  const source = screenSource(c);
+  if (!source.ok) return source;
+
   const verdict = checkRelevance(c.description, guard);
   if (!verdict.ok) return { ok: false, reason: verdict.reason };
 
-  return { ok: true, licence: licence.label };
+  return { ok: true, licence: source.licence };
+}
+
+/**
+ * Commons files that are free, large enough and actually photographs, as plain
+ * Candidates. The caller applies the relevance guard, so this is the shape
+ * fill-post-images.ts plugs into findConfirmed as its last resort source.
+ */
+export async function searchCommonsUsable(query: string): Promise<Candidate[]> {
+  const out: Candidate[] = [];
+  for (const c of await searchCommons(query)) {
+    const verdict = screenSource(c);
+    if (!verdict.ok) continue;
+    c.licence = verdict.licence;
+    // The caption has to survive the trip through findConfirmed, which only
+    // knows about Candidate, so the licence rides along in the credit fields
+    // rather than in a Commons specific shape the caller cannot see.
+    out.push({
+      provider: "wikimedia",
+      id: c.id,
+      fullUrl: c.fullUrl,
+      description: c.description,
+      photographer: c.photographer,
+      pageUrl: c.pageUrl,
+      width: c.width,
+      height: c.height,
+      licence: verdict.licence,
+    });
+  }
+  return out;
 }
 
 /**

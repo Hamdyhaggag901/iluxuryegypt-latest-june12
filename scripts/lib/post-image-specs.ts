@@ -9,6 +9,7 @@
 // other one had already filled.
 
 import type { Guard } from "./provider-images";
+import { figureEndingAt } from "./pinned-images";
 
 // ---------------------------------------------------------------------------
 // What each post needs
@@ -61,7 +62,7 @@ export const POSTS: PostSpec[] = [
       // old guard asked for desert OR Egypt and the description mentioned a
       // desert road. Vehicles are now denied outright.
       { role: "body", afterH2: 3, place: "Western Desert", city: "Aswan",
-        queries: ["Egyptian Western Desert sand dunes", "Sahara desert dunes Egypt landscape", "Egypt desert empty sand landscape"],
+        queries: ["Western Desert Egypt", "Egyptian Western Desert sand dunes", "Sahara desert dunes Egypt landscape", "Egypt desert empty sand landscape"],
         guard: { requirePlace: ["desert", "sahara", "dune", "dunes"],
                  allowPlaces: ["aswan", "siwa", "bahariya", "farafra"],
                  require: [["egypt", "egyptian", "sahara"]],
@@ -86,7 +87,7 @@ export const POSTS: PostSpec[] = [
                  require: [["egypt", "egyptian", "pharaoh", "sarcophagus", "statue"]],
                  deny: ["louvre", "metropolitan", "british museum"] } },
       { role: "body", afterH2: 1, place: "Grand Egyptian Museum", city: "Giza",
-        queries: ["Egyptian museum statue gallery Cairo", "ancient Egyptian sarcophagus museum", "Egyptian museum artifacts display"],
+        queries: ["Grand Egyptian Museum gallery", "Egyptian museum statue gallery Cairo", "ancient Egyptian sarcophagus museum", "Egyptian museum artifacts display"],
         guard: { requirePlace: ["museum", "gallery", "exhibit", "exhibition"], allowPlaces: ["giza", "cairo"],
                  require: [["statue", "sculpture", "sarcophagus", "artifact", "coffin", "mask"]],
                  deny: ["louvre", "british museum"] } },
@@ -115,7 +116,7 @@ export const POSTS: PostSpec[] = [
                  require: [["egypt", "egyptian", "desert", "rock", "entrance", "tomb", "tombs", "painting", "paintings", "wall", "burial", "chamber", "valley", "hill", "cliff"]],
                  deny: ["hatshepsut", "karnak", "temple", "column", "pyramid"] } },
       { role: "body", afterH2: 2, place: "Valley of the Kings", city: "Luxor",
-        queries: ["ancient Egyptian painted tomb Luxor", "Egyptian tomb wall paintings hieroglyphs", "painted burial chamber Egypt"],
+        queries: ["Valley of the Kings tomb painting", "ancient Egyptian painted tomb Luxor", "Egyptian tomb wall paintings hieroglyphs", "painted burial chamber Egypt"],
         guard: { requirePlace: ["tomb", "tombs", "burial", "chamber", "sarcophagus"], allowPlaces: ["luxor", "thebes", "theban"],
                  require: [["painting", "paintings", "painted", "mural", "murals", "fresco", "frescoes", "artwork", "decorated", "decoration", "hieroglyph", "relief", "wall", "colour", "color"]],
                  deny: ["museum", "replica", "temple", "karnak"] } },
@@ -220,7 +221,7 @@ export const POSTS: PostSpec[] = [
                  require: [["felucca", "sail", "sailing", "boat", "nile", "river"]],
                  deny: ["cruise ship", "temple", "pyramid", "luxor", "cairo"] } },
       { role: "body", afterH2: 3, place: "Nubian house", city: "Aswan",
-        queries: ["Nubian painted house wall Egypt", "Nubian village blue house Aswan", "Nubian architecture painted facade Egypt"],
+        queries: ["Nubian village Aswan", "Nubian painted house wall Egypt", "Nubian village blue house Aswan", "Nubian architecture painted facade Egypt"],
         guard: { requirePlace: ["nubian", "nubia"], allowPlaces: ["aswan", "nubia"],
                  require: [["house", "houses", "wall", "walls", "door", "painted", "blue", "colourful", "colorful"]],
                  deny: ["temple", "pyramid", "tomb", "abu simbel", "luxor", "cairo"] } },
@@ -279,7 +280,7 @@ export const POSTS: PostSpec[] = [
                  require: [["temple", "pylon", "column", "columns", "falcon", "statue", "courtyard", "wall"]],
                  deny: ["pyramid", "luxor", "karnak", "kom ombo"] } },
       { role: "body", afterH2: 10, place: "Nile between Aswan and Luxor", city: "Aswan",
-        queries: ["Nile cruise boat Egypt river", "Nile river bank Egypt palm trees", "Nile Egypt riverbank green"],
+        queries: ["Nile river Egypt", "Nile cruise boat Egypt river", "Nile river bank Egypt palm trees", "Nile Egypt riverbank green"],
         guard: { requirePlace: ["nile"], allowPlaces: ["aswan", "luxor", "edfu", "kom ombo"],
                  require: [["river", "boat", "water", "bank", "palm", "green"]],
                  deny: ["temple", "pyramid", "tomb", "cairo"] } },
@@ -291,7 +292,7 @@ export const POSTS: PostSpec[] = [
     keywordSuffix: " at medinet habu in Luxor",
     images: [
       { role: "featured", place: "Medinet Habu", city: "Luxor", keyword: true,
-        queries: ["Medinet Habu temple Luxor Egypt", "Medinet Habu Ramesses III temple", "Medinet Habu columns painted Egypt"],
+        queries: ["Medinet Habu temple Luxor", "Medinet Habu temple Luxor Egypt", "Medinet Habu Ramesses III temple", "Medinet Habu columns painted Egypt"],
         guard: { requirePlace: ["medinet habu", "habu"], allowPlaces: ["luxor", "thebes", "medinet habu"],
                  require: [["temple", "column", "columns", "wall", "relief", "carved", "painted", "court"]],
                  deny: ["pyramid", "sphinx", "karnak", "valley of the kings"] } },
@@ -355,12 +356,12 @@ export const POSTS: PostSpec[] = [
                  require: [["church", "interior", "nave", "icon", "icons", "screen", "column", "columns", "altar"]],
                  deny: ["pyramid", "mosque", "minaret", "luxor"] } },
       { role: "body", afterH2: 4, place: "Coptic Cairo", city: "Cairo",
-        queries: ["Coptic art icon Egypt museum", "Coptic textile manuscript Egypt", "Coptic carved wood Egypt museum"],
+        queries: ["Coptic Museum Cairo", "Coptic art icon Egypt museum", "Coptic textile manuscript Egypt", "Coptic carved wood Egypt museum"],
         guard: { requirePlace: ["coptic", "copt"], allowPlaces: ["cairo"],
                  require: [["icon", "icons", "art", "textile", "manuscript", "carved", "wood", "museum", "exhibit"]],
                  deny: ["pyramid", "mosque", "minaret", "luxor"] } },
       { role: "body", afterH2: 6, place: "Old Cairo", city: "Cairo",
-        queries: ["Old Cairo narrow street Egypt", "Old Cairo alley stone wall", "Old Cairo lane historic Egypt"],
+        queries: ["Old Cairo street", "Old Cairo narrow street Egypt", "Old Cairo alley stone wall", "Old Cairo lane historic Egypt"],
         guard: { requirePlace: ["cairo"], allowPlaces: ["cairo"],
                  require: [["street", "alley", "lane", "wall", "stone", "old", "historic"]],
                  deny: ["pyramid", "sphinx", "luxor", "aswan", "alexandria", "skyline", "traffic"] } },
@@ -432,6 +433,23 @@ export function figureExistsAfterH2(body: string, h2Index: number): boolean {
   const next = positions[h2Index];
   if (next === undefined) return /<\/figure>\s*$/.test(body.trimEnd());
   return /<\/figure>\s*$/.test(body.slice(0, next).trimEnd());
+}
+
+/**
+ * The figure sitting at the end of section `h2Index`, with its position in the
+ * body, or null when there is none there.
+ *
+ * A replacement needs the span rather than a boolean: it removes and inserts in
+ * one string operation, so the position is never briefly empty and a failure
+ * part way through cannot leave it that way.
+ */
+export function figureAtAfterH2(
+  body: string, h2Index: number
+): { start: number; end: number; html: string } | null {
+  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const next = positions[h2Index];
+  const head = next === undefined ? body : body.slice(0, next);
+  return figureEndingAt(head, head.length);
 }
 
 /**
