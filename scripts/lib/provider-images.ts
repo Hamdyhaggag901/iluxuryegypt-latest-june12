@@ -184,11 +184,49 @@ export const GLOBAL_DENY = [
   "malta", "cyprus", "sicily", "odessa",
 ];
 
-/** Whole word so "rome" never matches "roman", which is a real word here. */
-export function hasToken(haystack: string, token: string): boolean {
-  const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
+// Plurals a suffix rule cannot reach, all of them words these searches actually
+// return. Without sarcophagi mapping to sarcophagus, a require list asking for
+// "sarcophagus" refused a photograph described as "statues and sarcophagi".
+const IRREGULAR_PLURALS: Record<string, string> = {
+  sarcophagi: "sarcophagus", colossi: "colossus", oases: "oasis",
+  necropoleis: "necropolis", frescoes: "fresco", mummies: "mummy",
+  obelisks: "obelisk", hieroglyphics: "hieroglyph",
+};
+
+/**
+ * Singular form, used only for token matching. Deliberately separate from the
+ * composer's stem(): that one is tuned to group word forms and turns "statues"
+ * into "statu", which matches nothing. Short words are left alone so "bus"
+ * does not become "bu".
+ */
+function singular(word: string): string {
+  const w = word.toLowerCase();
+  if (IRREGULAR_PLURALS[w]) return IRREGULAR_PLURALS[w];
+  if (w.length <= 3) return w;
+  if (/ies$/.test(w) && w.length > 4) return w.slice(0, -3) + "y";
+  if (/(sses|shes|ches|xes)$/.test(w)) return w.slice(0, -2);
+  if (/s$/.test(w) && !/ss$/.test(w)) return w.slice(0, -1);
+  return w;
 }
+
+/**
+ * Whole word, so "rome" never matches "roman", which is a real word here, and
+ * "car" never matches "carved". Singular and plural count as the same word.
+ */
+export function hasToken(haystack: string, token: string): boolean {
+  const t = token.trim().toLowerCase();
+  const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // A multi word token is a phrase and is matched as written.
+  if (/\s/.test(t)) return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
+  if (new RegExp(`\\b${escaped}\\b`, "i").test(haystack)) return true;
+
+  const target = singular(t);
+  for (const word of haystack.toLowerCase().split(/[^a-z0-9'-]+/)) {
+    if (word && singular(word) === target) return true;
+  }
+  return false;
+}
+
 
 export function checkRelevance(description: string, guard: Guard): { ok: boolean; reason: string } {
   const text = description.trim();
@@ -377,18 +415,40 @@ export type Tier = "PLACE" | "CITY" | "VISUAL";
  * no-invention rule because it describes the page, not the picture.
  */
 export function composeAlt(
-  description: string, place: string, city: string, opts: { suffix?: string } = {}
+  description: string,
+  place: string,
+  city: string,
+  opts: { suffix?: string; placeConfirmed?: boolean } = {}
 ): { alt: string; tier: Tier } | null {
+  // No description means no evidence, and the place name fallback below must
+  // not become a way to caption a photograph nobody has described. In practice
+  // the relevance guard already refuses these, so this is a second lock on the
+  // same door.
+  if (!description.trim()) return null;
+
   const tokens = tokenSet(description);
   const placeWords = new Set(contentWords(place).map((w) => stem(w)));
   const namesPlace = contentWords(place).filter((w) => w.length > 3)
     .some((w) => tokens.has(w.toLowerCase()) || tokens.has(stem(w)));
   const namesCity = tokens.has(city.toLowerCase()) || tokens.has("egypt") || tokens.has("egyptian");
-  const tier: Tier = namesPlace ? "PLACE" : namesCity ? "CITY" : "VISUAL";
+  // `placeConfirmed` is the relevance guard's own verdict, and it is the
+  // authoritative one: the guard's requirePlace is what let this photo through
+  // in the first place. Re-deriving the answer here from the place name alone
+  // disagreed with it and threw away correct photos, for instance a desert
+  // shot confirmed for the Theban hills by "desert" and "Luxor" but rejected
+  // here because the words "Theban hills" were not in the description.
+  const tier: Tier = opts.placeConfirmed || namesPlace ? "PLACE" : namesCity ? "CITY" : "VISUAL";
 
   // A subject already in the placeName is a stutter, not a description.
   const redundant = (e: Entry) => contentWords(e.phrase).every((w) => placeWords.has(stem(w)));
-  const chosen = SUBJECTS.filter((e) => fires(e, tokens) && !redundant(e)).slice(0, 4);
+  const firing = SUBJECTS.filter((e) => fires(e, tokens));
+  let chosen = firing.filter((e) => !redundant(e)).slice(0, 4);
+  // Words for the container rather than the thing: a museum, a building, the
+  // stone it is made of. Fine as supporting detail, wrong as the only subject.
+  const GENERIC = new Set(["a museum gallery", "buildings", "stone", "walls", "a town"]);
+  if (chosen.length > 0 && chosen.every((e) => GENERIC.has(e.phrase)) && firing.some(redundant)) {
+    chosen = [];
+  }
   if (chosen.length === 0 && tier !== "PLACE") return null;
 
   // A colour applies only to the noun it modifies in the description:
@@ -435,7 +495,7 @@ export function composeAlt(
   const suffix = opts.suffix ?? "";
   const maxWords = 15 - (suffix ? wordCount(suffix) : 0);
 
-  const build = (o: { colour: boolean; nouns: number; angle: boolean; light: boolean; sky: boolean }) => {
+  const build = (o: { colour: boolean; nouns: number; angle: boolean; light: boolean; sky: boolean; location: boolean }) => {
     const nouns = chosen.slice(0, o.nouns).map((e, i) => withColour(e, colours[i], o.colour)).filter(Boolean);
     const head = nouns.length === 0
       ? (locationClause.replace(/^at /, "").replace(/^in /, "") || place)
@@ -443,7 +503,7 @@ export function composeAlt(
       : `${nouns.slice(0, -1).join(", ")} and ${nouns[nouns.length - 1]}`;
     const extras = [
       o.angle && angle ? angle.phrase : "",
-      locationClause && nouns.length > 0 ? locationClause : "",
+      o.location && locationClause && nouns.length > 0 ? locationClause : "",
       o.sky && skyClause ? skyClause : "",
       o.light && light ? light.phrase : "",
     ].filter(Boolean);
@@ -451,18 +511,53 @@ export function composeAlt(
     return sentence.charAt(0).toUpperCase() + sentence.slice(1);
   };
 
-  const o = { colour: true, nouns: 4, angle: true, light: true, sky: true };
+  const o = { colour: true, nouns: 4, angle: true, light: true, sky: true, location: true };
   let alt = build(o);
   while (wordCount(alt) > maxWords && o.nouns > 3) { o.nouns--; alt = build(o); }
-  for (const key of ["colour", "angle", "sky", "light"] as const) {
+  // The keyword suffix usually names the place already, so the location clause
+  // is the right thing to drop before the nouns that describe the picture.
+  for (const key of ["colour", "angle", "sky", "light", "location"] as const) {
     if (wordCount(alt) <= maxWords) break;
     o[key] = false; alt = build(o);
   }
   while (wordCount(alt) > maxWords && o.nouns > 1) { o.nouns--; alt = build(o); }
 
+  // A confirmed place earns a lower floor. Eight words of real description is
+  // the ideal, but refusing a correct photograph because its caption is terse
+  // is the worse outcome: five honest words beat no image at all.
+  const floor = tier === "PLACE" ? 5 : 8;
   const final = suffix ? alt + suffix : alt;
-  if (wordCount(final) < 8 || wordCount(final) > 15) return null;
-  return { alt: final, tier };
+  const length = wordCount(final);
+
+  if (length >= floor && length <= 15) return { alt: final, tier };
+
+  // Still too short, and the place is confirmed: name the place. This claims
+  // nothing about what is in the frame beyond what the guard already
+  // established, which is why it is only reachable at PLACE tier.
+  if (tier === "PLACE" && length < floor) {
+    const named = placeNameAlt(place, city, placeWords);
+    const withSuffix = suffix ? named + suffix : named;
+    if (wordCount(withSuffix) <= 15) return { alt: withSuffix, tier };
+    if (wordCount(named) <= 15) return { alt: named, tier };
+  }
+
+  return null;
+}
+
+// Places whose name is a common noun phrase and reads wrong without an
+// article. A bare proper name such as Saqqara or Hurghada does not take one.
+const ARTICLE_LEADERS = new Set([
+  "temple", "valley", "great", "red", "bent", "grand", "step", "stepped",
+  "catacombs", "western", "theban", "nile", "serapeum", "citadel", "sphinx", "black",
+]);
+
+/** "The Valley of the Kings in Luxor, Egypt". Identifies, never describes. */
+function placeNameAlt(place: string, city: string, placeWords: Set<string>): string {
+  const first = (contentWords(place)[0] ?? "").toLowerCase();
+  const article = /^the\b/i.test(place.trim()) ? "" : ARTICLE_LEADERS.has(first) ? "The " : "";
+  const cityInPlace = contentWords(city).every((w) => placeWords.has(stem(w)));
+  const where = cityInPlace ? "in Egypt" : `in ${city}, Egypt`;
+  return `${article}${place} ${where}`.replace(/\s+/g, " ").trim();
 }
 
 /** Every content word must trace to the description, the place, or the suffix. */

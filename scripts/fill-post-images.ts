@@ -145,12 +145,12 @@ const POSTS: PostSpec[] = [
       { role: "featured", place: "Valley of the Kings", city: "Luxor", keyword: true,
         queries: ["Valley of the Kings Luxor Egypt", "Valley of the Kings tomb entrance", "Valley of the Kings desert Egypt"],
         guard: { requirePlace: ["valley", "tomb", "tombs", "kings"], allowPlaces: ["luxor", "thebes", "theban"],
-                 require: [["egypt", "egyptian", "desert", "rock", "entrance"]],
+                 require: [["egypt", "egyptian", "desert", "rock", "entrance", "tomb", "tombs", "painting", "paintings", "wall", "burial", "chamber", "valley", "hill", "cliff"]],
                  deny: ["hatshepsut", "karnak", "temple", "column", "pyramid"] } },
       { role: "body", afterH2: 2, place: "Valley of the Kings", city: "Luxor",
         queries: ["ancient Egyptian painted tomb Luxor", "Egyptian tomb wall paintings hieroglyphs", "painted burial chamber Egypt"],
         guard: { requirePlace: ["tomb", "tombs", "burial", "chamber", "sarcophagus"], allowPlaces: ["luxor", "thebes", "theban"],
-                 require: [["painting", "painted", "hieroglyph", "relief", "wall", "colour", "color"]],
+                 require: [["painting", "paintings", "painted", "mural", "murals", "fresco", "frescoes", "artwork", "decorated", "decoration", "hieroglyph", "relief", "wall", "colour", "color"]],
                  deny: ["museum", "replica", "temple", "karnak"] } },
       // Left empty on the first run. Nefertari and the Valley of the Queens are
       // thinly tagged, so this asks for the subject rather than the site name.
@@ -237,6 +237,9 @@ const POSTS: PostSpec[] = [
 // ---------------------------------------------------------------------------
 const argv = process.argv.slice(2);
 const PLAN_ONLY = argv.includes("--plan");
+// A re-run fills only what is missing. Nothing already in place is touched,
+// re-fetched or re-described unless --refill says so.
+const REFILL = argv.includes("--refill");
 const DRY_RUN = argv.includes("--dry-run");
 const ONLY = argv.filter((a) => a.startsWith("--only=")).map((a) => a.slice("--only=".length));
 
@@ -251,7 +254,7 @@ interface ResultRow {
   role: string;
   position: string;
   place: string;
-  outcome: "set" | "skipped";
+  outcome: "set" | "skipped" | "kept";
   url: string;
   provider: string;
   query: string;
@@ -265,6 +268,18 @@ interface ResultRow {
 const results: ResultRow[] = [];
 const writtenFiles: string[] = [];
 const notes: string[] = [];
+
+/**
+ * True when a figure already sits at the end of section `h2Index`, which is
+ * exactly where insertFigureAfterH2 puts one. Lets a re-run skip the images
+ * that already worked rather than replacing them.
+ */
+function figureExistsAfterH2(body: string, h2Index: number): boolean {
+  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const next = positions[h2Index];
+  if (next === undefined) return /<\/figure>\s*$/.test(body.trimEnd());
+  return /<\/figure>\s*$/.test(body.slice(0, next).trimEnd());
+}
 
 /** Inserts a figure after the Nth H2's section, or at the end if there is no next H2. */
 function insertFigureAfterH2(body: string, h2Index: number, figure: string): string {
@@ -357,7 +372,7 @@ async function run(): Promise<void> {
 
     for (const post of specs) {
       const { rows } = await client.query(
-        `SELECT id, body_en, featured_image FROM posts WHERE slug = $1`,
+        `SELECT id, body_en, featured_image, featured_image_alt FROM posts WHERE slug = $1`,
         [post.slug]
       );
       if (!rows[0]) {
@@ -366,6 +381,7 @@ async function run(): Promise<void> {
       }
       let body: string = rows[0].body_en ?? "";
       let featured: string | null = rows[0].featured_image ?? null;
+      let featuredAlt: string | null = rows[0].featured_image_alt ?? null;
       // Two images on one page with identical alt text is a real defect, and
       // it happens when two different photos of the same site come back with
       // similar descriptions. Tracked per post so it can be reported.
@@ -373,7 +389,15 @@ async function run(): Promise<void> {
 
       // Body figures are inserted from the LAST position backwards, so an
       // earlier insertion never shifts the index of a later one.
-      const ordered = [...post.images].sort((a, b) => (b.afterH2 ?? 0) - (a.afterH2 ?? 0));
+      // Body figures are inserted from the LAST position backwards so an
+      // earlier insertion never shifts a later index. The featured image has no
+      // position and is put first, because an article without a hero is worse
+      // off than one missing a figure and it should get first pick of the
+      // photos when the two compete.
+      const ordered = [...post.images].sort((a, b) => {
+        if (a.role !== b.role) return a.role === "featured" ? -1 : 1;
+        return (b.afterH2 ?? 0) - (a.afterH2 ?? 0);
+      });
 
       for (const spec of ordered) {
         const position = spec.role === "featured" ? "hero" : `after H2 #${spec.afterH2}`;
@@ -382,6 +406,14 @@ async function run(): Promise<void> {
           outcome: "skipped", url: "", provider: "", query: "", description: "",
           alt: "", tier: "-", detail: "",
         };
+
+        const alreadyThere = spec.role === "featured"
+          ? Boolean(featured && featured.trim())
+          : figureExistsAfterH2(body, spec.afterH2!);
+        if (alreadyThere && !REFILL) {
+          results.push({ ...base, outcome: "kept", detail: "already filled, left alone" });
+          continue;
+        }
 
         if (PLAN_ONLY) {
           results.push({ ...base, detail: `would try: ${spec.queries.join(" | ")}` });
@@ -402,7 +434,9 @@ async function run(): Promise<void> {
 
         const description = found.candidate.description;
         const suffix = spec.keyword ? post.keywordSuffix : undefined;
-        const composed = composeAlt(description, spec.place, spec.city, { suffix });
+        // placeConfirmed is not an assumption: findConfirmed only returns a
+        // candidate whose description satisfied this image's requirePlace.
+        const composed = composeAlt(description, spec.place, spec.city, { suffix, placeConfirmed: true });
         if (!composed) {
           results.push({
             ...base, description,
@@ -443,6 +477,7 @@ async function run(): Promise<void> {
 
         if (spec.role === "featured") {
           featured = saved.url;
+          featuredAlt = composed.alt;
         } else {
           const escaped = composed.alt.replace(/"/g, "&quot;");
           const figure =
@@ -460,8 +495,8 @@ async function run(): Promise<void> {
 
       if (!PLAN_ONLY) {
         await client.query(
-          `UPDATE posts SET featured_image = $1, body_en = $2, updated_at = now() WHERE id = $3`,
-          [featured, body, rows[0].id]
+          `UPDATE posts SET featured_image = $1, featured_image_alt = $2, body_en = $3, updated_at = now() WHERE id = $4`,
+          [featured, featuredAlt, body, rows[0].id]
         );
       }
     }
@@ -522,7 +557,9 @@ function printReport(): void {
   for (const r of results) {
     console.log(`\n  ${r.slug} ${r.position} — ${r.place}`);
     if (r.description) console.log(`    the photo's own description: "${r.description}"`);
-    if (r.outcome === "set") {
+    if (r.outcome === "kept") {
+      console.log(`    already filled, left alone`);
+    } else if (r.outcome === "set") {
       console.log(`    file: ${r.url}`);
       console.log(`    alt:  ${r.alt}`);
       console.log(`    via:  ${r.provider} / "${r.query}"${r.detail ? ` (${r.detail})` : ""}`);
@@ -533,6 +570,8 @@ function printReport(): void {
   }
 
   const skipped = results.filter((r) => r.outcome === "skipped" && !PLAN_ONLY);
+  const kept = results.filter((r) => r.outcome === "kept");
+  if (kept.length > 0) console.log(`\n${kept.length} image(s) already in place and left untouched.`);
   if (skipped.length > 0) {
     console.log(`\n${skipped.length} image(s) could not be filled. Add these by hand from the Media Library:`);
     for (const r of skipped) console.log(`  ${r.slug} ${r.position} (${r.place})`);
