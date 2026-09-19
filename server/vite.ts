@@ -6,6 +6,7 @@ import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
 import { resolvePageMeta, injectMetaTags } from "./seo-meta";
+import { resolvePageContentCached, injectPageContent } from "./seo-content";
 
 const viteLogger = createLogger();
 
@@ -132,13 +133,26 @@ export function serveStatic(app: Express) {
       return res.status(404).send("Not found");
     }
 
-    const meta = await resolvePageMeta(url);
-    const page = meta ? injectMetaTags(indexTemplate, url, meta) : indexTemplate;
+    const [meta, content] = await Promise.all([
+      resolvePageMeta(url),
+      resolvePageContentCached(url),
+    ]);
+
+    let page = meta ? injectMetaTags(indexTemplate, url, meta) : indexTemplate;
+    // The body a crawler reads. React empties #root when it mounts, so this
+    // never has to be cleaned up and can never collide with the client tree.
+    if (content.kind === "content") page = injectPageContent(page, content.html);
 
     const headers: Record<string, string> = { "Content-Type": "text/html" };
     if (url === "/") {
       headers["Link"] = '</.well-known/api-catalog>; rel="api-catalog"';
     }
-    res.status(200).set(headers).send(page);
+
+    // A slug with no row behind it is a 404, with the status to match. It used
+    // to be a 200 carrying an empty shell, which tells a crawler the page
+    // exists and is simply blank. The shell is still sent so the SPA can show
+    // its own not-found screen to a person.
+    const status = content.kind === "notFound" ? 404 : 200;
+    res.status(status).set(headers).send(page);
   });
 }

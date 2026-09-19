@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from "express";
+import { clearContentCache } from "./seo-content";
 
 // IndexNow lets us tell Bing, Yandex, Seznam and Naver that a URL changed,
 // instead of waiting for a recrawl or clicking "Request Indexing" per page.
@@ -135,6 +136,12 @@ export async function submitUrls(urls: string[]): Promise<SubmitResult> {
  * everything so an unhandled rejection can't take the process down.
  */
 export function notifyIndexNow(urls: string[]): void {
+  // The server rendered content for these pages is now stale, whatever
+  // IndexNow itself is configured to do. Clearing here rather than at each of
+  // the fifteen CMS handlers means a new handler cannot forget to do it, and
+  // it runs even when IndexNow is switched off, because the cache is not
+  // optional the way the ping is.
+  clearContentCache();
   if (!isIndexNowEnabled() || urls.length === 0) return;
   void submitUrls(urls).catch((error) => {
     console.error("[indexnow] unexpected failure:", error);
