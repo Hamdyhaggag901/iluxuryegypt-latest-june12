@@ -36,6 +36,7 @@
 import { storage } from "./storage";
 import { isPostLive } from "@shared/post-visibility";
 import { destinationHeading } from "@shared/page-heading";
+import { HOME_INTRO_PARAGRAPH } from "@shared/home-intro";
 import { stripHtml } from "@shared/strip-html";
 import { SITE_URL } from "./seo-meta";
 
@@ -263,6 +264,12 @@ async function homepage(): Promise<ContentResult> {
   return content(
     `<h1>${esc(heading)}</h1>` +
       (firstSlide?.description ? `<p>${esc(firstSlide.description)}</p>` : "") +
+      // Sits directly under the hero on the rendered page too. Everything
+      // above it comes from hero_slides and is client only, so without this
+      // paragraph the phrases the homepage targets appear nowhere a crawler
+      // that runs no JavaScript can read them. Same constant the React
+      // component renders, from @shared/home-intro.
+      `<p>${esc(HOME_INTRO_PARAGRAPH)}</p>` +
       (restSlides.length > 0
         ? section(
             "Where we travel",

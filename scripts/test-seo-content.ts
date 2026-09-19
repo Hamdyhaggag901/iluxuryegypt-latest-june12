@@ -19,6 +19,7 @@
 import { ENV_REPORT } from "./lib/script-env";
 import fs from "fs";
 import path from "path";
+import { HOME_INTRO_PARAGRAPH } from "@shared/home-intro";
 
 void ENV_REPORT;
 
@@ -340,8 +341,83 @@ if (!HAS_DB) {
 }
 
 // ---------------------------------------------------------------------------
+console.log("\nE. The homepage intro paragraph\n");
+
+// The hero slider is client only, so this paragraph is the one piece of
+// homepage copy a crawler that runs no JavaScript can read. Everything here is
+// about it still being there, still saying the same thing on both sides, and
+// still being readable by a person rather than only by a crawler.
+
+const KEY_PHRASES = ["egypt private tours", "egypt luxury private tours", "luxury egypt vacation packages"];
+
+// Styles that would turn quiet copy into hidden keyword text. Any of these on
+// the paragraph is cloaking, whatever the intent behind it.
+const HIDING = [
+  /\bhidden\b/, /\bsr-only\b/, /\binvisible\b/, /\bopacity-0\b/,
+  /display\s*:\s*none/i, /visibility\s*:\s*hidden/i, /\bblur-/,
+  /-left-\[?\s*-?9\d{3}/, /\btext-transparent\b/,
+];
+/** A Tailwind text size below 13px, which is too small to read. */
+const TINY = /text-\[(\d+(?:\.\d+)?)px\]/;
+
+{
+  const copy = HOME_INTRO_PARAGRAPH;
+  ok("the copy is one paragraph, not several", !/\n/.test(copy) && copy.trim() === copy);
+  ok("it carries no heading markup", !/<h[1-6]/i.test(copy) && !/^#/.test(copy));
+  ok("it has exactly one em dash", (copy.match(/—/g) || []).length === 1,
+     String((copy.match(/—/g) || []).length));
+  ok("and no en dash", !copy.includes("–"));
+  for (const phrase of KEY_PHRASES) {
+    ok(`the copy contains "${phrase}"`, copy.includes(phrase));
+  }
+  ok("the phrases are plain prose, not links or emphasis",
+     !/<(a|strong|em|b|i)\b/i.test(copy));
+}
+
+{
+  // One source of truth. A second copy of this wording in the component is how
+  // the crawler ends up reading one paragraph while the visitor sees another.
+  const home = fs.readFileSync(path.resolve(import.meta.dirname, "..", "client", "src", "pages", "home.tsx"), "utf-8");
+  ok("the homepage component imports the shared copy",
+     /import\s*\{\s*HOME_INTRO_PARAGRAPH\s*\}\s*from\s*"@shared\/home-intro"/.test(home));
+  ok("and does not carry a second copy of the wording",
+     !home.includes(HOME_INTRO_PARAGRAPH.slice(0, 40)));
+
+  const element = home.match(/<p\b[\s\S]*?data-testid="home-intro"[\s\S]*?>/);
+  ok("the component renders it as a paragraph, not a heading", Boolean(element));
+  const classNames = element?.[0].match(/className="([^"]*)"/)?.[1] ?? "";
+  ok("the rendered paragraph carries no hiding classes",
+     !HIDING.some((re) => re.test(classNames)), classNames);
+  const tiny = classNames.match(TINY);
+  ok("and no font size below 13px", !tiny || Number(tiny[1]) >= 13, tiny?.[0] ?? "no explicit px size");
+}
+
+if (!HAS_DB) {
+  console.log("  DATABASE_URL not set, skipping the rendered homepage checks.\n");
+} else {
+  const { html } = await render("/");
+
+  // The brief's own list, asserted against what the server actually sends.
+  ok("the homepage still has exactly one <h1>", count(html, /<h1>/g) === 1, `${count(html, /<h1>/g)} found`);
+  ok("the intro paragraph is in the server HTML as a real <p>",
+     html.includes(`<p>${esc(HOME_INTRO_PARAGRAPH)}</p>`));
+  for (const phrase of KEY_PHRASES) {
+    ok(`the server HTML contains "${phrase}"`, html.includes(phrase));
+  }
+
+  // Not wrapped in anything that would hide it, and not turned into a heading
+  // on its way out. The server block has no styling at all, so any style or
+  // hiding attribute here would have had to be added deliberately.
+  const paragraph = html.match(new RegExp(`<[^>]*>${esc(HOME_INTRO_PARAGRAPH).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`));
+  const openingTag = paragraph?.[0].match(/<[^>]*>/)?.[0] ?? "";
+  ok("it is inside a <p>", openingTag === "<p>", openingTag);
+  ok("the paragraph carries no hiding styles",
+     !/style=|hidden|aria-hidden/i.test(openingTag), openingTag);
+}
+
+// ---------------------------------------------------------------------------
 if (HTTP_BASE) {
-  console.log(`\nE. Over HTTP against ${HTTP_BASE}\n`);
+  console.log(`\nF. Over HTTP against ${HTTP_BASE}\n`);
   for (const [label, url, expected] of [
     ["homepage", "/", 200],
     ["blog post", "/blog", 200],

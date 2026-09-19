@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useSEO } from "@/hooks/use-seo";
+import { HOME_INTRO_PARAGRAPH } from "@shared/home-intro";
 import Navigation from "../components/navigation";
 import HeroSlider from "../components/hero-slider";
 import OurStorySection from "../components/our-story-section";
@@ -37,6 +38,17 @@ export default function Home() {
       <Navigation />
       <main>
         <HeroSlider />
+        {/* The only homepage copy a crawler that runs no JavaScript can read:
+            everything in the slider above comes from hero_slides on the client.
+            The same constant is rendered into the HTML by server/seo-content.ts.
+            Quiet by design, and genuinely visible: muted body text at 14px, not
+            hidden, shrunk or faded out. */}
+        <p
+          className="mx-auto max-w-[65ch] px-6 py-14 md:py-20 text-center text-sm md:text-base leading-[1.9] text-muted-foreground"
+          data-testid="home-intro"
+        >
+          {HOME_INTRO_PARAGRAPH}
+        </p>
         <OurStorySection />
         <WhyChooseUsSection />
         <CategoriesCarouselSection />
