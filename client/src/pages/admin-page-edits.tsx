@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { splitCardContent, joinCardContent } from "@shared/why-choose-content";
 import { Plus, Pencil, Trash2, GripVertical, Video, Image as ImageIcon, Loader2, ArrowLeft, Home, ChevronRight, Star, Phone, Mail, MessageSquare, Info, Users, Award, BookOpen, MapPin, Globe, Shield, Building2, Plane, Quote, Upload } from "lucide-react";
 
 interface HeroSlide {
@@ -323,10 +324,13 @@ export default function AdminPageEdits() {
   const [deleteCardDialogOpen, setDeleteCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<WhyChooseCard | null>(null);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  // pullQuote is a form field only. It is joined back into `content` before the
+  // request goes out, so the API and the table are unchanged.
   const [cardForm, setCardForm] = useState({
     sortOrder: 0,
     title: "",
     content: "",
+    pullQuote: "",
     imageUrl: "",
     isActive: true,
   });
@@ -1214,7 +1218,7 @@ export default function AdminPageEdits() {
 
   // Why choose card mutations
   const createCardMutation = useMutation({
-    mutationFn: async (data: typeof cardForm) => {
+    mutationFn: async (data: ReturnType<typeof cardPayload>) => {
       const response = await fetch("/api/cms/why-choose-cards", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1233,7 +1237,7 @@ export default function AdminPageEdits() {
   });
 
   const updateCardMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof cardForm }) => {
+    mutationFn: async ({ id, data }: { id: string; data: ReturnType<typeof cardPayload> }) => {
       const response = await fetch(`/api/cms/why-choose-cards/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -1456,6 +1460,7 @@ export default function AdminPageEdits() {
       sortOrder: (cardsData?.cards?.length || 0),
       title: "",
       content: "",
+      pullQuote: "",
       imageUrl: "",
       isActive: true,
     });
@@ -1515,15 +1520,23 @@ export default function AdminPageEdits() {
   };
 
   const openEditCard = (card: WhyChooseCard) => {
+    const { body, pullQuote } = splitCardContent(card.content);
     setEditingCard(card);
     setCardForm({
       sortOrder: card.sortOrder,
       title: card.title,
-      content: card.content,
+      content: body,
+      pullQuote,
       imageUrl: card.imageUrl,
       isActive: card.isActive,
     });
     setCardDialogOpen(true);
+  };
+
+  /** The shape the API takes: pullQuote folded back into content. */
+  const cardPayload = (form: typeof cardForm) => {
+    const { pullQuote, ...rest } = form;
+    return { ...rest, content: joinCardContent(form.content, pullQuote) };
   };
 
   const openNewCard = () => {
@@ -3391,10 +3404,10 @@ export default function AdminPageEdits() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Why Choose Cards (4 Cards)</CardTitle>
-                <CardDescription>Manage the 4 feature cards with images and content</CardDescription>
+                <CardTitle>Why Choose Terms (5 Rows)</CardTitle>
+                <CardDescription>The rows of the Why Us ledger on the home page. Each one is a title, a paragraph and a short pull quote.</CardDescription>
               </div>
-              <Button onClick={openNewCard} disabled={cards.length >= 4}>
+              <Button onClick={openNewCard} disabled={cards.length >= 5}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Card
               </Button>
@@ -3640,7 +3653,7 @@ export default function AdminPageEdits() {
           <DialogHeader>
             <DialogTitle>{editingCard ? "Edit Card" : "Add Card"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); editingCard ? updateCardMutation.mutate({ id: editingCard.id, data: cardForm }) : createCardMutation.mutate(cardForm); }} className="space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); const payload = cardPayload(cardForm); editingCard ? updateCardMutation.mutate({ id: editingCard.id, data: payload }) : createCardMutation.mutate(payload); }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Sort Order</Label>
@@ -3652,12 +3665,19 @@ export default function AdminPageEdits() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Image URL *</Label>
-              <Input value={cardForm.imageUrl} onChange={(e) => setCardForm({ ...cardForm, imageUrl: e.target.value })} required />
-            </div>
-            <div className="space-y-2">
               <Label>Content *</Label>
               <Textarea value={cardForm.content} onChange={(e) => setCardForm({ ...cardForm, content: e.target.value })} rows={4} required />
+              <p className="text-xs text-muted-foreground">The paragraph that appears when the row is opened. Around 2 sentences reads best.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Pull quote</Label>
+              <Input value={cardForm.pullQuote} onChange={(e) => setCardForm({ ...cardForm, pullQuote: e.target.value })} placeholder="From 4,000 USD per person" />
+              <p className="text-xs text-muted-foreground">The short line set below the paragraph. Leave it empty and the row shows the paragraph on its own.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Image URL</Label>
+              <Input value={cardForm.imageUrl} onChange={(e) => setCardForm({ ...cardForm, imageUrl: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Not used by this section any more. It is kept so nothing that already reads the field breaks, and it can be left empty.</p>
             </div>
             <div className="flex items-center space-x-2">
               <Switch checked={cardForm.isActive} onCheckedChange={(c) => setCardForm({ ...cardForm, isActive: c })} />
