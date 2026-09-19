@@ -28,6 +28,38 @@ const BOT_USER_AGENTS = [
 const cache = new Map<string, { html: string; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60 * 24; // 24 hours
 
+/**
+ * Drop cached bot snapshots, for the given paths or for every page.
+ *
+ * A snapshot here is a photograph of the page as it was, and at a day long it
+ * is by far the longest lived copy in the request path. Nothing used to clear
+ * it, so after an edit a crawler could keep being handed the pre-edit page for
+ * twenty four hours, missing whatever the edit added, structured data
+ * included. It is now cleared alongside the server rendered content cache on
+ * every CMS write.
+ *
+ * Paths are passed where the caller knows them, because re-rendering is one
+ * headless Chrome at a time and clearing the whole map over a single edit
+ * would queue up the entire site behind it.
+ *
+ * A change made straight in the database, by SQL rather than through the
+ * admin, goes through no handler and so reaches neither cache: restart the
+ * process after running one.
+ */
+export function clearPrerenderCache(paths?: string[]): void {
+  if (cache.size === 0) return;
+
+  if (!paths) {
+    const cleared = cache.size;
+    cache.clear();
+    log(`Prerender cache cleared (${cleared} page${cleared === 1 ? "" : "s"})`);
+    return;
+  }
+
+  const cleared = paths.filter((path) => cache.delete(path));
+  if (cleared.length > 0) log(`Prerender cache cleared: ${cleared.join(", ")}`);
+}
+
 // Concurrency control - only allow 1 Chrome at a time, queue the rest
 let activeRenders = 0;
 const MAX_CONCURRENT = 1;

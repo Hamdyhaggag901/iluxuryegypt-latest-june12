@@ -19,10 +19,22 @@
 import { ENV_REPORT } from "./lib/script-env";
 import fs from "fs";
 import path from "path";
-import { esc, trusted, injectPageContent, resolvePageContent } from "../server/seo-content";
-import { resolvePageMeta, injectMetaTags } from "../server/seo-meta";
 
 void ENV_REPORT;
+
+// Whether there is a database to talk to, read before the placeholder below
+// can muddy the answer.
+const HAS_DB = Boolean(process.env.DATABASE_URL);
+
+// server/db.ts refuses to load at all without a connection string, and both
+// modules under test reach it through storage, so a static import would take
+// the pure cases down with it on a machine that has no database. A placeholder
+// gets the modules loaded; the pool it builds is never asked to connect,
+// because every live case is behind HAS_DB.
+if (!HAS_DB) process.env.DATABASE_URL = "postgres://placeholder:placeholder@127.0.0.1:1/placeholder";
+
+const { esc, trusted, injectPageContent, resolvePageContent } = await import("../server/seo-content");
+const { resolvePageMeta, injectMetaTags } = await import("../server/seo-meta");
 
 let fails = 0;
 function ok(name: string, passed: boolean, detail = ""): void {
@@ -31,6 +43,39 @@ function ok(name: string, passed: boolean, detail = ""): void {
 }
 
 const HTTP_BASE = process.argv.slice(2).find((a) => a.startsWith("--http="))?.slice("--http=".length);
+
+const BARE_TEMPLATE = `<html><head><title>t</title><meta name="description" content="d" /></head><body><div id="root"></div></body></html>`;
+
+const distIndex = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
+const template = fs.existsSync(distIndex) ? fs.readFileSync(distIndex, "utf-8") : BARE_TEMPLATE;
+
+/** Exactly what the server sends, built by the same two calls. */
+async function render(url: string): Promise<{ html: string; status: number }> {
+  const [meta, content] = await Promise.all([resolvePageMeta(url), resolvePageContent(url)]);
+  let html = meta ? injectMetaTags(template, url, meta) : template;
+  if (content.kind === "content") html = injectPageContent(html, content.html);
+  return { html, status: content.kind === "notFound" ? 404 : 200 };
+}
+
+const count = (s: string, re: RegExp) => (s.match(re) || []).length;
+
+/**
+ * Every JSON-LD script in a response, parsed. The string "INVALID" stands in
+ * for one that is not JSON, so a broken script fails loudly instead of simply
+ * not being found.
+ */
+function jsonLdNodes(s: string): any[] {
+  return [...s.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => {
+    try { return JSON.parse(m[1].replace(/\\u003c/g, "<")); } catch { return "INVALID"; }
+  });
+}
+
+const jsonLdTypes = (s: string): string[] =>
+  jsonLdNodes(s).map((n) => (n === "INVALID" ? "INVALID" : n["@type"])).filter(Boolean);
+
+/** The FAQPage node, which is the one carrying a mainEntity list of questions. */
+const faqNode = (s: string): any =>
+  jsonLdNodes(s).find((n) => n !== "INVALID" && n["@type"] === "FAQPage" && Array.isArray(n.mainEntity));
 
 // ---------------------------------------------------------------------------
 console.log("\nA. Escaping: markup through, values escaped\n");
@@ -78,32 +123,9 @@ console.log("\nB. Injection\n");
 // ---------------------------------------------------------------------------
 console.log("\nC. Not found is different from nothing to say\n");
 
-if (!process.env.DATABASE_URL) {
+if (!HAS_DB) {
   console.log("  DATABASE_URL not set, skipping the live checks.\n");
 } else {
-  const distIndex = path.resolve(import.meta.dirname, "..", "dist", "public", "index.html");
-  const template = fs.existsSync(distIndex)
-    ? fs.readFileSync(distIndex, "utf-8")
-    : `<html><head><title>t</title><meta name="description" content="d" /></head><body><div id="root"></div></body></html>`;
-
-  /** Exactly what the server sends, built by the same two calls. */
-  async function render(url: string): Promise<{ html: string; status: number }> {
-    const [meta, content] = await Promise.all([resolvePageMeta(url), resolvePageContent(url)]);
-    let html = meta ? injectMetaTags(template, url, meta) : template;
-    if (content.kind === "content") html = injectPageContent(html, content.html);
-    return { html, status: content.kind === "notFound" ? 404 : 200 };
-  }
-
-  const count = (s: string, re: RegExp) => (s.match(re) || []).length;
-  const jsonLdTypes = (s: string) =>
-    [...s.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
-      .flatMap((m) => {
-        try {
-          const parsed = JSON.parse(m[1].replace(/\\u003c/g, "<"));
-          return [parsed["@type"]].filter(Boolean);
-        } catch { return ["INVALID"]; }
-      });
-
   async function routeTest(label: string, url: string, expect: { h1?: RegExp } = {}): Promise<void> {
     const { html, status } = await render(url);
     ok(`${label}: responds 200`, status === 200, `status ${status}`);
@@ -206,8 +228,120 @@ if (!process.env.DATABASE_URL) {
 }
 
 // ---------------------------------------------------------------------------
+console.log("\nD. FAQ structured data\n");
+
+// The injection half, with no database. A FAQPage travels beside the
+// BlogPosting as a second object in the same array, so what is checked here is
+// that a second object really does become a second <script> and survives the
+// escaping intact.
+{
+  const html = injectMetaTags(BARE_TEMPLATE, "/blog/x", {
+    title: "T",
+    description: "D",
+    image: "https://example.com/i.jpg",
+    type: "article",
+    jsonLd: [
+      { "@context": "https://schema.org", "@type": "BlogPosting", headline: "T" },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          { "@type": "Question", name: "Is it <b>far</b>?", acceptedAnswer: { "@type": "Answer", text: "About 3 hours each way." } },
+          { "@type": "Question", name: "What does it cost?", acceptedAnswer: { "@type": "Answer", text: "From $120 per person." } },
+          { "@type": "Question", name: "Hazard", acceptedAnswer: { "@type": "Answer", text: "</script><script>alert(1)</script>" } },
+        ],
+      },
+    ],
+  });
+  const types = jsonLdTypes(html);
+  const faq = faqNode(html);
+  ok("a FAQPage beside a BlogPosting becomes its own script",
+     types.includes("BlogPosting") && types.includes("FAQPage"), types.join(", "));
+  ok("every question makes it into the script", faq?.mainEntity?.length === 3, String(faq?.mainEntity?.length));
+  // An answer is editor written text, so it can contain anything, including
+  // the one string that would end the script tag in the middle of the JSON.
+  ok("a literal </script> in an answer does not close the tag early",
+     !jsonLdTypes(html).includes("INVALID") && !html.includes("<script>alert(1)"),
+     jsonLdTypes(html).join(", "));
+  ok("and every answer still parses back to its original text",
+     faq?.mainEntity?.[0]?.name === "Is it <b>far</b>?" &&
+     faq?.mainEntity?.[2]?.acceptedAnswer?.text === "</script><script>alert(1)</script>",
+     JSON.stringify(faq?.mainEntity?.[2]?.acceptedAnswer?.text));
+}
+
+if (!HAS_DB) {
+  console.log("  DATABASE_URL not set, skipping the live FAQ checks.\n");
+} else {
+  const { storage } = await import("../server/storage");
+  const { isPostLive } = await import("@shared/post-visibility");
+
+  type Faq = { question?: string; answer?: string };
+  // The same test seo-meta applies: both halves filled in, or it is not a FAQ.
+  const usable = (f: Faq | null | undefined): boolean =>
+    Boolean(f && f.question?.trim() && f.answer?.trim());
+  const storedFaqs = (post: { faqs?: unknown }): Faq[] =>
+    ((post.faqs || []) as Faq[]).filter(usable);
+
+  const livePosts = (await storage.getPosts()).filter((p) => isPostLive(p));
+  const withFaqs = livePosts.filter((p) => storedFaqs(p).length > 0);
+
+  ok("at least one live post has curated FAQs to assert on", withFaqs.length > 0,
+     `${livePosts.length} live post(s), none of them with FAQs`);
+
+  // Every one of them rather than a sample. One article quietly losing its
+  // FAQPage while the rest keep theirs is the exact failure this is here for,
+  // and a sample is how that article gets missed.
+  const noFaqPage: string[] = [];
+  const wrongQuestions: string[] = [];
+  for (const post of withFaqs) {
+    const stored = storedFaqs(post).map((f) => f.question!.trim());
+    const { html } = await render(`/blog/${post.slug}`);
+    const faq = faqNode(html);
+    if (!faq) { noFaqPage.push(post.slug); continue; }
+    const asked: string[] = faq.mainEntity.map((q: any) => q?.name);
+    const answered = faq.mainEntity.every(
+      (q: any) => q?.["@type"] === "Question" && typeof q?.acceptedAnswer?.text === "string" && q.acceptedAnswer.text.trim().length > 0,
+    );
+    if (asked.length !== stored.length || !stored.every((q) => asked.includes(q)) || !answered) {
+      wrongQuestions.push(`${post.slug} (${stored.length} stored, ${asked.length} in the schema${answered ? "" : ", an answer is empty"})`);
+    }
+  }
+  ok("every live post with FAQs emits a FAQPage in the raw HTML",
+     noFaqPage.length === 0, noFaqPage.join(", "));
+  ok("each FAQPage carries one answered Question per stored FAQ",
+     wrongQuestions.length === 0, wrongQuestions.join(", "));
+
+  if (withFaqs[0]) {
+    // The FAQPage is an addition. If it ever replaces the article node or the
+    // breadcrumbs, the page loses more than it gains.
+    const { html } = await render(`/blog/${withFaqs[0].slug}`);
+    const types = jsonLdTypes(html);
+    ok(`the article and breadcrumb nodes are still beside it (${withFaqs[0].slug})`,
+       types.includes("BreadcrumbList") && types.length >= 3 && !types.includes("INVALID"),
+       types.join(", "));
+  }
+
+  // The other half of the contract: no questions, no empty FAQPage.
+  const withoutFaqs = livePosts.find((p) => storedFaqs(p).length === 0);
+  if (withoutFaqs) {
+    const { html } = await render(`/blog/${withoutFaqs.slug}`);
+    ok(`a post with no FAQs emits no FAQPage (${withoutFaqs.slug})`,
+       !jsonLdTypes(html).includes("FAQPage"), jsonLdTypes(html).join(", "));
+  }
+
+  // A scheduled post has no structured data at all, FAQs or not, so its
+  // questions cannot be indexed before the article is live.
+  const scheduledWithFaqs = (await storage.getPosts()).find((p) => !isPostLive(p) && storedFaqs(p).length > 0);
+  if (scheduledWithFaqs) {
+    const { html } = await render(`/blog/${scheduledWithFaqs.slug}`);
+    ok(`a scheduled post's FAQs are not published early (${scheduledWithFaqs.slug})`,
+       !jsonLdTypes(html).includes("FAQPage"), jsonLdTypes(html).join(", "));
+  }
+}
+
+// ---------------------------------------------------------------------------
 if (HTTP_BASE) {
-  console.log(`\nD. Over HTTP against ${HTTP_BASE}\n`);
+  console.log(`\nE. Over HTTP against ${HTTP_BASE}\n`);
   for (const [label, url, expected] of [
     ["homepage", "/", 200],
     ["blog post", "/blog", 200],
@@ -221,6 +355,41 @@ if (HTTP_BASE) {
       if (expected === 404) ok(`${label} ${url} carries no content`, !body.includes("data-server-rendered"));
     } catch (err) {
       ok(`${label} ${url} is reachable`, false, err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  // The path a crawler actually takes. A bot user agent is intercepted by the
+  // prerender middleware and served a headless-Chrome snapshot instead of the
+  // response built above, so the structured data has to survive that too, and a
+  // snapshot cached before an edit is the one way the two can disagree.
+  if (HAS_DB) {
+    const { storage } = await import("../server/storage");
+    const { isPostLive } = await import("@shared/post-visibility");
+    type Faq = { question?: string; answer?: string };
+    const post = (await storage.getPosts()).find(
+      (p) => isPostLive(p) && ((p.faqs || []) as Faq[]).some((f) => f?.question?.trim() && f?.answer?.trim()),
+    );
+    if (!post) {
+      ok("a live post with FAQs exists to fetch", false, "none in this database");
+    } else {
+      for (const [label, ua] of [
+        ["a plain request", "curl/8.0.0"],
+        ["a crawler", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"],
+      ] as Array<[string, string]>) {
+        try {
+          const res = await fetch(`${HTTP_BASE}/blog/${post.slug}`, { headers: { "user-agent": ua } });
+          const body = await res.text();
+          const prerendered = res.headers.get("x-prerendered");
+          ok(`${label} for /blog/${post.slug} gets a FAQPage`, body.includes('"FAQPage"'),
+             `${body.length} bytes, x-prerendered: ${prerendered ?? "none"}`);
+          if (prerendered === "cache") {
+            ok(`${label} was not served a cached snapshot`, false,
+               "x-prerendered: cache, so this answer can predate the data behind it");
+          }
+        } catch (err) {
+          ok(`${label} for /blog/${post.slug} is reachable`, false, err instanceof Error ? err.message : String(err));
+        }
+      }
     }
   }
 }

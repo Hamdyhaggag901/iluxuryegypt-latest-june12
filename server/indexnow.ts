@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { clearContentCache } from "./seo-content";
+import { clearPrerenderCache } from "./prerender";
 
 // IndexNow lets us tell Bing, Yandex, Seznam and Naver that a URL changed,
 // instead of waiting for a recrawl or clicking "Request Indexing" per page.
@@ -142,6 +143,21 @@ export function notifyIndexNow(urls: string[]): void {
   // it runs even when IndexNow is switched off, because the cache is not
   // optional the way the ping is.
   clearContentCache();
+  // The bot snapshots are stale for the same reason, and they last a day
+  // rather than five minutes, so leaving them would hand a crawler the old
+  // page long after a visitor stopped seeing it. Only the pages that changed:
+  // these are the same URLs being submitted for recrawl.
+  // The handlers pass site relative paths ("/blog/my-post"), which is already
+  // the key the prerender cache uses; absolute URLs are accepted too so a
+  // future caller passing one is not silently ignored.
+  clearPrerenderCache(
+    urls
+      .map((url) => {
+        if (url.startsWith("/")) return url.split(/[?#]/)[0];
+        try { return new URL(url).pathname; } catch { return null; }
+      })
+      .filter((path): path is string => path !== null),
+  );
   if (!isIndexNowEnabled() || urls.length === 0) return;
   void submitUrls(urls).catch((error) => {
     console.error("[indexnow] unexpected failure:", error);
