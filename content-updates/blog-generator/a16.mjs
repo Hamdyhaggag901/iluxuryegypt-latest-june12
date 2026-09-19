@@ -59,6 +59,8 @@ export default {
 
 <p>Dinner is usually cooked on the fire, often chicken and rice and vegetables in a covered pot buried in embers. Then the fire burns down, the temperature drops, and the sky arrives.</p>
 
+<p>There is a more comfortable version of the same night. The <a href="/white-desert-luxury-camping">luxury camping trip</a> runs the identical route with proper beds, a cook and a support vehicle, which is the difference between enduring the cold and sitting out in it.</p>
+
 <p>There is effectively no light pollution for a hundred kilometres in any direction. The Milky Way is not a faint smudge here, it is the brightest thing overhead, and satellites cross it every few minutes.</p>
 
 <p>Fennec foxes come into camps at night looking for scraps. They are small, enormous eared, entirely unafraid, and they will take food out of an open bag.</p>

@@ -56,10 +56,10 @@ export const SCHEDULE = [
   // Wave one: low difficulty keywords, publishing across the second half of
   // October alongside the tail of the batch above.
   "2026-10-15T09:00:00+03:00", // valley-of-the-queens
-  "2026-10-17T09:00:00+03:00", // egypt-diving-red-sea
+  "2026-10-16T09:00:00+03:00", // egypt-diving-red-sea
   "2026-10-19T09:00:00+03:00", // black-and-white-desert-egypt
   "2026-10-21T09:00:00+03:00", // tombs-of-the-nobles
-  "2026-10-23T09:00:00+03:00", // open-air-museum-memphis-egypt
+  "2026-10-24T09:00:00+03:00", // open-air-museum-memphis-egypt
 
   // Wave two: higher difficulty keywords, written now and dated December on
   // purpose so they publish into a site with more depth behind them.
@@ -76,11 +76,21 @@ export const SCHEDULE = [
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.
+//
+// KEEP THIS IN STEP WITH THE `tours` TABLE. It is a hand maintained copy of
+// data that lives in the database, and the generator has no database access at
+// generation time, so nothing here can notice when the two drift. The failure
+// is quiet in both directions: a slug missing from this list makes the
+// generator reject a link to a tour that exists, and a slug left here after the
+// tour is unpublished or renamed lets a link through that 404s on the live
+// site. See the README for the query to check it with.
 export const TOUR_SLUGS = new Set([
   "7-day-egypt-tour", "10-day-egypt-tour", "12-days-egypt-tour",
   "family-tours-egypt", "egypt-family-vacation-packages", "egypt-tours-family",
   "egypt-small-group-tour", "egypt-private-tours", "egypt-private-tour-packages",
   "egypt-nile-cruise-packages", "best-luxury-egypt-tours", "luxury-small-group-tours-egypt",
+  // Confirmed published in the tours table on 19 September 2026.
+  "white-desert-luxury-camping",
 ]);
 
 export const DESTINATION_SLUGS = new Set([

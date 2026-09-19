@@ -38,6 +38,31 @@ is the point of having it: editing the SQL by hand loses the checks.
    anything.
 4. Run `node gen.mjs && node sched.mjs`.
 
+## TOUR_SLUGS drifts, and nothing here can notice
+
+`TOUR_SLUGS` in `articles.mjs` is a hand maintained copy of data that lives in
+the `tours` table. The generator runs with no database connection, deliberately,
+so it cannot check itself against the real thing and will never warn you.
+
+Both directions of drift are quiet:
+
+- A published tour missing from the list makes `gen.mjs` reject a link to a page
+  that exists. This happened: `white-desert-luxury-camping` was real and
+  published, the list did not have it, and two articles shipped without the link
+  they wanted.
+- A slug left in the list after the tour is renamed or unpublished lets a link
+  through that 404s on the live site, which is the worse half.
+
+Check it against the database before a batch goes out, and paste the result in:
+
+```sql
+SELECT slug, published FROM tours ORDER BY slug;
+```
+
+Anything published and missing from `TOUR_SLUGS` should be added. Anything in
+`TOUR_SLUGS` that is not published should come out, and every article linking to
+it needs a new target before it does.
+
 Two keyword rules are worth knowing before you write, because both have bitten:
 
 - The primary keyword is counted as a raw substring, so a secondary that

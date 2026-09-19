@@ -538,5 +538,204 @@ for (const person of ["seti", "hathor", "horus", "isis", "sobek", "ramesses", "k
      selfClash.length === 0, selfClash.join("\n        "));
 }
 
+// ---------------------------------------------------------------------------
+console.log("\nN. The nine October and December specs\n");
+
+// One deliberate false positive per spec, chosen to be the photograph that
+// would plausibly come back from that spec's own search terms and be wrong.
+// Every one of these is a picture somebody could reasonably have filed under
+// the same words, which is the only kind worth testing.
+const WAVE_SLUGS = [
+  "valley-of-the-queens", "egypt-diving-red-sea", "black-and-white-desert-egypt",
+  "tombs-of-the-nobles", "open-air-museum-memphis-egypt",
+  "hatshepsut-temple", "memphis-egypt", "deir-el-medina", "bahariya-oasis-egypt",
+];
+
+const guardFor = (slug: string, place: string): Guard => {
+  const post = POSTS.find((p) => p.slug === slug);
+  if (!post) throw new Error(`no spec for ${slug}`);
+  const img = post.images.find((i) => i.place === place);
+  if (!img) throw new Error(`no ${place} image in ${slug}`);
+  return img.guard;
+};
+
+{
+  const missing = WAVE_SLUGS.filter((slug) => !POSTS.some((p) => p.slug === slug));
+  ok("all nine wave posts have image specs", missing.length === 0, missing.join(", "));
+}
+
+const WRONG: Array<[string, string, Guard]> = [
+  // The Kings valley for the Queens valley. Same hillside, same word "tomb",
+  // same city, and it is the single likeliest mistake on the west bank.
+  ["a Valley of the Kings tomb for the Queens",
+   "Painted wall in a tomb in the Valley of the Kings, Luxor, Egypt",
+   guardFor("valley-of-the-queens", "Valley of the Queens")],
+
+  // Tropical reef photography is interchangeable to look at and not to caption.
+  ["a Maldives reef for the Red Sea",
+   "Colourful coral reef and tropical fish in the Maldives",
+   guardFor("egypt-diving-red-sea", "Red Sea reef")],
+
+  // White gypsum dunes in New Mexico, which is what "white desert" returns.
+  ["White Sands for the White Desert",
+   "White gypsum sand dunes at White Sands, New Mexico",
+   guardFor("black-and-white-desert-egypt", "White Desert")],
+
+  // The brief's own example: royal tomb decoration sold as an official's tomb.
+  ["a royal tomb painting for the nobles",
+   "Painted royal tomb chamber with hieroglyphs, Luxor, Egypt",
+   guardFor("tombs-of-the-nobles", "Tombs of the Nobles")],
+
+  // Memphis, Tennessee. "tennessee" and "graceland" are refused globally, so
+  // this one deliberately names neither and relies on the per spec deny list.
+  ["Beale Street for the Memphis museum",
+   "Neon signs on Beale Street in Memphis at night, guitar in the window",
+   guardFor("open-air-museum-memphis-egypt", "Memphis")],
+
+  // Her tomb is in the royal valley, 1 kilometre from her temple through the
+  // rock, and "hatshepsut" alone cannot tell the two apart.
+  ["Hatshepsut's tomb for Hatshepsut's temple",
+   "Tomb of Hatshepsut in the Valley of the Kings, Luxor",
+   guardFor("hatshepsut-temple", "Temple of Hatshepsut")],
+
+  ["Graceland for ancient Memphis",
+   "The mansion at Graceland, Memphis, Tennessee",
+   guardFor("memphis-egypt", "Memphis")],
+
+  // The workers' village is houses. A royal burial chamber is not.
+  ["a royal burial chamber for the workers village",
+   "Royal tomb burial chamber with painted sarcophagus, Valley of the Kings",
+   guardFor("deir-el-medina", "Deir el Medina")],
+
+  // Bahariya is the gateway to the chalk, so its own search terms return the
+  // desert constantly. The oasis article is not about the desert.
+  ["the White Desert for the oasis itself",
+   "Chalk rock formations in the White Desert near Bahariya, Egypt",
+   guardFor("bahariya-oasis-egypt", "Bahariya Oasis")],
+];
+
+for (const [label, desc, guard] of WRONG) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is refused", !v.ok, v.ok ? "WRONGLY ACCEPTED" : `(${v.reason})`);
+}
+
+console.log("\nAnd the right photograph still passes each one\n");
+
+const RIGHT: Array<[string, string, Guard]> = [
+  ["a Nefertari wall painting",
+   "Wall painting in the tomb of Nefertari, Valley of the Queens, Luxor, Egypt",
+   guardFor("valley-of-the-queens", "Valley of the Queens")],
+  ["a Red Sea reef",
+   "Coral reef with shoals of fish in the Red Sea off Hurghada, Egypt",
+   guardFor("egypt-diving-red-sea", "Red Sea reef")],
+  ["a White Desert chalk formation",
+   "Wind eroded chalk rock formations in the White Desert, Farafra, Egypt",
+   guardFor("black-and-white-desert-egypt", "White Desert")],
+  ["a nobles tomb banquet scene",
+   "Painted banquet scene with musicians in a tomb at Sheikh Abd el Qurna, Luxor",
+   guardFor("tombs-of-the-nobles", "Tombs of the Nobles")],
+  ["the Memphis colossus",
+   "Colossal limestone statue of Ramesses II at Memphis, Egypt",
+   guardFor("open-air-museum-memphis-egypt", "Memphis")],
+  ["the terraces at Deir el Bahari",
+   "The terraces and colonnades of the temple of Hatshepsut at Deir el Bahari",
+   guardFor("hatshepsut-temple", "Temple of Hatshepsut")],
+  ["the ruins of ancient Memphis",
+   "Ancient stone ruins and palm trees at Memphis, Egypt",
+   guardFor("memphis-egypt", "Memphis")],
+  ["the village houses at Deir el Medina",
+   "Stone foundations of the workers houses at Deir el Medina, Luxor, Egypt",
+   guardFor("deir-el-medina", "Deir el Medina")],
+  ["a Bahariya palm grove",
+   "Palm grove and spring water at Bahariya, Egypt",
+   guardFor("bahariya-oasis-egypt", "Bahariya Oasis")],
+];
+
+for (const [label, desc, guard] of RIGHT) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " passes", v.ok, v.ok ? "" : `WRONGLY REFUSED (${v.reason})`);
+}
+
+console.log("\nCases that isolate the per spec deny lists\n");
+{
+  // The rejections above mostly fire on requirePlace, on the contradiction
+  // check or on OUTSIDE_EGYPT, because those run first and are stronger. That
+  // is the right order, and it means a deny list can rot without any test
+  // noticing. These two descriptions satisfy everything else, so only the deny
+  // list stands between them and the article.
+  const elvis = checkRelevance(
+    "Bronze statue of Elvis in Memphis",
+    guardFor("memphis-egypt", "Memphis"));
+  ok("an Elvis statue in Memphis is refused by the deny list alone",
+     !elvis.ok, elvis.ok ? "WRONGLY ACCEPTED" : `(${elvis.reason})`);
+
+  const antarctic = checkRelevance(
+    "Chalk white rock formations in the white desert of Antarctica",
+    guardFor("black-and-white-desert-egypt", "White Desert"));
+  ok("an Antarctic white desert is refused by the deny list alone",
+     !antarctic.ok, antarctic.ok ? "WRONGLY ACCEPTED" : `(${antarctic.reason})`);
+}
+
+console.log("\nThe two cases where a near miss has to be allowed through\n");
+{
+  // Deir el Medina's OWN painted tombs are the exception the village guard
+  // denies, which is why they have a position of their own rather than a
+  // looser guard on the village.
+  const v = checkRelevance(
+    "Painted vaulted burial chamber in the tomb of Sennedjem at Deir el Medina, Luxor",
+    guardFor("deir-el-medina", "Deir el Medina tomb"));
+  ok("Sennedjem's painted chamber passes on its own position", v.ok, v.ok ? "" : `REFUSED (${v.reason})`);
+
+  // And the same photograph must NOT satisfy the village position.
+  const w = checkRelevance(
+    "Painted vaulted burial chamber in the tomb of Sennedjem at Deir el Medina, Luxor",
+    guardFor("deir-el-medina", "Deir el Medina"));
+  ok("and is still refused for the village position", !w.ok, w.ok ? "WRONGLY ACCEPTED" : `(${w.reason})`);
+
+  // The alabaster sphinx has to allow the word "sphinx" to describe itself,
+  // so giza is what keeps the Great Sphinx out rather than the word.
+  const g = checkRelevance(
+    "The Great Sphinx of Giza with the pyramids behind it, Egypt",
+    guardFor("open-air-museum-memphis-egypt", "Alabaster sphinx Memphis"));
+  ok("the Great Sphinx is refused for the alabaster sphinx", !g.ok, g.ok ? "WRONGLY ACCEPTED" : `(${g.reason})`);
+
+  const a = checkRelevance(
+    "The alabaster sphinx at Memphis, Egypt, carved from a single block",
+    guardFor("open-air-museum-memphis-egypt", "Alabaster sphinx Memphis"));
+  ok("and the alabaster sphinx itself passes", a.ok, a.ok ? "" : `REFUSED (${a.reason})`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nO. Every image position exists in the article it belongs to\n");
+
+// afterH2 is 1 based and has to be less than the article's H2 count, or
+// fill-post-images has nowhere to put the figure. That check happens at run
+// time against the live body; this one runs it against the source, so a spec
+// written for the wrong article fails here rather than on the server.
+{
+  const mod = await import("../content-updates/blog-generator/articles.mjs" as string);
+  const articles = (mod as { ARTICLES: Array<{ slug: string; body: string }> }).ARTICLES;
+  const h2Count = new Map(
+    articles.map((a) => [a.slug, (a.body.match(/<h2>/g) ?? []).length]),
+  );
+
+  const bad: string[] = [];
+  for (const post of POSTS) {
+    const count = h2Count.get(post.slug);
+    if (count === undefined) continue; // an article that predates the generator
+    for (const img of post.images) {
+      if (img.afterH2 === undefined) continue;
+      if (img.afterH2 < 1 || img.afterH2 >= count) {
+        bad.push(`${post.slug} afterH2 ${img.afterH2} but the article has ${count} H2 sections`);
+      }
+    }
+  }
+  ok("every afterH2 index is inside its article", bad.length === 0, bad.join("\n        "));
+
+  const covered = WAVE_SLUGS.filter((slug) => h2Count.has(slug));
+  ok("the nine wave articles are all readable from the generator",
+     covered.length === WAVE_SLUGS.length, `${covered.length} of ${WAVE_SLUGS.length}`);
+}
+
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);
 process.exit(fails === 0 ? 0 : 1);

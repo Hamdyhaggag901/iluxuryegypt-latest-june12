@@ -251,6 +251,18 @@ SCHEDULE.forEach((iso, i) => {
     problems.push(`${ARTICLES[i]?.slug ?? `schedule[${i}]`}: ${iso} is ${local} in Cairo, not 09:00. Check the UTC offset against Egyptian summer time.`);
 });
 
+// One article per day. Publishing two at once on a site this young is the
+// pattern the spread out schedule exists to avoid, and it is easy to create by
+// accident when a later batch is dated into the gaps of an earlier one.
+const byDay = new Map();
+SCHEDULE.forEach((iso, i) => {
+  const day = iso.slice(0, 10);
+  if (!byDay.has(day)) byDay.set(day, []);
+  byDay.get(day).push(ARTICLES[i]?.slug ?? `schedule[${i}]`);
+});
+for (const [day, slugs] of byDay)
+  if (slugs.length > 1) problems.push(`${day}: ${slugs.length} articles share this publish date (${slugs.join(", ")})`);
+
 if (problems.length > 0) {
   console.error("GUARD FAILURES:\n  " + problems.join("\n  "));
   process.exit(1);

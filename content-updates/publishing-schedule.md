@@ -27,18 +27,18 @@ sitemap fetch after the moment passes. No manual step is needed for that.
 | 8 | Sunday, 11 October 2026, 09:00 Cairo time | `kom-ombo-temple` | `kom ombo temple` | 1751 |
 | 9 | Wednesday, 14 October 2026, 09:00 Cairo time | `medinet-habu` | `medinet habu` | 1403 |
 | 10 | Thursday, 15 October 2026, 09:00 Cairo time | `valley-of-the-queens` | `valley of the queens` | 1813 |
-| 11 | Saturday, 17 October 2026, 09:00 Cairo time | `things-to-do-in-aswan` | `things to do in aswan` | 1717 |
-| 12 | Saturday, 17 October 2026, 09:00 Cairo time | `egypt-diving-red-sea` | `egypt diving red sea` | 1438 |
-| 13 | Monday, 19 October 2026, 09:00 Cairo time | `black-and-white-desert-egypt` | `black and white desert egypt` | 1479 |
+| 11 | Friday, 16 October 2026, 09:00 Cairo time | `egypt-diving-red-sea` | `egypt diving red sea` | 1438 |
+| 12 | Saturday, 17 October 2026, 09:00 Cairo time | `things-to-do-in-aswan` | `things to do in aswan` | 1717 |
+| 13 | Monday, 19 October 2026, 09:00 Cairo time | `black-and-white-desert-egypt` | `black and white desert egypt` | 1519 |
 | 14 | Tuesday, 20 October 2026, 09:00 Cairo time | `coptic-cairo` | `coptic cairo` | 1437 |
 | 15 | Wednesday, 21 October 2026, 09:00 Cairo time | `tombs-of-the-nobles` | `tombs of the nobles` | 1415 |
 | 16 | Friday, 23 October 2026, 09:00 Cairo time | `islamic-cairo` | `islamic cairo` | 1535 |
-| 17 | Friday, 23 October 2026, 09:00 Cairo time | `open-air-museum-memphis-egypt` | `open air museum memphis egypt` | 1450 |
+| 17 | Saturday, 24 October 2026, 09:00 Cairo time | `open-air-museum-memphis-egypt` | `open air museum memphis egypt` | 1450 |
 | 18 | Monday, 26 October 2026, 09:00 Cairo time | `alexandria-day-trip-from-cairo` | `alexandria day trip from cairo` | 1390 |
 | 19 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
 | 20 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
 | 21 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
-| 22 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1421 |
+| 22 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
 
 The order is deliberate. Each article links back to ones already published and
 never forward to one still scheduled, because a link to a post that has not
@@ -207,7 +207,23 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 11. Things to Do in Aswan, in the Order That Actually Matters
+### 11. Egypt Diving Red Sea Guide: Seasons, Sites and First Dives
+
+- **Goes live:** Friday, 16 October 2026, 09:00 Cairo time
+- **URL:** `/blog/egypt-diving-red-sea`
+- **Primary keyword:** `egypt diving red sea` (3 uses in the body)
+- **Secondary:** `diving in egypt red sea`, `diving the red sea egypt`, `diving red sea egypt`, `scuba diving egypt red sea`
+- **SEO title:** Egypt Diving Red Sea: Seasons, Sites, First Dives (49 chars)
+- **Meta description:** 157 chars
+- **Length:** 1438 words, 8 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-one-october.sql`
+- **Internal links:**
+  - article: `/blog/best-time-to-visit-egypt` &mdash; anchor "month by month guide to visiting Egypt"
+  - destination: `/egypt-travel-guide/things-to-do-in-hurghada` &mdash; anchor "Hurghada area guide"
+  - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
+
+### 12. Things to Do in Aswan, in the Order That Actually Matters
 
 - **Goes live:** Saturday, 17 October 2026, 09:00 Cairo time
 - **URL:** `/blog/things-to-do-in-aswan`
@@ -224,22 +240,6 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "Aswan destination guide"
   - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
 
-### 12. Egypt Diving Red Sea Guide: Seasons, Sites and First Dives
-
-- **Goes live:** Saturday, 17 October 2026, 09:00 Cairo time
-- **URL:** `/blog/egypt-diving-red-sea`
-- **Primary keyword:** `egypt diving red sea` (3 uses in the body)
-- **Secondary:** `diving in egypt red sea`, `diving the red sea egypt`, `diving red sea egypt`, `scuba diving egypt red sea`
-- **SEO title:** Egypt Diving Red Sea: Seasons, Sites, First Dives (49 chars)
-- **Meta description:** 157 chars
-- **Length:** 1438 words, 8 H2 sections
-- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
-- **SQL file:** `content-updates/add-posts-wave-one-october.sql`
-- **Internal links:**
-  - article: `/blog/best-time-to-visit-egypt` &mdash; anchor "month by month guide to visiting Egypt"
-  - destination: `/egypt-travel-guide/things-to-do-in-hurghada` &mdash; anchor "Hurghada area guide"
-  - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
-
 ### 13. Black and White Desert Egypt: Two Deserts in One Drive
 
 - **Goes live:** Monday, 19 October 2026, 09:00 Cairo time
@@ -248,10 +248,11 @@ reached its date would 404. The generator enforces this.
 - **Secondary:** `black and white desert egypt tours`, `camping white desert egypt`, `white desert camp`
 - **SEO title:** Black and White Desert Egypt: What the Trip Is Like (51 chars)
 - **Meta description:** 157 chars
-- **Length:** 1479 words, 7 H2 sections
+- **Length:** 1519 words, 7 H2 sections
 - **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/add-posts-wave-one-october.sql`
 - **Internal links:**
+  - tour: `/white-desert-luxury-camping` &mdash; anchor "luxury camping trip"
   - article: `/blog/best-time-to-visit-egypt` &mdash; anchor "month by month guide"
   - destination: `/egypt-travel-guide/siwa-oasis-egypt` &mdash; anchor "Siwa area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
@@ -306,7 +307,7 @@ reached its date would 404. The generator enforces this.
 
 ### 17. Open Air Museum Memphis Egypt: The Colossus on Its Back
 
-- **Goes live:** Friday, 23 October 2026, 09:00 Cairo time
+- **Goes live:** Saturday, 24 October 2026, 09:00 Cairo time
 - **URL:** `/blog/open-air-museum-memphis-egypt`
 - **Primary keyword:** `open air museum memphis egypt` (3 uses in the body)
 - **Secondary:** `memphis open air museum`, `memphis open air museum egypt`
@@ -395,11 +396,12 @@ reached its date would 404. The generator enforces this.
 - **Secondary:** `bahariya oasis`, `bahariya oasis tour`, `bahariya oasis hotels`
 - **SEO title:** Bahariya Oasis Egypt: Springs, Mummies, Black Hills (51 chars)
 - **Meta description:** 159 chars
-- **Length:** 1421 words, 8 H2 sections
+- **Length:** 1458 words, 8 H2 sections
 - **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
 - **SQL file:** `content-updates/add-posts-wave-two-december.sql`
 - **Internal links:**
   - article: `/blog/black-and-white-desert-egypt` &mdash; anchor "guide to the two deserts"
+  - tour: `/white-desert-luxury-camping` &mdash; anchor "luxury desert camp"
   - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "Cairo area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 

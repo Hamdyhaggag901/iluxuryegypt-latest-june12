@@ -436,7 +436,313 @@ export const POSTS: PostSpec[] = [
                  deny: ["pyramid", "cairo", "luxor", "aswan", "rome", "italy"] } },
     ],
   },
+
+  // -------------------------------------------------------------------------
+  // The October and December waves.
+  //
+  // Queries are two or three words. The providers return nothing at all for a
+  // four word phrase, so the focus keyword goes in the alt text and never in
+  // the search.
+  //
+  // Several of these lean on the contradiction check rather than on deny
+  // lists, because it is stronger: any EGYPT_PLACES name the guard does not
+  // allow rejects the candidate outright. "Valley of the Kings" is one of
+  // those names, which is what keeps royal tomb photographs out of the two
+  // articles below that are about anywhere but.
+  // -------------------------------------------------------------------------
+  {
+    slug: "valley-of-the-queens",
+    focusKeyword: "valley of the queens",
+    keywordSuffix: " in the valley of the queens",
+    images: [
+      // Nefertari and this valley are thinly tagged by the stock providers, so
+      // these will often find nothing. An empty position is a no-op; a photo
+      // of the Kings valley sold as the Queens valley is not.
+      { role: "featured", place: "Valley of the Queens", city: "Luxor", keyword: true,
+        queries: ["Nefertari tomb painting", "Valley of the Queens", "Egyptian queen tomb"],
+        guard: { requirePlace: ["valley of the queens", "tomb of nefertari", "nefertari tomb"],
+                 allowPlaces: ["luxor", "thebes", "theban", "valley of the queens"],
+                 require: [["painting", "painted", "tomb", "chamber", "wall", "relief", "hieroglyph", "colour", "color"]],
+                 deny: ["museum", "replica", "model", "exhibition"] } },
+      { role: "body", afterH2: 3, place: "Valley of the Queens", city: "Luxor",
+        queries: ["Egyptian tomb chamber", "ancient Egyptian mural", "tomb wall painting"],
+        guard: { requirePlace: ["valley of the queens", "tomb of nefertari", "nefertari tomb"],
+                 allowPlaces: ["luxor", "thebes", "theban", "valley of the queens"],
+                 require: [["painting", "painted", "mural", "fresco", "relief", "hieroglyph", "chamber"]],
+                 deny: ["museum", "replica", "model"] } },
+      { role: "body", afterH2: 5, place: "Valley of the Queens", city: "Luxor",
+        queries: ["Theban necropolis valley", "Luxor west bank", "desert valley Egypt"],
+        guard: { requirePlace: ["valley of the queens"],
+                 allowPlaces: ["luxor", "thebes", "theban", "valley of the queens"],
+                 require: [["valley", "cliff", "cliffs", "rock", "desert", "entrance", "path", "hillside"]],
+                 deny: ["temple", "column", "columns", "pylon", "pyramid", "museum"] } },
+    ],
+  },
+  {
+    slug: "egypt-diving-red-sea",
+    focusKeyword: "egypt diving red sea",
+    keywordSuffix: " on an egypt diving red sea trip",
+    images: [
+      // "red sea" is not in EGYPT_PLACES, so it cannot contradict anything and
+      // is safe to require. The coast towns are allowed rather than required,
+      // because a reef photograph usually names the sea and not the town.
+      { role: "featured", place: "Red Sea reef", city: "Hurghada", keyword: true,
+        queries: ["Red Sea coral reef", "Red Sea underwater", "coral reef Egypt"],
+        guard: { requirePlace: ["red sea"],
+                 allowPlaces: ["hurghada", "marsa alam", "sharm", "dahab", "safaga", "sinai"],
+                 require: [["reef", "coral", "fish", "underwater", "diver", "diving", "scuba", "snorkel"]],
+                 deny: ["aquarium", "tank", "captivity", "zoo", "maldives", "caribbean", "bahamas",
+                        "great barrier", "fiji", "swimming pool"] } },
+      { role: "body", afterH2: 3, place: "Red Sea wreck", city: "Hurghada",
+        queries: ["Red Sea shipwreck", "underwater wreck diving", "sunken ship reef"],
+        guard: { requirePlace: ["red sea", "thistlegorm", "abu nuhas"],
+                 allowPlaces: ["hurghada", "marsa alam", "sharm", "dahab", "safaga", "sinai"],
+                 require: [["wreck", "shipwreck", "sunken", "hull", "cargo", "underwater"]],
+                 deny: ["aquarium", "museum", "harbour", "harbor", "beached", "maldives", "caribbean",
+                        "great barrier", "truk", "scapa"] } },
+      { role: "body", afterH2: 4, place: "Red Sea marine life", city: "Marsa Alam",
+        queries: ["Red Sea fish", "reef shark Egypt", "Red Sea turtle"],
+        guard: { requirePlace: ["red sea"],
+                 allowPlaces: ["hurghada", "marsa alam", "sharm", "dahab", "safaga", "sinai"],
+                 require: [["shark", "turtle", "dolphin", "fish", "ray", "reef", "shoal", "school"]],
+                 deny: ["aquarium", "tank", "captivity", "zoo", "maldives", "caribbean", "bahamas",
+                        "great barrier", "galapagos"] } },
+    ],
+  },
+  {
+    slug: "black-and-white-desert-egypt",
+    focusKeyword: "black and white desert egypt",
+    keywordSuffix: " on the black and white desert egypt route",
+    images: [
+      // The deny lists here are unusually long on purpose. "White desert" and
+      // "black desert" are generic enough as English that they return polar
+      // ice, Namibian dunes and New Mexico gypsum, none of which name a
+      // country the OUTSIDE_EGYPT list would catch in every caption.
+      { role: "featured", place: "White Desert", city: "Farafra", keyword: true,
+        queries: ["White Desert Egypt", "chalk rock formation", "Farafra desert"],
+        guard: { requirePlace: ["white desert", "farafra"],
+                 allowPlaces: ["white desert", "farafra", "bahariya"],
+                 require: [["chalk", "limestone", "formation", "formations", "rock", "outcrop", "desert", "sand"]],
+                 deny: ["antarctic", "antarctica", "arctic", "greenland", "patagonia", "namib",
+                        "sossusvlei", "white sands", "new mexico", "atacama", "gobi", "mojave",
+                        "snow", "ice", "glacier", "salt flat", "salar"] } },
+      { role: "body", afterH2: 1, place: "White Desert", city: "Farafra",
+        queries: ["chalk formations desert", "wind eroded rock", "White Desert sunset"],
+        guard: { requirePlace: ["white desert", "farafra"],
+                 allowPlaces: ["white desert", "farafra", "bahariya"],
+                 require: [["chalk", "limestone", "formation", "formations", "eroded", "mushroom", "pinnacle", "rock"]],
+                 deny: ["antarctic", "antarctica", "arctic", "greenland", "namib", "sossusvlei",
+                        "white sands", "new mexico", "atacama", "gobi", "mojave", "snow", "ice",
+                        "glacier", "salt flat", "salar"] } },
+      { role: "body", afterH2: 2, place: "White Desert camp", city: "Farafra",
+        queries: ["desert camp night", "White Desert camping", "desert stars Egypt"],
+        guard: { requirePlace: ["white desert", "farafra"],
+                 allowPlaces: ["white desert", "farafra", "bahariya"],
+                 require: [["camp", "camping", "tent", "campfire", "fire", "night", "stars", "bedouin"]],
+                 deny: ["antarctic", "antarctica", "arctic", "namib", "sossusvlei", "white sands",
+                        "atacama", "gobi", "mojave", "snow", "ice", "glacier", "resort", "hotel",
+                        "glamping", "festival"] } },
+      { role: "body", afterH2: 3, place: "Black Desert", city: "Bahariya",
+        queries: ["Black Desert Egypt", "volcanic desert hills", "dark conical hills"],
+        guard: { requirePlace: ["black desert", "bahariya"],
+                 allowPlaces: ["black desert", "bahariya", "farafra"],
+                 require: [["hill", "hills", "cone", "conical", "volcanic", "basalt", "dolerite", "dark", "desert"]],
+                 deny: ["antarctic", "antarctica", "iceland", "hawaii", "etna", "vesuvius", "namib",
+                        "atacama", "snow", "ice", "glacier", "lava flow", "eruption"] } },
+    ],
+  },
+  {
+    slug: "tombs-of-the-nobles",
+    focusKeyword: "tombs of the nobles",
+    keywordSuffix: " in the tombs of the nobles",
+    images: [
+      // The whole risk on this one is a royal tomb passing for an official's
+      // tomb: both are painted, both are at Luxor, and the captions are nearly
+      // identical. "valley of the kings" is in EGYPT_PLACES and is not allowed
+      // here, so the contradiction check refuses it before anything else runs,
+      // and the royal vocabulary in deny covers a caption that omits the valley.
+      { role: "featured", place: "Tombs of the Nobles", city: "Luxor", keyword: true,
+        queries: ["Sheikh Abd el Qurna tomb", "nobles tomb Luxor", "Egyptian banquet fresco"],
+        guard: { requirePlace: ["tombs of the nobles", "tomb of the nobles", "sheikh abd el qurna", "qurna", "gurna"],
+                 allowPlaces: ["luxor", "thebes", "theban"],
+                 require: [["painting", "painted", "fresco", "mural", "relief", "wall", "chamber", "scene"]],
+                 deny: ["valley of the kings", "royal tomb", "tutankhamun", "pharaoh",
+                        "museum", "replica", "model"] } },
+      { role: "body", afterH2: 1, place: "Tombs of the Nobles", city: "Luxor",
+        queries: ["Egyptian harvest painting", "ancient Egyptian daily life", "tomb painting musicians"],
+        guard: { requirePlace: ["tombs of the nobles", "tomb of the nobles", "sheikh abd el qurna", "qurna", "gurna"],
+                 allowPlaces: ["luxor", "thebes", "theban"],
+                 require: [["harvest", "banquet", "musician", "musicians", "farming", "fishing",
+                            "daily", "painting", "painted", "fresco"]],
+                 deny: ["valley of the kings", "royal tomb", "tutankhamun", "pharaoh", "museum", "replica"] } },
+      { role: "body", afterH2: 4, place: "Qubbet el Hawa", city: "Aswan",
+        queries: ["Qubbet el Hawa Aswan", "Aswan cliff tombs", "Nile cliff tombs"],
+        guard: { requirePlace: ["qubbet el hawa", "qubbet al hawa", "qubbet-el-hawa"],
+                 allowPlaces: ["aswan", "elephantine", "nubia"],
+                 require: [["tomb", "tombs", "cliff", "rock", "stair", "stairway", "facade", "nile"]],
+                 deny: ["valley of the kings", "museum", "replica"] } },
+    ],
+  },
+  {
+    slug: "open-air-museum-memphis-egypt",
+    focusKeyword: "open air museum memphis egypt",
+    keywordSuffix: " at the open air museum memphis egypt",
+    images: [
+      // Memphis is the one name on this site that exists in another country
+      // and is far more famous there. "tennessee" and "graceland" are already
+      // refused globally by OUTSIDE_EGYPT; the rest of that city's vocabulary
+      // is not, so it goes in deny here. "blues" is deliberately absent: it
+      // singularises to "blue" and would reject every description with a blue
+      // sky in it.
+      { role: "featured", place: "Memphis", city: "Mit Rahina", keyword: true,
+        queries: ["Memphis Egypt colossus", "Ramesses statue Memphis", "Mit Rahina Egypt"],
+        guard: { requirePlace: ["memphis", "mit rahina"],
+                 allowPlaces: ["memphis", "cairo"],
+                 require: [["colossus", "statue", "ramesses", "ramses", "ancient", "egyptian", "limestone"]],
+                 deny: ["elvis", "beale street", "mississippi", "guitar", "bbq", "barbecue",
+                        "grizzlies", "pyramid arena", "sun studio", "memphis belle"] } },
+      { role: "body", afterH2: 1, place: "Alabaster sphinx Memphis", city: "Mit Rahina",
+        queries: ["alabaster sphinx Memphis", "Egyptian alabaster statue", "Memphis sphinx Egypt"],
+        // "sphinx" has to be allowed because the subject is one, which is why
+        // giza is NOT allowed: it is the only thing keeping the Great Sphinx out.
+        guard: { requirePlace: ["memphis", "mit rahina"],
+                 allowPlaces: ["memphis", "sphinx"],
+                 require: [["sphinx", "alabaster", "calcite", "statue"]],
+                 deny: ["elvis", "beale street", "mississippi", "guitar", "grizzlies",
+                        "great sphinx", "pyramid"] } },
+      { role: "body", afterH2: 4, place: "Memphis museum garden", city: "Mit Rahina",
+        queries: ["Memphis Egypt ruins", "Mit Rahina statuary", "Egyptian sarcophagus garden"],
+        guard: { requirePlace: ["memphis", "mit rahina"],
+                 allowPlaces: ["memphis", "cairo"],
+                 require: [["statue", "statues", "sarcophagus", "capital", "capitals", "ruins",
+                            "fragment", "fragments", "garden", "palm", "palms"]],
+                 deny: ["elvis", "beale street", "mississippi", "guitar", "grizzlies"] } },
+    ],
+  },
+  {
+    slug: "hatshepsut-temple",
+    focusKeyword: "hatshepsut temple",
+    keywordSuffix: " at the hatshepsut temple",
+    images: [
+      // "hatshepsut" on its own is in NOT_A_PLACE_PERSON and cannot confirm a
+      // place: she has a temple here, a tomb in the royal valley and statues
+      // in several museums. The two word forms and "deir el bahari" do name
+      // the building, so those are what requirePlace holds.
+      { role: "featured", place: "Temple of Hatshepsut", city: "Luxor", keyword: true,
+        queries: ["Hatshepsut temple", "Deir el Bahari", "temple terraces Egypt"],
+        guard: { requirePlace: ["hatshepsut temple", "temple of hatshepsut", "deir el bahari", "deir el-bahari"],
+                 allowPlaces: ["luxor", "thebes", "theban", "hatshepsut temple", "deir el bahari", "deir el-bahari"],
+                 require: [["temple", "terrace", "terraces", "colonnade", "column", "columns", "ramp", "cliff", "limestone"]],
+                 deny: ["museum", "replica", "model", "miniature", "drawing"] } },
+      { role: "body", afterH2: 3, place: "Temple of Hatshepsut", city: "Luxor",
+        queries: ["Hatshepsut temple relief", "Egyptian carved relief", "Deir el Bahari wall"],
+        guard: { requirePlace: ["hatshepsut temple", "temple of hatshepsut", "deir el bahari", "deir el-bahari"],
+                 allowPlaces: ["luxor", "thebes", "theban", "hatshepsut temple", "deir el bahari", "deir el-bahari"],
+                 require: [["relief", "carving", "carved", "hieroglyph", "wall", "painted", "colonnade"]],
+                 deny: ["museum", "replica", "model"] } },
+      { role: "body", afterH2: 8, place: "Temple of Hatshepsut", city: "Luxor",
+        queries: ["Deir el Bahari cliff", "Hatshepsut temple wide", "temple below cliff"],
+        guard: { requirePlace: ["hatshepsut temple", "temple of hatshepsut", "deir el bahari", "deir el-bahari"],
+                 allowPlaces: ["luxor", "thebes", "theban", "hatshepsut temple", "deir el bahari", "deir el-bahari"],
+                 require: [["cliff", "terrace", "terraces", "temple", "facade", "rock", "landscape"]],
+                 deny: ["museum", "replica", "model", "interior"] } },
+    ],
+  },
+  {
+    slug: "memphis-egypt",
+    focusKeyword: "memphis egypt",
+    keywordSuffix: " at the site of memphis egypt",
+    images: [
+      { role: "featured", place: "Memphis", city: "Mit Rahina", keyword: true,
+        queries: ["Memphis Egypt ruins", "Mit Rahina palms", "ancient Memphis Egypt"],
+        guard: { requirePlace: ["memphis", "mit rahina"],
+                 allowPlaces: ["memphis", "cairo"],
+                 require: [["ruins", "stone", "statue", "palm", "palms", "ancient", "egyptian", "excavation", "colossus"]],
+                 deny: ["elvis", "beale street", "mississippi", "guitar", "bbq", "barbecue",
+                        "grizzlies", "pyramid arena", "sun studio", "memphis belle"] } },
+      { role: "body", afterH2: 5, place: "Memphis colossus", city: "Mit Rahina",
+        queries: ["Ramesses colossus Memphis", "fallen statue Egypt", "Memphis Egypt statue"],
+        guard: { requirePlace: ["memphis", "mit rahina"],
+                 allowPlaces: ["memphis", "cairo"],
+                 require: [["colossus", "statue", "ramesses", "ramses", "limestone", "fallen", "recumbent"]],
+                 deny: ["elvis", "beale street", "mississippi", "guitar", "grizzlies"] } },
+      { role: "body", afterH2: 8, place: "Saqqara", city: "Giza",
+        queries: ["Saqqara necropolis", "Saqqara pyramid Egypt", "Saqqara desert"],
+        guard: { requirePlace: ["saqqara", "sakkara"],
+                 allowPlaces: ["saqqara", "sakkara", "memphis", "cairo", "giza"],
+                 require: [["pyramid", "step", "stepped", "mastaba", "necropolis", "desert", "sand", "tomb"]],
+                 deny: ["great pyramid", "giza pyramids", "elvis", "meroe"] } },
+    ],
+  },
+  {
+    slug: "deir-el-medina",
+    focusKeyword: "deir el medina",
+    keywordSuffix: " at deir el medina",
+    images: [
+      // The named case from the brief. A painted royal tomb matches "tomb",
+      // "painted" and "Luxor" and is the wrong picture for a village of
+      // houses, so the village spec denies the royal vocabulary outright and
+      // requires the settlement itself.
+      { role: "featured", place: "Deir el Medina", city: "Luxor", keyword: true,
+        queries: ["Deir el Medina village", "ancient Egyptian village", "workers village Luxor"],
+        guard: { requirePlace: ["deir el medina", "deir el-medina", "set maat"],
+                 allowPlaces: ["luxor", "thebes", "theban", "deir el medina"],
+                 require: [["village", "house", "houses", "settlement", "street", "wall", "walls",
+                            "foundation", "foundations", "ruins", "stone"]],
+                 deny: ["valley of the kings", "royal tomb", "tutankhamun", "pharaoh",
+                        "sarcophagus", "temple", "column", "columns", "pylon", "museum"] } },
+      // The workmen's own painted tombs ARE the exception, so they get their
+      // own position rather than a looser guard on the one above. Sennedjem,
+      // Pashedu and Inherkhau are private individuals whose tombs exist only
+      // here, so unlike a king's name they do identify the place.
+      { role: "body", afterH2: 3, place: "Deir el Medina tomb", city: "Luxor",
+        queries: ["Sennedjem tomb painting", "Deir el Medina tomb", "Egyptian vaulted tomb"],
+        guard: { requirePlace: ["deir el medina", "deir el-medina", "sennedjem", "pashedu", "inherkhau"],
+                 allowPlaces: ["luxor", "thebes", "theban", "deir el medina"],
+                 require: [["painting", "painted", "vault", "vaulted", "chamber", "fresco", "mural", "relief"]],
+                 deny: ["valley of the kings", "royal tomb", "tutankhamun", "museum", "replica"] } },
+      { role: "body", afterH2: 4, place: "Deir el Medina temple", city: "Luxor",
+        queries: ["Deir el Medina temple", "Ptolemaic temple Egypt", "small Egyptian temple"],
+        guard: { requirePlace: ["deir el medina", "deir el-medina"],
+                 allowPlaces: ["luxor", "thebes", "theban", "deir el medina"],
+                 require: [["temple", "chapel", "ptolemaic", "enclosure", "stone", "sandstone"]],
+                 deny: ["valley of the kings", "museum", "replica"] } },
+    ],
+  },
+  {
+    slug: "bahariya-oasis-egypt",
+    focusKeyword: "bahariya oasis egypt",
+    keywordSuffix: " in bahariya oasis egypt",
+    images: [
+      // The oasis, deliberately not the desert next to it. "white desert" is
+      // in EGYPT_PLACES and is NOT allowed on the first two positions, so a
+      // chalk landscape captioned "White Desert, Bahariya" is refused here and
+      // left for the article that is actually about it.
+      { role: "featured", place: "Bahariya Oasis", city: "Bawiti", keyword: true,
+        queries: ["Bahariya oasis Egypt", "Egyptian oasis palms", "desert oasis spring"],
+        guard: { requirePlace: ["bahariya", "bawiti"],
+                 allowPlaces: ["bahariya"],
+                 require: [["oasis", "palm", "palms", "grove", "spring", "water", "pool", "village", "green"]],
+                 deny: ["antarctic", "namib", "atacama", "resort", "waterpark", "beach",
+                        "swimming pool"] } },
+      { role: "body", afterH2: 1, place: "Bahariya springs", city: "Bawiti",
+        queries: ["desert hot spring", "Bahariya spring Egypt", "oasis pool palms"],
+        guard: { requirePlace: ["bahariya", "bawiti"],
+                 allowPlaces: ["bahariya"],
+                 require: [["spring", "pool", "water", "bath", "palm", "palms", "steam"]],
+                 deny: ["antarctic", "iceland", "blue lagoon", "onsen", "resort",
+                        "waterpark", "beach"] } },
+      { role: "body", afterH2: 4, place: "Black Desert", city: "Bahariya",
+        queries: ["Black Desert Egypt", "volcanic desert hills", "dark desert cones"],
+        guard: { requirePlace: ["black desert", "bahariya"],
+                 allowPlaces: ["black desert", "bahariya"],
+                 require: [["hill", "hills", "cone", "conical", "volcanic", "basalt", "dolerite", "dark", "desert"]],
+                 deny: ["antarctic", "iceland", "hawaii", "etna", "vesuvius", "namib", "atacama",
+                        "snow", "ice", "glacier", "lava flow", "eruption"] } },
+    ],
+  },
 ];
+
 
 /**
  * True when a figure already sits at the end of section `h2Index`, which is

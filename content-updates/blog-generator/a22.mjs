@@ -75,6 +75,8 @@ export default {
 
 <p>You will drive past all of this on the way to the chalk. The <a href="/blog/black-and-white-desert-egypt">guide to the two deserts</a> covers what happens after the hills, and why the pair is almost always visited together.</p>
 
+<p>The oasis is where the sand trip is assembled, whichever way you do it. A <a href="/white-desert-luxury-camping">luxury desert camp</a> and a mattress on a rug behind a windbreak both leave from the same handful of yards in Bawiti.</p>
+
 <h2>Bahariya Oasis Hotels and Where to Sleep</h2>
 
 <p>Expect simple. Bahariya oasis hotels are small, family run, often mud brick, and several sit out in the palm groves rather than in town. A few have their own spring fed pools, which is the feature to ask about.</p>
