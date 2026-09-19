@@ -109,8 +109,17 @@ ARTICLES.forEach((a, index) => {
     problems.push(`${L}: contains an em or en dash`);
   for (const phrase of BANNED_PHRASES)
     if (lower.includes(phrase)) problems.push(`${L}: uses the banned phrase "${phrase}"`);
-  for (const reserved of RESERVED_KEYWORDS[L] ?? [])
-    if (lower.includes(reserved)) problems.push(`${L}: uses "${reserved}", which is reserved for another page`);
+  for (const reserved of RESERVED_KEYWORDS[L] ?? []) {
+    // A reserved phrase that is a substring of this article's own primary
+    // keyword is unavoidable: "black and white desert egypt" contains "white
+    // desert egypt". Only standalone uses count, so those are subtracted.
+    let hits = countOf(lower, reserved);
+    if (a.primary.includes(reserved) && a.primary !== reserved) hits -= primaryCount;
+    // Same for a secondary that swallows it, e.g. "camping white desert egypt".
+    for (const sec of a.secondary)
+      if (sec !== reserved && sec.includes(reserved) && !a.primary.includes(sec)) hits -= countOf(lower, sec);
+    if (hits > 0) problems.push(`${L}: uses "${reserved}" ${hits} time(s) standalone, and it is reserved for another page`);
+  }
 
   // At most two promotional sentences per article.
   const promo = sentences.filter((s) => /\bour\b/i.test(s) && /itinerary|tour|package/i.test(s));
@@ -138,8 +147,9 @@ ARTICLES.forEach((a, index) => {
   // forward link would 404 between its date and the target's. That is why a1
   // carried a {{RELATED_POST_SLUG}} token for so long. Exempt it and say so,
   // rather than papering over a broken link.
-  if (postLinks.length === 0 && index > 0) problems.push(`${L}: no link to another article`);
-  if (postLinks.length === 0 && index === 0)
+  const publishesFirst = SCHEDULE.every((iso, i) => i === index || Date.parse(iso) >= Date.parse(SCHEDULE[index]));
+  if (postLinks.length === 0 && !publishesFirst) problems.push(`${L}: no link to another article`);
+  if (postLinks.length === 0 && publishesFirst)
     notes.push(`${L}: publishes first, so it links to no other article. Add a backlink once a sibling is live.`);
 
   for (const href of hrefs) {
@@ -148,14 +158,21 @@ ARTICLES.forEach((a, index) => {
   }
 
   // A link to a sibling that publishes LATER would 404 until that date.
+  //
+  // Compared by date rather than by position in ARTICLES. Position used to be
+  // a safe proxy because SCHEDULE was ascending, and it stopped being one the
+  // moment a later batch was appended with earlier dates: an article added at
+  // the end can easily publish before one in the middle, and an index compare
+  // would wave through a link that 404s for a week.
+  const mine = Date.parse(SCHEDULE[index]);
   for (const href of postLinks) {
     const target = href.replace("/blog/", "");
     if (target.includes("{{")) continue;
     if (EXISTING_POST_SLUGS.has(target)) continue; // already live, cannot 404
     const targetIndex = ARTICLES.findIndex((x) => x.slug === target);
     if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is neither in this batch nor a known live article`);
-    else if (targetIndex >= index)
-      problems.push(`${L}: links to /blog/${target}, scheduled at or after it, so the link would 404 on publication`);
+    else if (Date.parse(SCHEDULE[targetIndex]) >= mine)
+      problems.push(`${L}: links to /blog/${target}, which publishes ${SCHEDULE[targetIndex]}, at or after this article's ${SCHEDULE[index]}, so the link would 404 on publication`);
   }
 
   // Descriptive anchors, not repeated keyword.
@@ -221,6 +238,19 @@ ARTICLES.forEach((a, index) => {
   });
 });
 
+// Every article publishes at 9am Cairo. The offset written into the ISO string
+// is easy to get wrong across a daylight saving boundary, and the result is a
+// post that goes live an hour early for the rest of its life without anyone
+// noticing, so the wall clock time is checked rather than the string.
+const cairoTime = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Africa/Cairo", hour: "2-digit", minute: "2-digit", hour12: false,
+});
+SCHEDULE.forEach((iso, i) => {
+  const local = cairoTime.format(new Date(iso));
+  if (local !== "09:00")
+    problems.push(`${ARTICLES[i]?.slug ?? `schedule[${i}]`}: ${iso} is ${local} in Cairo, not 09:00. Check the UTC offset against Egyptian summer time.`);
+});
+
 if (problems.length > 0) {
   console.error("GUARD FAILURES:\n  " + problems.join("\n  "));
   process.exit(1);
@@ -245,8 +275,12 @@ ARTICLES.forEach((a, index) => {
   const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
   const tags = `ARRAY[${a.tags.map(pg).join(", ")}]::text[]`;
 
+  // "N of M" counts only the articles that ship as their own file. Counting
+  // every article in ARTICLES would rewrite the header of all thirteen earlier
+  // files every time a wave is added, for no change anyone asked for.
+  const standalone = ARTICLES.filter((x) => !x.wave).length;
   const sql = `-- ${a.titleEn}
--- Blog post ${index + 1} of ${ARTICLES.length}. Primary keyword: ${a.primary}
+-- Blog post ${index + 1} of ${standalone}. Primary keyword: ${a.primary}
 --
 -- Scheduled for ${SCHEDULE[index]} via posts.scheduled_at, so it stays out of
 -- the blog list, the sitemap and the server rendered meta until that moment.
@@ -385,8 +419,205 @@ WHERE slug = ${pg(a.slug)}
   AND (title_es IS NOT NULL OR title_fr IS NOT NULL OR title_jp IS NOT NULL
        OR body_es IS NOT NULL OR body_fr IS NOT NULL OR body_jp IS NOT NULL);
 `;
-  writeFileSync(`${OUT}/blog-${String(index + 1).padStart(2, "0")}-${a.slug}.sql`, sql);
+  // Articles that belong to a wave ship in one grouped file instead, written
+  // below. Two files carrying the same row would both be correct and both be
+  // safe to run, and someone would still have to work out which one to run.
+  if (!a.wave) writeFileSync(`${OUT}/blog-${String(index + 1).padStart(2, "0")}-${a.slug}.sql`, sql);
 });
+
+// ---------------------------------------------------------------------------
+// Wave files
+// ---------------------------------------------------------------------------
+// A batch written and loaded in one go, rather than one file per article. The
+// row shape is the same as above with one addition: published_at, the date the
+// article presents itself as written on. scheduled_at alone decides visibility
+// (shared/post-visibility.ts), but seo-meta.ts reads published_at for
+// datePublished in the BlogPosting, and without it an article scheduled for
+// December would tell a crawler it was written on the day the row was created.
+const WAVES = [...new Set(ARTICLES.map((a) => a.wave).filter(Boolean))];
+
+for (const wave of WAVES) {
+  const members = ARTICLES
+    .map((a, index) => ({ a, index }))
+    .filter(({ a }) => a.wave === wave);
+
+  const slugList = members.map(({ a }) => pg(a.slug)).join(", ");
+
+  const rows = members.map(({ a, index }) => {
+    const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
+    return `(
+  ${pg(a.slug)},
+  ${pg(a.titleEn)},
+  ${pg(a.body.trim())},
+  ${pg(a.excerpt)},
+  ${pg(a.category)},
+  ARRAY[${a.tags.map(pg).join(", ")}]::text[],
+  ${pg(a.primary)},
+  ${pg(a.metaTitle)},
+  ${pg(a.metaDescription)},
+  'published',
+  ${pg(SCHEDULE[index])}::timestamptz,
+  ${pg(SCHEDULE[index])}::timestamptz AT TIME ZONE 'Africa/Cairo',
+  ${pg(faqJson)}::jsonb,
+  'BlogPosting'
+)`;
+  }).join(",\n");
+
+  const verifications = members.map(({ a }) => `SELECT ${pg(a.slug)} AS slug,
+       (SELECT count(*) FROM regexp_matches(body_en, ${pg(a.primary)}, 'gi')) AS primary_hits
+FROM posts WHERE slug = ${pg(a.slug)};`).join("\n");
+
+  const sql = `-- Wave "${wave}": ${members.length} articles, loaded in one file.
+--
+${members.map(({ a, index }) => `--   ${SCHEDULE[index]}  ${a.slug}  (${a.primary})`).join("\n")}
+--
+-- Scheduled via posts.scheduled_at, so every row stays out of the blog list,
+-- the sitemap and the server rendered meta until its moment. published_at
+-- carries the same instant as the article's own date. See
+-- shared/post-visibility.ts for the visibility rule.
+--
+-- RUN THE MIGRATION FIRST (Admin > Settings > Run Migrations). This needs
+-- posts.scheduled_at, posts.faqs and posts.schema_markup.
+--
+-- Only the English columns are filled. title_es/fr/jp and body_es/fr/jp are
+-- deliberately left NULL rather than machine translated.
+--
+-- Images are NOT set here. scripts/fill-post-images.ts fetches them, checks
+-- each candidate against the provider's own description, and writes
+-- featured_image plus the in-body figures. Run it after this file.
+--
+-- The hero alt text each article wants, carrying its focus keyword, which is
+-- one of the required keyword placements. featured_image_alt stays NULL until
+-- there is an image to describe; these are the strings to use when there is:
+--
+${members.map(({ a }) => `--   ${a.slug}\n--     ${a.heroAlt}`).join("\n")}
+--
+-- Safe to run twice. See the ON CONFLICT block: a row whose body already has
+-- figures in it keeps that body rather than losing the images.
+
+-- ---------------------------------------------------------------------------
+-- Before: what is already in the database for these slugs.
+-- On a first run this returns no rows, which is the expected result.
+-- ---------------------------------------------------------------------------
+SELECT slug,
+       status,
+       scheduled_at,
+       published_at,
+       length(body_en) AS body_chars,
+       (body_en LIKE '%<figure%') AS has_images,
+       updated_at
+FROM posts
+WHERE slug IN (${slugList})
+ORDER BY scheduled_at;
+
+BEGIN;
+
+INSERT INTO posts (
+  slug, title_en, body_en, excerpt, category, tags,
+  focus_keyword, meta_title, meta_description,
+  status, scheduled_at, published_at, faqs, schema_type
+) VALUES
+${rows}
+ON CONFLICT (slug) DO UPDATE SET
+  title_en = EXCLUDED.title_en,
+  -- The body is NOT overwritten once images are in it. Re-running a file after
+  -- scripts/fill-post-images.ts once deleted every <figure> that script had
+  -- inserted, silently, with the file reporting success.
+  --
+  -- To change the prose of a row that has figures, patch it surgically instead.
+  -- See content-updates/blog-generator/README.md.
+  body_en = CASE
+    WHEN posts.body_en LIKE '%<figure%' THEN posts.body_en
+    ELSE EXCLUDED.body_en
+  END,
+  excerpt = EXCLUDED.excerpt,
+  category = EXCLUDED.category,
+  tags = EXCLUDED.tags,
+  focus_keyword = EXCLUDED.focus_keyword,
+  meta_title = EXCLUDED.meta_title,
+  meta_description = EXCLUDED.meta_description,
+  status = EXCLUDED.status,
+  scheduled_at = EXCLUDED.scheduled_at,
+  published_at = EXCLUDED.published_at,
+  faqs = EXCLUDED.faqs,
+  schema_type = EXCLUDED.schema_type,
+  updated_at = now();
+
+COMMIT;
+
+-- ---------------------------------------------------------------------------
+-- Verification. Every "bad" column below must read 0, and the row count must
+-- be ${members.length}.
+-- ---------------------------------------------------------------------------
+SELECT count(*) AS rows_present FROM posts WHERE slug IN (${slugList});
+
+SELECT slug,
+       length(meta_title) AS title_len,
+       length(meta_description) AS meta_len,
+       jsonb_array_length(faqs) AS faq_count,
+       array_length(regexp_split_to_array(regexp_replace(body_en, '<[^>]+>', ' ', 'g'), '\\s+'), 1) AS body_words,
+       scheduled_at,
+       published_at,
+       CASE WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
+            ELSE 'body written from this file' END AS body_en_outcome
+FROM posts WHERE slug IN (${slugList}) ORDER BY scheduled_at;
+
+${verifications}
+
+SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList}) AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
+
+SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList}) AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+
+-- Answers are written to be quoted on their own by an AI answer engine, which
+-- means 40 to 80 words each. Outside that they are either empty or too long.
+SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug IN (${slugList})
+  AND array_length(regexp_split_to_array(trim(f->>'answer'), '\\s+'), 1) NOT BETWEEN 40 AND 80;
+
+-- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
+SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList})
+  AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
+
+SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
+FROM posts p, jsonb_array_elements(p.faqs) f
+WHERE p.slug IN (${slugList})
+  AND (coalesce(f->>'id','') = '' OR coalesce(f->>'question','') = '' OR coalesce(f->>'answer','') = '');
+
+SELECT 'em or en dash present' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList})
+  AND (body_en ~ '[\\u2013\\u2014]' OR meta_title ~ '[\\u2013\\u2014]' OR meta_description ~ '[\\u2013\\u2014]' OR title_en ~ '[\\u2013\\u2014]');
+
+-- Tour links must sit at the site root. Anything under the category path 404s.
+SELECT 'tour links under /luxury-egypt-tour-packages/' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList}) AND body_en ~ 'href="/luxury-egypt-tour-packages/[^"]';
+
+-- The hotel listing moved. A link to the old path still works through the 301,
+-- and costs every reader a hop for no reason.
+SELECT 'links to the old /stay path' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList}) AND body_en ~ 'href="/stay';
+
+SELECT 'unfilled placeholders' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList}) AND (body_en LIKE '%data-placeholder=%' OR body_en ~ '\\{\\{[A-Z_]+\\}\\}');
+
+SELECT 'other language columns left empty' AS check, count(*) AS bad FROM posts
+WHERE slug IN (${slugList})
+  AND (title_es IS NOT NULL OR title_fr IS NOT NULL OR title_jp IS NOT NULL
+       OR body_es IS NOT NULL OR body_fr IS NOT NULL OR body_jp IS NOT NULL);
+
+-- The owner paragraphs are deliberately left as HTML comments for someone to
+-- replace with a real first hand voice. This is a reminder, not a failure.
+SELECT slug,
+       (length(body_en) - length(replace(body_en, '<!-- OWNER:', ''))) / 11 AS owner_notes_awaiting_a_paragraph
+FROM posts WHERE slug IN (${slugList}) ORDER BY slug;
+`;
+
+  writeFileSync(`${OUT}/add-posts-wave-${wave}.sql`, sql);
+  console.log(`wave "${wave}": ${members.length} article(s) -> add-posts-wave-${wave}.sql`);
+}
 
 console.log(`\n${ARTICLES.length} SQL file(s) written to ${OUT}`);
 

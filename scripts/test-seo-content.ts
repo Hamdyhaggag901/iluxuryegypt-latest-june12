@@ -494,8 +494,88 @@ if (!HAS_DB) {
 }
 
 // ---------------------------------------------------------------------------
+console.log("\nG. Article SEO field lengths\n");
+
+// Every article's SEO title and meta description, checked at the source that
+// writes them rather than at the database that receives them. These are the
+// two fields a search result is built from: a title over 60 characters gets
+// truncated mid word, and a description outside 150 to 160 either wastes the
+// space or gets cut.
+//
+// The nine slugs added in the October and December waves are named explicitly,
+// so this fails loudly if one of them is ever dropped from the batch rather
+// than passing vacuously over whatever happens to be left.
+const WAVE_SLUGS = [
+  "valley-of-the-queens", "egypt-diving-red-sea", "black-and-white-desert-egypt",
+  "tombs-of-the-nobles", "open-air-museum-memphis-egypt",
+  "hatshepsut-temple", "memphis-egypt", "deir-el-medina", "bahariya-oasis-egypt",
+];
+
+{
+  type Article = { slug: string; metaTitle: string; metaDescription: string };
+  const mod = await import("../content-updates/blog-generator/articles.mjs" as string);
+  const articles = (mod as { ARTICLES: Article[] }).ARTICLES;
+
+  ok("the article source loads", Array.isArray(articles) && articles.length > 0, String(articles?.length));
+
+  const bySlug = new Map(articles.map((a) => [a.slug, a]));
+  const missing = WAVE_SLUGS.filter((slug) => !bySlug.has(slug));
+  ok("all nine wave articles are still in the batch", missing.length === 0, missing.join(", "));
+
+  const longTitles = articles.filter((a) => a.metaTitle.length >= 60)
+    .map((a) => `${a.slug} (${a.metaTitle.length})`);
+  ok("every SEO title is under 60 characters", longTitles.length === 0, longTitles.join(", "));
+
+  const badDescriptions = articles
+    .filter((a) => a.metaDescription.length < 150 || a.metaDescription.length > 160)
+    .map((a) => `${a.slug} (${a.metaDescription.length})`);
+  ok("every meta description is 150 to 160 characters", badDescriptions.length === 0, badDescriptions.join(", "));
+
+  // Named individually as well, so a failure says which article to open.
+  for (const slug of WAVE_SLUGS) {
+    const a = bySlug.get(slug);
+    if (!a) continue;
+    ok(`${slug}: title ${a.metaTitle.length}, description ${a.metaDescription.length}`,
+       a.metaTitle.length < 60 && a.metaDescription.length >= 150 && a.metaDescription.length <= 160);
+  }
+}
+
+if (!HAS_DB) {
+  console.log("  DATABASE_URL not set, skipping the stored article checks.\n");
+} else {
+  const { storage } = await import("../server/storage");
+  const posts = await storage.getPosts();
+  const bySlug = new Map(posts.map((p) => [p.slug, p]));
+
+  const loaded = WAVE_SLUGS.filter((slug) => bySlug.has(slug));
+  if (loaded.length === 0) {
+    console.log("  none of the nine wave articles are in this database yet, so there is nothing stored to check.\n");
+  } else {
+    const badStored = loaded
+      .map((slug) => bySlug.get(slug)!)
+      .filter((p) => (p.metaTitle ?? "").length >= 60
+        || (p.metaDescription ?? "").length < 150
+        || (p.metaDescription ?? "").length > 160)
+      .map((p) => `${p.slug} (title ${(p.metaTitle ?? "").length}, description ${(p.metaDescription ?? "").length})`);
+    ok(`${loaded.length} stored wave article(s) keep their SEO field lengths`,
+       badStored.length === 0, badStored.join(", "));
+
+    // Scheduling is the whole point of the December batch, so it is worth
+    // asserting rather than assuming: a wave article that is already visible
+    // has lost its schedule somewhere between the file and the row.
+    const { isPostScheduled } = await import("@shared/post-visibility");
+    const december = loaded.filter((slug) => {
+      const at = bySlug.get(slug)!.scheduledAt;
+      return at ? new Date(at).getUTCMonth() === 11 : false;
+    });
+    const live = december.filter((slug) => !isPostScheduled(bySlug.get(slug)!));
+    ok("the December articles are still scheduled rather than live", live.length === 0, live.join(", "));
+  }
+}
+
+// ---------------------------------------------------------------------------
 if (HTTP_BASE) {
-  console.log(`\nG. Over HTTP against ${HTTP_BASE}\n`);
+  console.log(`\nH. Over HTTP against ${HTTP_BASE}\n`);
   for (const [label, url, expected] of [
     ["homepage", "/", 200],
     ["blog post", "/blog", 200],

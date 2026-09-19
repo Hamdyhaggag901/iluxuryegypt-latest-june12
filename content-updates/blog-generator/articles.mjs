@@ -18,8 +18,21 @@ import a10 from "./a10.mjs";
 import a11 from "./a11.mjs";
 import a12 from "./a12.mjs";
 import a13 from "./a13.mjs";
+import a14 from "./a14.mjs";
+import a15 from "./a15.mjs";
+import a16 from "./a16.mjs";
+import a17 from "./a17.mjs";
+import a18 from "./a18.mjs";
+import a19 from "./a19.mjs";
+import a20 from "./a20.mjs";
+import a21 from "./a21.mjs";
+import a22 from "./a22.mjs";
 
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13];
+// a14 onwards are the two later waves. They are APPENDED rather than slotted
+// into date order, so the 13 files above regenerate byte for byte. The order of
+// this array no longer matches the order of publication, which is why gen.mjs
+// validates "does this link point at something already live" by date.
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
@@ -39,6 +52,27 @@ export const SCHEDULE = [
   "2026-10-20T09:00:00+03:00", // coptic-cairo
   "2026-10-23T09:00:00+03:00", // islamic-cairo
   "2026-10-26T09:00:00+03:00", // alexandria-day-trip-from-cairo
+
+  // Wave one: low difficulty keywords, publishing across the second half of
+  // October alongside the tail of the batch above.
+  "2026-10-15T09:00:00+03:00", // valley-of-the-queens
+  "2026-10-17T09:00:00+03:00", // egypt-diving-red-sea
+  "2026-10-19T09:00:00+03:00", // black-and-white-desert-egypt
+  "2026-10-21T09:00:00+03:00", // tombs-of-the-nobles
+  "2026-10-23T09:00:00+03:00", // open-air-museum-memphis-egypt
+
+  // Wave two: higher difficulty keywords, written now and dated December on
+  // purpose so they publish into a site with more depth behind them.
+  //
+  // +02:00, not +03:00. Egypt keeps summer time from late April to the last
+  // Friday in October, so 9am Cairo is +03:00 for every date above and +02:00
+  // for every date here. Writing +03:00 on a December row publishes it at 8am
+  // local, silently. gen.mjs now checks each of these renders as 09:00 in
+  // Africa/Cairo rather than trusting the offset typed in the string.
+  "2026-12-01T09:00:00+02:00", // hatshepsut-temple
+  "2026-12-05T09:00:00+02:00", // memphis-egypt
+  "2026-12-10T09:00:00+02:00", // deir-el-medina
+  "2026-12-15T09:00:00+02:00", // bahariya-oasis-egypt
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.
@@ -77,4 +111,28 @@ export const RESERVED_KEYWORDS = {
   // Higher difficulty variants of the same intent, deliberately not chased.
   "dendera-temple-egypt": ["abydos temple egypt"],
   "islamic-cairo": ["cair islamic"],
+  // The Kings tombs have their own article. This one stays on the Queens, and
+  // the combined phrase is a harder keyword than either page should chase.
+  "valley-of-the-queens": ["valley of the kings and queens"],
+  // The camping tour page owns bare "white desert egypt". This article covers
+  // both deserts as a pair and must never use that phrase on its own, and Siwa
+  // belongs to its destination guide.
+  "black-and-white-desert-egypt": ["white desert egypt", "siwa oasis egypt"],
+  // Both destination pages own their phrases outright. This article covers two
+  // cities and could drift into either without the guard.
+  "tombs-of-the-nobles": ["attractions in luxor", "aswan egypt attractions"],
+  // Saqqara and the new Giza museum are both far harder keywords than this
+  // short museum piece should be chasing, and both are easy to wander into.
+  "open-air-museum-memphis-egypt": ["step pyramid of djoser", "grand egyptian museum", "egyptian museum cairo"],
+  "hatshepsut-temple": ["attractions in luxor", "karnak"],
+  // "memphis tours egypt" is a competitor's brand name as well as a hard
+  // keyword, and it is one careless sentence away in an article like this.
+  "memphis-egypt": ["memphis tours egypt", "step pyramid of djoser"],
+  // Deir el Bahari belongs to the Hatshepsut article. Two neighbouring sites
+  // with confusingly similar names is exactly how a page ends up outranking
+  // its own sibling for the wrong query.
+  "deir-el-medina": ["deir el bahari", "attractions in luxor", "karnak"],
+  // The desert article owns the chalk, the camping tour page owns bare "white
+  // desert egypt", and Siwa belongs to its destination guide.
+  "bahariya-oasis-egypt": ["white desert egypt", "siwa oasis egypt"],
 };

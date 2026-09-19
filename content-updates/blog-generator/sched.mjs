@@ -7,11 +7,22 @@ const fmt = (iso) => {
   return d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Africa/Cairo"})
     + ", " + d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:"Africa/Cairo"}) + " Cairo time";
 };
+// ARTICLES is in the order articles were written, which stopped matching the
+// order they publish in once the later waves were appended. The document is
+// about a schedule, so it is sorted by date.
+const ORDER = A.map((a, i) => i).sort((x, y) => Date.parse(S[x].scheduled) - Date.parse(S[y].scheduled));
+const span = (() => {
+  const first = new Date(S[ORDER[0]].scheduled);
+  const last = new Date(S[ORDER[ORDER.length - 1]].scheduled);
+  const weeks = Math.round((last - first) / (7 * 24 * 3600 * 1000));
+  return `${weeks} weeks`;
+})();
+
 let md = `# Publishing schedule: ${A.length} SEO articles
 
-${A.length} articles across five weeks, one every two to three days. Publishing a
-batch at once is an unnatural pattern for a site this young, which is the only
-reason they are spread out rather than shipped together.
+${A.length} articles across ${span}, most of them two to three days apart.
+Publishing a batch at once is an unnatural pattern for a site this young, which
+is the only reason they are spread out rather than shipped together.
 
 Each one is already loaded with \`status = 'published'\` and a \`scheduled_at\`
 timestamp, so nothing needs to be done on the day. The post stays out of the
@@ -27,8 +38,9 @@ sitemap fetch after the moment passes. No manual step is needed for that.
 | # | Goes live | Slug | Primary keyword | Words |
 |---|---|---|---|---|
 `;
-A.forEach((a,i)=>{
-  md += `| ${i+1} | ${fmt(S[i].scheduled)} | \`${a.slug}\` | \`${a.primary}\` | ${S[i].words} |\n`;
+ORDER.forEach((i,n)=>{
+  const a = A[i];
+  md += `| ${n+1} | ${fmt(S[i].scheduled)} | \`${a.slug}\` | \`${a.primary}\` | ${S[i].words} |\n`;
 });
 
 md += `
@@ -39,9 +51,10 @@ reached its date would 404. The generator enforces this.
 ## Per article
 
 `;
-A.forEach((a,i)=>{
+ORDER.forEach((i,n)=>{
+  const a = A[i];
   const hrefs = [...a.body.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map(m=>({href:m[1],text:m[2]}));
-  md += `### ${i+1}. ${a.titleEn}\n\n`;
+  md += `### ${n+1}. ${a.titleEn}\n\n`;
   md += `- **Goes live:** ${fmt(S[i].scheduled)}\n`;
   md += `- **URL:** \`/blog/${a.slug}\`\n`;
   md += `- **Primary keyword:** \`${a.primary}\` (${S[i].primary} uses in the body)\n`;
@@ -50,7 +63,7 @@ A.forEach((a,i)=>{
   md += `- **Meta description:** ${S[i].meta} chars\n`;
   md += `- **Length:** ${S[i].words} words, ${S[i].h2} H2 sections\n`;
   md += `- **FAQs:** ${S[i].faqs}, rendered on the page and emitted as FAQPage structured data\n`;
-  md += `- **SQL file:** \`content-updates/blog-${String(i+1).padStart(2,"0")}-${a.slug}.sql\`\n`;
+  md += `- **SQL file:** \`content-updates/${a.wave ? `add-posts-wave-${a.wave}.sql` : `blog-${String(i+1).padStart(2,"0")}-${a.slug}.sql`}\`\n`;
   md += `- **Internal links:**\n`;
   for (const h of hrefs) {
     const kind = h.href.startsWith("/blog/") ? "article"

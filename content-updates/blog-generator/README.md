@@ -15,9 +15,23 @@ is the point of having it: editing the SQL by hand loses the checks.
 
 1. Write `aN.mjs`, copying the shape of an existing one.
 2. Add the import, the entry and a publication date in `articles.mjs`. The date
-   decides the order, and the order decides what the article is allowed to link
-   to: an article may link back to one published earlier or to one of the
-   `EXISTING_POST_SLUGS`, never forward to one still scheduled.
+   decides what the article is allowed to link to: an article may link back to
+   one published earlier or to one of the `EXISTING_POST_SLUGS`, never forward
+   to one still scheduled. Append to the end of `ARTICLES` rather than slotting
+   the entry into date order, so the existing SQL files regenerate unchanged;
+   the array order and the publishing order are deliberately independent and
+   every check that cares uses the date.
+
+   Publication times are 9am Cairo, written as an ISO string with an explicit
+   offset. Egypt keeps summer time from late April to the last Friday in
+   October, so that is `+03:00` in summer and `+02:00` in winter. `gen.mjs`
+   checks the wall clock time rather than trusting the offset, because a wrong
+   one publishes the article an hour early forever and nothing else notices.
+
+   An article may carry `wave: "<name>"`. Articles in a wave ship together in
+   `content-updates/add-posts-wave-<name>.sql` instead of one file each, and
+   that file also sets `published_at` and opens with a SELECT showing what is
+   already in the database for those slugs.
 3. Add its four image positions to `scripts/lib/post-image-specs.ts`. The
    `afterH2` index is 1 based and must be less than the article's H2 count;
    `fill-post-images.ts` checks that against the live body before it downloads
@@ -39,6 +53,10 @@ cd content-updates/blog-generator
 node gen.mjs      # validates and rewrites the five SQL files
 node sched.mjs    # rewrites publishing-schedule.md
 ```
+
+Each article also carries `heroAlt`, the alt text its featured image should get
+once there is one. It is emitted as a comment at the top of the wave SQL rather
+than written to `featured_image_alt`, which stays NULL until an image exists.
 
 `gen.mjs` checks, per article: keyword in the SEO title, H1, meta description,
 first hundred words, one H2 and the slug; primary keyword 3 to 5 times and each
