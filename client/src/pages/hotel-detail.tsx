@@ -205,7 +205,7 @@ export default function HotelDetail() {
           <div className="text-center">
             <h1 className="text-4xl font-serif font-bold text-primary mb-4">Hotel Not Found</h1>
             <p className="text-muted-foreground mb-8">The hotel you're looking for doesn't exist.</p>
-            <Link href="/stay">
+            <Link href="/luxury-hotels-in-egypt">
               <Button>Return to Hotels</Button>
             </Link>
           </div>
@@ -524,7 +524,7 @@ export default function HotelDetail() {
               Discover More Luxury Accommodations
             </h2>
             <div className="w-16 h-px bg-accent mx-auto mb-8" />
-            <Link href="/stay">
+            <Link href="/luxury-hotels-in-egypt">
               <Button size="lg" data-testid="button-view-all-hotels">
                 View All Hotels
               </Button>

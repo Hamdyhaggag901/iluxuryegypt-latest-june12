@@ -1,6 +1,7 @@
 import Navigation from "../components/navigation";
 import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
+import { HOTEL_INDEX_FALLBACK_HEADING } from "@shared/page-heading";
 import Footer from "../components/footer";
 import ScrollToTopButton from "../components/scroll-to-top-button";
 import { Button } from "@/components/ui/button";
@@ -108,7 +109,7 @@ export default function Stay() {
   const featuredTestimonial = testimonialsResponse?.testimonials?.[0];
 
   const heroData = stayPageData?.hero || {
-    title: "Where Luxury Meets the Nile",
+    title: HOTEL_INDEX_FALLBACK_HEADING,
     backgroundImage: luxuryHallImage,
   };
 

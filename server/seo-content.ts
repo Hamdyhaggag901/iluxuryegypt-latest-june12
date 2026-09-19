@@ -35,7 +35,7 @@
 
 import { storage } from "./storage";
 import { isPostLive } from "@shared/post-visibility";
-import { destinationHeading } from "@shared/page-heading";
+import { destinationHeading, HOTEL_INDEX_FALLBACK_HEADING } from "@shared/page-heading";
 import { HOME_INTRO_PARAGRAPH } from "@shared/home-intro";
 import { stripHtml } from "@shared/strip-html";
 import { SITE_URL } from "./seo-meta";
@@ -214,6 +214,38 @@ async function destinationIndex(): Promise<ContentResult> {
   return content(`<h1>Egypt Travel Guide</h1><ul>${items}</ul>`);
 }
 
+/**
+ * The hotel listing page.
+ *
+ * Added with the /stay -> /luxury-hotels-in-egypt rename: the page was in
+ * resolvePageMeta (title, description, an ItemList of hotels) but never in
+ * this layer, so a crawler that runs no JavaScript received the head and an
+ * empty body. The H1 comes from the same stay_page_hero row the React page
+ * reads, with the same fallback, so the two cannot show different headings.
+ *
+ * Hotel pages themselves are at /hotel/:slug, which is what the links here
+ * and every hotel's canonical_url point at. That path is unchanged.
+ */
+async function hotelIndex(): Promise<ContentResult> {
+  const [hero, hotels] = await Promise.all([
+    storage.getStayPageHero().catch(() => undefined),
+    storage.getHotels().catch(() => []),
+  ]);
+
+  const heading = hero?.title?.trim() || HOTEL_INDEX_FALLBACK_HEADING;
+  const published = hotels.filter((h) => h.status === "published");
+  const items = published
+    .map(
+      (h) =>
+        `<li>${img(h.image, h.imageAlt || `${h.name}, ${h.location}`)}` +
+        `<h2>${link(`/hotel/${h.slug}`, h.name)}</h2>` +
+        `<p>${esc(h.location)}</p></li>`
+    )
+    .join("");
+
+  return content(`<h1>${esc(heading)}</h1><ul>${items}</ul>`);
+}
+
 async function categoryPage(slug: string): Promise<ContentResult> {
   const category = await storage.getCategoryBySlug(slug);
   if (!category) return NOT_FOUND;
@@ -348,6 +380,7 @@ export async function resolvePageContent(pathname: string): Promise<ContentResul
     if (normalized === "/blog") return await blogIndex();
     if (normalized === "/egypt-travel-guide") return await destinationIndex();
     if (normalized === "/luxury-egypt-tour-packages") return await tourIndex();
+    if (normalized === "/luxury-hotels-in-egypt") return await hotelIndex();
 
     let match: RegExpMatchArray | null;
 

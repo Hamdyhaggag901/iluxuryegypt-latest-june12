@@ -38,7 +38,7 @@ const defaultNavItems = [
     { label: "Day Tours", href: "/egypt-day-tours" },
     { label: "Nile Cruises", href: "/egypt-nile-cruise-tours" },
   ]},
-  { label: "Stays", id: "stays", type: "page" as const, href: "/stay" },
+  { label: "Stays", id: "stays", type: "page" as const, href: "/luxury-hotels-in-egypt" },
   { label: "Blog", id: "blog", type: "page" as const, href: "/blog" },
   { label: "Contact", id: "contact", type: "page" as const, href: "/contact" },
 ];
@@ -50,7 +50,7 @@ const MOBILE_MAIN_CATEGORIES = [
   { label: "Egypt Destinations", href: "/egypt-travel-guide" },
   { label: "Egypt Tour Packages", href: "/luxury-egypt-tour-packages" },
   { label: "Egypt Day Tours", href: "/egypt-day-tours" },
-  { label: "Stay", href: "/stay" },
+  { label: "Stay", href: "/luxury-hotels-in-egypt" },
 ];
 
 const MOBILE_POPULAR_LINKS = [

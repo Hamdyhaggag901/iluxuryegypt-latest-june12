@@ -1008,7 +1008,7 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
     }
   });
 
-  // Reorder hotels for the /stay grid (admin/editor access)
+  // Reorder hotels for the /luxury-hotels-in-egypt grid (admin/editor access)
   app.post("/api/cms/hotels/reorder", requireAuth, requireEditor, async (req, res) => {
     try {
       const orderedIds = z.array(z.string()).parse(req.body.orderedIds);
@@ -4787,7 +4787,7 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
         { url: "/luxury-egypt-tour-packages", priority: "0.9", changefreq: "weekly" },
         { url: "/egypt-day-tours", priority: "0.8", changefreq: "weekly" },
         { url: "/egypt-nile-cruise-tours", priority: "0.8", changefreq: "weekly" },
-        { url: "/stay", priority: "0.8", changefreq: "weekly" },
+        { url: "/luxury-hotels-in-egypt", priority: "0.8", changefreq: "weekly" },
         { url: "/blog", priority: "0.8", changefreq: "daily" },
         { url: "/contact", priority: "0.7", changefreq: "monthly" },
         { url: "/tailor-made", priority: "0.7", changefreq: "monthly" },

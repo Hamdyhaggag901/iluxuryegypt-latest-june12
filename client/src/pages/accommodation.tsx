@@ -131,7 +131,7 @@ export default function Accommodation() {
         </section>
 
         <section className="pb-20 md:pb-28 text-center" data-testid="accommodation-closing-cta">
-          <Link href="/stay">
+          <Link href="/luxury-hotels-in-egypt">
             <Button
               size="lg"
               className="bg-accent text-accent-foreground hover:bg-accent/90"

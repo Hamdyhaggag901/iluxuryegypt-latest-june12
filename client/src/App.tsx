@@ -186,7 +186,7 @@ function Router() {
             <Route path="/nile-cruises/:slug" component={ASaraNileCruise} />
 
             {/* Stays */}
-            <Route path="/stay" component={Stay} />
+            <Route path="/luxury-hotels-in-egypt" component={Stay} />
             <Route path="/hotel/:slug" component={HotelDetail} />
 
             {/* Blog */}

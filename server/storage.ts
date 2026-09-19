@@ -93,7 +93,7 @@ export interface IStorage {
   // Hotel methods
   createHotel(hotel: InsertHotel): Promise<Hotel>;
   getHotels(): Promise<Hotel[]>;
-  // Card-list shape (homepage "Where You Will Stay", /stay listing) —
+  // Card-list shape (homepage "Where You Will Stay", /luxury-hotels-in-egypt listing) —
   // skips gallery, article, fullDescription, facilities/rooms and every
   // SEO field, none of which those cards render. getHotels() sends all of
   // it for every hotel on every request; a PageSpeed audit flagged

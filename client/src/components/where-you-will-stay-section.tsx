@@ -23,7 +23,7 @@ export default function WhereYouWillStaySection({
   title = "Hand-Selected for the Discerning Traveler",
   subtitle = "Five-star properties chosen for their location, service, and character — not just a room to sleep in.",
   limit = 3,
-  viewAllHref = "/stay",
+  viewAllHref = "/luxury-hotels-in-egypt",
   viewAllLabel = "View All Stays",
 }: WhereYouWillStaySectionProps) {
   // This self-fetch path only ever renders name/image/imageAlt/region/

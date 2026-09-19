@@ -32,10 +32,21 @@ const HAS_DB = Boolean(process.env.DATABASE_URL);
 // the pure cases down with it on a machine that has no database. A placeholder
 // gets the modules loaded; the pool it builds is never asked to connect,
 // because every live case is behind HAS_DB.
-if (!HAS_DB) process.env.DATABASE_URL = "postgres://placeholder:placeholder@127.0.0.1:1/placeholder";
+if (!HAS_DB) {
+  process.env.DATABASE_URL = "postgres://placeholder:placeholder@127.0.0.1:1/placeholder";
+  // server/storage.ts kicks off seedDatabase() when it is imported, which with
+  // the placeholder above fails and logs in the middle of the results. It is
+  // expected here and says nothing about the cases being run, so only that one
+  // message is swallowed; every other console.error still comes through.
+  const realError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("Database seeding error")) return;
+    realError(...args);
+  };
+}
 
 const { esc, trusted, injectPageContent, resolvePageContent } = await import("../server/seo-content");
-const { resolvePageMeta, injectMetaTags } = await import("../server/seo-meta");
+const { resolvePageMeta, injectMetaTags, SITE_URL } = await import("../server/seo-meta");
 
 let fails = 0;
 function ok(name: string, passed: boolean, detail = ""): void {
@@ -416,8 +427,75 @@ if (!HAS_DB) {
 }
 
 // ---------------------------------------------------------------------------
+console.log("\nF. /stay moved to /luxury-hotels-in-egypt\n");
+
+// Every old URL here is one someone else may already have linked or indexed,
+// so these run without a database or a server: "does /stay still work" should
+// never need a deployment to answer.
+{
+  const { resolveRedirect } = await import("../server/path-redirects");
+
+  ok("/stay redirects to the new listing path",
+     resolveRedirect("/stay") === "/luxury-hotels-in-egypt", String(resolveRedirect("/stay")));
+
+  // There has never been a /stay/:slug route: hotel pages are served at
+  // /hotel/:slug and that is where their canonical_url points, so an old
+  // /stay/<slug> link goes straight there rather than to a child of the new
+  // listing that nothing serves.
+  ok("/stay/<slug> redirects to that hotel's page",
+     resolveRedirect("/stay/four-seasons-first-residence-cairo") === "/hotel/four-seasons-first-residence-cairo",
+     String(resolveRedirect("/stay/four-seasons-first-residence-cairo")));
+  ok("a child of the new listing path goes to the same place",
+     resolveRedirect("/luxury-hotels-in-egypt/four-seasons-first-residence-cairo") === "/hotel/four-seasons-first-residence-cairo",
+     String(resolveRedirect("/luxury-hotels-in-egypt/four-seasons-first-residence-cairo")));
+
+  ok("neither redirect lands on a path that redirects again",
+     resolveRedirect("/luxury-hotels-in-egypt") === null && resolveRedirect("/hotel/x") === null,
+     `${resolveRedirect("/luxury-hotels-in-egypt")} / ${resolveRedirect("/hotel/x")}`);
+  ok("a query string survives the move",
+     resolveRedirect("/stay", "?utm_source=newsletter") === "/luxury-hotels-in-egypt?utm_source=newsletter");
+  ok("an unrelated path is left alone", resolveRedirect("/blog") === null);
+  ok("/stay is gone as a served path, it only redirects",
+     resolveRedirect("/stay") !== null && resolveRedirect("/stayed-in-egypt") === null,
+     String(resolveRedirect("/stayed-in-egypt")));
+}
+
+{
+  // The sitemap's static list, read from source. An old path left in it tells
+  // search engines to keep crawling a URL that now redirects.
+  const routes = fs.readFileSync(path.resolve(import.meta.dirname, "..", "server", "routes.ts"), "utf-8");
+  const staticPages = routes.match(/const staticPages = \[[\s\S]*?\];/)?.[0] ?? "";
+  ok("the sitemap's static list was found", staticPages.length > 0);
+  ok("the sitemap lists the new path", staticPages.includes('"/luxury-hotels-in-egypt"'));
+  ok("and does not list the old one", !/"\/stay"/.test(staticPages));
+}
+
+if (!HAS_DB) {
+  console.log("  DATABASE_URL not set, skipping the rendered hotel listing checks.\n");
+} else {
+  const { html, status } = await render("/luxury-hotels-in-egypt");
+  ok("the new listing path responds 200", status === 200, `status ${status}`);
+  ok("it renders server content", html.includes('data-server-rendered="true"'));
+  ok("with exactly one <h1>", count(html, /<h1>/g) === 1, `${count(html, /<h1>/g)} found`);
+  ok("and links to hotel pages", /href="\/hotel\/[^"]+"/.test(html));
+
+  const types = jsonLdTypes(html);
+  ok("its ItemList and breadcrumbs still resolve",
+     types.includes("ItemList") && types.includes("BreadcrumbList"), types.join(", "));
+  ok("the breadcrumb points at the new path and reads as a human label",
+     html.includes(`${SITE_URL}/luxury-hotels-in-egypt`) && html.includes('"Luxury Hotels"'));
+  ok("the canonical is the new path",
+     html.includes(`<link rel="canonical" href="${SITE_URL}/luxury-hotels-in-egypt" />`));
+
+  // The old path has no meta of its own any more: it is a redirect, and the
+  // 301 target is what carries the canonical.
+  const stay = await resolvePageMeta("/stay");
+  ok("/stay no longer resolves meta of its own", stay === null, JSON.stringify(stay?.title));
+}
+
+// ---------------------------------------------------------------------------
 if (HTTP_BASE) {
-  console.log(`\nF. Over HTTP against ${HTTP_BASE}\n`);
+  console.log(`\nG. Over HTTP against ${HTTP_BASE}\n`);
   for (const [label, url, expected] of [
     ["homepage", "/", 200],
     ["blog post", "/blog", 200],
@@ -432,6 +510,43 @@ if (HTTP_BASE) {
     } catch (err) {
       ok(`${label} ${url} is reachable`, false, err instanceof Error ? err.message : String(err));
     }
+  }
+
+  // The status a crawler actually sees for the moved paths. Only a real
+  // response can tell 301 from 302, or from a soft 200 that a client side
+  // redirect would produce.
+  for (const [from, to] of [
+    ["/stay", "/luxury-hotels-in-egypt"],
+    ["/stay/four-seasons-first-residence-cairo", "/hotel/four-seasons-first-residence-cairo"],
+    ["/luxury-hotels-in-egypt/four-seasons-first-residence-cairo", "/hotel/four-seasons-first-residence-cairo"],
+  ] as Array<[string, string]>) {
+    try {
+      const res = await fetch(`${HTTP_BASE}${from}`, { redirect: "manual" });
+      ok(`${from} is a 301, not a 302 or a 200`, res.status === 301, `got ${res.status}`);
+      ok(`${from} points at ${to}`, res.headers.get("location") === to, String(res.headers.get("location")));
+    } catch (err) {
+      ok(`${from} is reachable`, false, err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  for (const live of ["/luxury-hotels-in-egypt", "/hotel/four-seasons-first-residence-cairo"]) {
+    try {
+      const res = await fetch(`${HTTP_BASE}${live}`, { redirect: "manual" });
+      const body = await res.text();
+      ok(`${live} responds 200`, res.status === 200, `got ${res.status}`);
+      ok(`${live} carries an <h1>`, /<h1[\s>]/.test(body));
+    } catch (err) {
+      ok(`${live} is reachable`, false, err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  try {
+    const res = await fetch(`${HTTP_BASE}/sitemap.xml`);
+    const xml = await res.text();
+    ok("the served sitemap lists the new path", xml.includes("/luxury-hotels-in-egypt"));
+    ok("and no longer lists /stay", !/<loc>[^<]*\/stay<\/loc>/.test(xml));
+  } catch (err) {
+    ok("the sitemap is reachable", false, err instanceof Error ? err.message : String(err));
   }
 
   // The path a crawler actually takes. A bot user agent is intercepted by the

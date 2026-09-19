@@ -561,7 +561,7 @@ export const stayCta = pgTable("stay_cta", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-// Stay listing (/stay) page settings — header, filters, and which hotel is featured
+// Stay listing (/luxury-hotels-in-egypt) page settings — header, filters, and which hotel is featured
 export const stayListingSettings = pgTable("stay_listing_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   eyebrow: text("eyebrow").notNull().default(""),

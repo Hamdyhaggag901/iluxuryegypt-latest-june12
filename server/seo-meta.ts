@@ -160,7 +160,7 @@ const STATIC_PAGE_META: Record<string, StaticMeta> = {
     title: "Luxury Nile Cruise Tours in Egypt",
     description: "Sail Egypt's eternal river aboard boutique vessels. Private balconies, gourmet cuisine, and curated shore excursions.",
   },
-  "/stay": {
+  "/luxury-hotels-in-egypt": {
     title: "Luxury Hotels & Stays in Egypt",
     description:
       "Discover Egypt's finest luxury hotels and boutique accommodations. Handpicked stays from Nile-side palaces to Red Sea resorts.",
@@ -214,7 +214,8 @@ const STATIC_BREADCRUMBS: Record<string, BreadcrumbItem[]> = {
   "/egypt-day-tours": [{ name: "Egypt Day Tours", url: "/egypt-day-tours" }],
   "/egypt-nile-cruise-tours": [{ name: "Egypt Nile Cruise Tours", url: "/egypt-nile-cruise-tours" }],
   "/nile-cruises": [{ name: "Nile Cruises", url: "/nile-cruises" }],
-  "/stay": [{ name: "Stay", url: "/stay" }],
+  // The URL carries the keyword; the crumb a visitor reads stays short.
+  "/luxury-hotels-in-egypt": [{ name: "Luxury Hotels", url: "/luxury-hotels-in-egypt" }],
   "/blog": [{ name: "Blog", url: "/blog" }],
   "/faq": [{ name: "FAQ", url: "/faq" }],
   "/tailor-made": [{ name: "Tailor-Made", url: "/tailor-made" }],
@@ -518,9 +519,9 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
     }
   }
 
-  // /stay listing page — ItemList of published hotels, same convention.
-  if (normalized === "/stay") {
-    const meta = STATIC_PAGE_META["/stay"];
+  // Hotel listing page — ItemList of published hotels, same convention.
+  if (normalized === "/luxury-hotels-in-egypt") {
+    const meta = STATIC_PAGE_META["/luxury-hotels-in-egypt"];
     try {
       const allHotels = await storage.getHotels();
       const published = allHotels.filter((h) => h.status === "published");
@@ -542,16 +543,16 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
-        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/stay"]),
+        jsonLd: withBreadcrumbs(jsonLd, STATIC_BREADCRUMBS["/luxury-hotels-in-egypt"]),
       };
     } catch (err) {
-      console.error("[seo-meta] Failed to resolve stay ItemList:", err);
+      console.error("[seo-meta] Failed to resolve hotel ItemList:", err);
       return {
         title: meta.title,
         description: truncate(meta.description, 160),
         image: DEFAULT_IMAGE,
         type: "website",
-        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/stay"]),
+        jsonLd: withBreadcrumbs(undefined, STATIC_BREADCRUMBS["/luxury-hotels-in-egypt"]),
       };
     }
   }
@@ -751,7 +752,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         canonical: hotel.canonicalUrl?.trim() || undefined,
         robots: hotel.robots?.trim() || undefined,
         jsonLd: withBreadcrumbs(jsonLd, [
-          { name: "Stay", url: "/stay" },
+          { name: "Luxury Hotels", url: "/luxury-hotels-in-egypt" },
           { name: hotel.name, url: `/hotel/${hotel.slug}` },
         ]),
       };

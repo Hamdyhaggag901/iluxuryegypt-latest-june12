@@ -32,3 +32,13 @@ export function destinationHeading(
     ? titleCaseKeyword(destination.focusKeyword)
     : destination.name;
 }
+
+/**
+ * The hotel listing page's H1 when no hero row has been saved yet.
+ *
+ * client/src/pages/stay.tsx falls back to this when /api/public/stay-page
+ * returns no hero, and server/seo-content.ts has to fall back to the same
+ * string: a crawler reading one heading while a visitor sees another is the
+ * drift this module exists to prevent.
+ */
+export const HOTEL_INDEX_FALLBACK_HEADING = "Where Luxury Meets the Nile";
