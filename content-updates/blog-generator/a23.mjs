@@ -13,7 +13,7 @@ export default {
   category: "Travel Planning",
   tags: ["Best Time to Visit", "Weather", "Egypt Travel Planning"],
   titleEn: "Best Time to Visit Egypt: A Month by Month Guide",
-  metaTitle: "Best Time to Visit Egypt in 2026: Month by Month",
+  metaTitle: "Best Time to Visit Egypt in {year}: Month by Month",
   metaDescription:
     "The best time to visit Egypt is October to April, and November to February is the pick of it. Month by month temperatures, crowds and what each one costs you.",
   excerpt:

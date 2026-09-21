@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { applyYear } from "@shared/year-placeholder";
 import { POST_CATEGORY_FILTERS } from "@shared/post-categories";
 import { motion } from "framer-motion";
 import { useSEO } from "@/hooks/use-seo";
@@ -196,14 +197,14 @@ export default function Blog() {
                   <div className="relative h-64 overflow-hidden">
                     <img
                       src={post.featuredImage || 'https://images.unsplash.com/photo-1539650116574-75c0c6d04136?q=80&w=2070&auto=format&fit=crop'}
-                      alt={post.titleEn}
+                      alt={applyYear(post.titleEn)}
                       className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4">
                       <h3 className="text-2xl font-serif font-bold text-white mb-2 line-clamp-2" data-testid={`text-title-${post.slug}`}>
-                        {post.titleEn}
+                        {applyYear(post.titleEn)}
                       </h3>
                     </div>
                   </div>

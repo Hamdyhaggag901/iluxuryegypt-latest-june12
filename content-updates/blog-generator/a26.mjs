@@ -11,7 +11,7 @@ export default {
   category: "Travel Planning",
   tags: ["Safety", "US Travellers", "Egypt Travel Planning"],
   titleEn: "Is Egypt Safe for Americans? What the Advisory Says",
-  metaTitle: "Is Egypt Safe for Americans in 2026? The Advisory",
+  metaTitle: "Is Egypt Safe for Americans in {year}? The Advisory",
   metaDescription:
     "Is Egypt safe for Americans? State Department Level 2, the same as France and the UK, with two regions at Do Not Travel. What that means for a real trip.",
   excerpt:

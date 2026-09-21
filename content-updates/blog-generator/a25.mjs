@@ -12,7 +12,7 @@ export default {
   category: "Travel Planning",
   tags: ["Visa", "US Travellers", "Egypt Travel Planning"],
   titleEn: "Egypt Visa for US Citizens: Options, Steps and Timing",
-  metaTitle: "Egypt Visa for US Citizens in 2026: Your Options",
+  metaTitle: "Egypt Visa for US Citizens in {year}: Your Options",
   metaDescription:
     "An egypt visa for us citizens can be bought on arrival or online before you fly. What each route needs, how long it takes, and the official pages to check.",
   excerpt:

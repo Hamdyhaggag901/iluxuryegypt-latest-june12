@@ -31,12 +31,17 @@ import a23 from "./a23.mjs";
 import a24 from "./a24.mjs";
 import a25 from "./a25.mjs";
 import a26 from "./a26.mjs";
+import a27 from "./a27.mjs";
+import a28 from "./a28.mjs";
+import a29 from "./a29.mjs";
+import a30 from "./a30.mjs";
+import a31 from "./a31.mjs";
 
 // a14 onwards are the two later waves. They are APPENDED rather than slotted
 // into date order, so the 13 files above regenerate byte for byte. The order of
 // this array no longer matches the order of publication, which is why gen.mjs
 // validates "does this link point at something already live" by date.
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26];
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
@@ -90,6 +95,11 @@ export const SCHEDULE = [
   LIVE, // luxury-egypt-tours
   LIVE, // egypt-visa-for-us-citizens
   LIVE, // is-egypt-safe-for-americans
+  LIVE, // egypt-travel-insurance
+  LIVE, // egypt-honeymoon
+  LIVE, // egypt-plug-type
+  LIVE, // private-pyramid-tours-egypt
+  LIVE, // best-luxury-nile-cruise-egypt
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.

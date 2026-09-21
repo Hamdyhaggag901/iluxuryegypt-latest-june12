@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useSEO } from "@/hooks/use-seo";
+import { applyYear } from "@shared/year-placeholder";
 import FaqSection from "@/components/faq-section";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
@@ -445,7 +446,7 @@ function RelatedPostCard({ post, index = 0 }: { post: any; index?: number }) {
             {post.category && (
               <p className="text-xs text-accent-text font-medium mb-1">{post.category}</p>
             )}
-            <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{post.titleEn}</h3>
+            <h3 className="font-serif font-bold text-base text-primary leading-tight line-clamp-2">{applyYear(post.titleEn)}</h3>
           </CardContent>
         </Link>
       </Card>
@@ -483,7 +484,10 @@ export default function BlogPost() {
   );
 
   useSEO({
-    title: post?.title,
+    // {year} is stored, not rendered. The server fills it in for crawlers and
+    // this fills it in for the browser, so the two agree. See
+    // shared/year-placeholder.ts.
+    title: applyYear(post?.title),
     description: post?.metaDescription || post?.excerpt?.slice(0, 160),
     image: post?.featuredImage,
     type: "article",
@@ -581,7 +585,7 @@ export default function BlogPost() {
             </Link>
             
             <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6 leading-tight" data-testid="text-post-title">
-              {post.titleEn}
+              {applyYear(post.titleEn)}
             </h1>
             
             <div className="flex flex-wrap items-center gap-6 text-white/80">

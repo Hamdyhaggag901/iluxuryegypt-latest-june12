@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import { isPostLive } from "@shared/post-visibility";
+import { applyYear } from "@shared/year-placeholder";
 import type { Facility, Tour } from "@shared/schema";
 import { getLegalPageHref } from "@shared/schema";
 import { stripHtml } from "@shared/strip-html";
@@ -593,7 +594,14 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       // scheduled post has no title, description or BlogPosting JSON-LD of its
       // own for a crawler to pick up before it is live.
       if (!post || !isPostLive(post)) return null;
-      const description = truncate(post.metaDescription || post.excerpt || DEFAULT_DESCRIPTION, 160);
+      // {year} is filled in here rather than stored, so a title targeting
+      // "... in 2026" becomes "... in 2027" on 1 January with no edit. See
+      // shared/year-placeholder.ts. Applied to every field that reaches the
+      // page: a placeholder leaking into a <title> is the failure this guards
+      // against, and substituting everywhere beats remembering where.
+      const titleEn = applyYear(post.titleEn);
+      const metaTitle = applyYear(post.metaTitle);
+      const description = truncate(applyYear(post.metaDescription) || applyYear(post.excerpt) || DEFAULT_DESCRIPTION, 160);
       // og_image overrides the hero for social cards only; the BlogPosting
       // image stays the hero, which is what the article actually shows.
       const image = post.ogImage?.trim() || post.featuredImage || DEFAULT_IMAGE;
@@ -604,7 +612,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         // schema_type lets a post be something more specific than BlogPosting,
         // e.g. TravelGuide or FAQPage, without touching this file.
         "@type": post.schemaType?.trim() || "BlogPosting",
-        headline: post.titleEn,
+        headline: titleEn,
         description,
         image: post.featuredImage || DEFAULT_IMAGE,
         url: `${SITE_URL}/blog/${post.slug}`,
@@ -650,7 +658,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
       }
 
       return {
-        title: withSiteName(post.metaTitle || post.titleEn),
+        title: withSiteName(metaTitle || titleEn),
         description,
         image,
         type: "article",
@@ -658,7 +666,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         robots: post.robots?.trim() || undefined,
         jsonLd: withBreadcrumbs(graph, [
           { name: "Blog", url: "/blog" },
-          { name: post.titleEn, url: `/blog/${post.slug}` },
+          { name: titleEn, url: `/blog/${post.slug}` },
         ]),
       };
     }

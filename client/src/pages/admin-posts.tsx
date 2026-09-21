@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { applyYear, YEAR_PLACEHOLDER } from "@shared/year-placeholder";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,7 +132,7 @@ function SeoOverrideFields({ form, idPrefix }: { form: any; idPrefix: string }) 
             <FormLabel>Meta Title</FormLabel>
             <FormControl>
               <Input
-                placeholder="Blank uses the article title"
+                placeholder={`Blank uses the article title. ${YEAR_PLACEHOLDER} becomes the current year.`}
                 data-testid={`input-${idPrefix}-meta-title`}
                 {...field}
                 value={field.value ?? ""}
@@ -863,7 +864,10 @@ export default function AdminPosts() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-medium text-gray-900" data-testid={`text-title-${post.id}`}>
-                            {post.titleEn || "Untitled"}
+                            {/* Shown as a reader sees it, with {year} filled in,
+                                so the list is a preview rather than the raw
+                                stored string. */}
+                            {applyYear(post.titleEn) || "Untitled"}
                           </h3>
                           <Badge
                             variant={postState(post) === "published" ? "default" : "secondary"}

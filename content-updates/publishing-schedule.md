@@ -433,3 +433,8 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `luxury-egypt-tours` | `luxury-egypt-tours` | `luxury egypt tours` | 1818 |
 | `egypt-visa-for-us-citizens` | `do-us-citizens-need-a-visa-for-egypt` | `egypt visa for us citizens` | 1617 |
 | `is-egypt-safe-for-americans` | `is-egypt-safe-for-american-tourists` | `is egypt safe for americans` | 1833 |
+| `egypt-travel-insurance` | `egypt-travel-insurance` | `travel insurance egypt` | 1590 |
+| `egypt-honeymoon` | `egypt-honeymoon` | `egypt honeymoon` | 1850 |
+| `egypt-plug-type` | `egypt-plug-type` | `egypt plug type` | 1119 |
+| `private-pyramid-tours-egypt` | `private-pyramid-tours-egypt` | `private pyramid tours egypt` | 1440 |
+| `best-luxury-nile-cruise-egypt` | `best-luxury-nile-cruise-egypt` | `best luxury nile cruise` | 1842 |

@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { log } from "./vite";
+import { currentYear } from "@shared/year-placeholder";
 
 let puppeteer: any = null;
 
@@ -56,7 +57,7 @@ export function clearPrerenderCache(paths?: string[]): void {
     return;
   }
 
-  const cleared = paths.filter((path) => cache.delete(path));
+  const cleared = paths.filter((path) => cache.delete(cacheKeyFor(path)));
   if (cleared.length > 0) log(`Prerender cache cleared: ${cleared.join(", ")}`);
 }
 
@@ -141,8 +142,21 @@ function isBot(userAgent: string): boolean {
 
 // Shared with markdown-negotiation.ts so a markdown request and a bot
 // prerender of the same path reuse one Puppeteer render and one cache entry.
+/**
+ * Cache key for a path.
+ *
+ * The year is in it because article titles carry a {year} placeholder filled in
+ * at render time. A snapshot taken on 31 December says 2026, and this cache
+ * holds for 24 hours, so without the year in the key the first crawler of the
+ * new year would be handed last year's title. Keying on it makes every entry
+ * unreachable at midnight Cairo instead.
+ */
+export function cacheKeyFor(reqPath: string): string {
+  return `${currentYear()}:${reqPath}`;
+}
+
 export async function getRenderedHtml(reqPath: string): Promise<string> {
-  const cached = cache.get(reqPath);
+  const cached = cache.get(cacheKeyFor(reqPath));
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.html;
   }
@@ -151,7 +165,7 @@ export async function getRenderedHtml(reqPath: string): Promise<string> {
   const html = await queuedRender(fullUrl);
 
   if (html.length > 10000) {
-    cache.set(reqPath, { html, timestamp: Date.now() });
+    cache.set(cacheKeyFor(reqPath), { html, timestamp: Date.now() });
   }
 
   return html;
@@ -170,7 +184,7 @@ export function prerenderMiddleware() {
     if (!isBot(userAgent) && !forcePrerender) return next();
 
     const fullUrl = `http://localhost:${process.env.PORT || 5000}${req.path}`;
-    const cacheKey = req.path;
+    const cacheKey = cacheKeyFor(req.path);
 
     try {
       // Check cache

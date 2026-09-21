@@ -56,6 +56,10 @@ const countOf = (haystack, needle) =>
  * summary of it, and so the page carries the signal that it knows where its
  * own facts come from.
  */
+// Mirrors shared/year-placeholder.ts. The generator cannot import a .ts file,
+// and one constant duplicated with a pointer to its source beats a build step.
+const YEAR_PLACEHOLDER = "{year}";
+
 const OFFICIAL_SOURCES = [
   "travel.state.gov",
   "visa2.egypt.gov.eg",
@@ -87,14 +91,34 @@ ARTICLES.forEach((a, index) => {
     problems.push(`${L}: category "${a.category}" is not one of the site's categories, so the post would appear under no blog filter`);
 
   // ---- SEO placement ----
-  if (a.metaTitle.length > 60) problems.push(`${L}: meta_title ${a.metaTitle.length} chars (max 60)`);
-  if (!a.metaTitle.toLowerCase().includes(a.primary)) problems.push(`${L}: primary keyword missing from meta_title`);
-  if (a.metaDescription.length < 150 || a.metaDescription.length > 160)
-    problems.push(`${L}: meta_description ${a.metaDescription.length} chars (want 150-160)`);
-  if (!a.metaDescription.toLowerCase().includes(a.primary)) problems.push(`${L}: primary keyword missing from meta_description`);
+  // Lengths are measured on what a reader sees, not on what is stored. A title
+  // holding {year} is six characters in the database and four on the page, and
+  // it is the page that Google truncates. See shared/year-placeholder.ts.
+  const rendered = (t) => String(t ?? "").split(YEAR_PLACEHOLDER).join("2026");
+  const renderedTitle = rendered(a.metaTitle);
+  if (renderedTitle.length > 60) problems.push(`${L}: meta_title ${renderedTitle.length} chars rendered (max 60)`);
+
+  // A hardcoded year is stale on 1 January and nobody remembers. If a title
+  // wants a year it uses the placeholder.
+  for (const [field, value] of [["meta_title", a.metaTitle], ["title_en", a.titleEn], ["meta_description", a.metaDescription]])
+    if (/\b20\d{2}\b/.test(value))
+      problems.push(`${L}: ${field} hardcodes a year. Use ${YEAR_PLACEHOLDER}, which is filled in at render time.`);
+  if (!renderedTitle.toLowerCase().includes(a.primary)) problems.push(`${L}: primary keyword missing from meta_title`);
+  const renderedDescription = rendered(a.metaDescription);
+  if (renderedDescription.length < 150 || renderedDescription.length > 160)
+    problems.push(`${L}: meta_description ${renderedDescription.length} chars rendered (want 150-160)`);
+  if (!renderedDescription.toLowerCase().includes(a.primary)) problems.push(`${L}: primary keyword missing from meta_description`);
   if (!a.titleEn.toLowerCase().includes(a.primary)) problems.push(`${L}: primary keyword missing from the H1 (title_en)`);
   if (!first100.includes(a.primary)) problems.push(`${L}: primary keyword missing from the first 100 words`);
-  if (!a.slug.includes(a.primary.replace(/\s+/g, "-"))) problems.push(`${L}: primary keyword not in the slug`);
+  // Word by word rather than as one joined string. The point of the rule is
+  // that the URL carries the words of the keyword, not that it carries them in
+  // the keyword's order: /blog/egypt-travel-insurance and the keyword "travel
+  // insurance egypt" are the same three words and rank the same. Checking the
+  // joined string would have failed that slug, and the only way to satisfy it
+  // would have been to rename a URL that is already published and indexed.
+  const slugWords = new Set(a.slug.split("-"));
+  const missing = a.primary.split(/\s+/).filter((w) => !slugWords.has(w));
+  if (missing.length > 0) problems.push(`${L}: primary keyword not in the slug (missing: ${missing.join(", ")})`);
 
   const h2s = [...a.body.matchAll(/<h2>(.*?)<\/h2>/g)].map((m) => strip(m[1]));
   if (!h2s.some((h) => h.toLowerCase().includes(a.primary)))
@@ -212,9 +236,12 @@ ARTICLES.forEach((a, index) => {
   // moment a later batch was appended with earlier dates: an article added at
   // the end can easily publish before one in the middle, and an index compare
   // would wave through a link that 404s for a week.
-  // A live article can link to anything that is also live, and anything live
-  // can be linked to from anywhere: the reader can reach it today.
-  const mine = SCHEDULE[index] === LIVE ? Infinity : Date.parse(SCHEDULE[index]);
+  // A rewrite of a published row goes out the moment its SQL is run, so its
+  // effective publish moment is now, not the end of time. Infinity was wrong
+  // here: it let a rewrite shipping today link to a batch article dated three
+  // weeks out, and that link 404s for three weeks. Anything already live is
+  // still linkable from anywhere, which is what EXISTING_POST_SLUGS covers.
+  const mine = SCHEDULE[index] === LIVE ? Date.now() : Date.parse(SCHEDULE[index]);
   for (const href of postLinks) {
     const target = href.replace("/blog/", "");
     if (target.includes("{{")) continue;
@@ -222,7 +249,7 @@ ARTICLES.forEach((a, index) => {
     const targetIndex = ARTICLES.findIndex((x) => x.slug === target);
     if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is neither in this batch nor a known live article`);
     else if (SCHEDULE[targetIndex] !== LIVE && Date.parse(SCHEDULE[targetIndex]) >= mine)
-      problems.push(`${L}: links to /blog/${target}, which publishes ${SCHEDULE[targetIndex]}, at or after this article's ${SCHEDULE[index]}, so the link would 404 on publication`);
+      problems.push(`${L}: links to /blog/${target}, which publishes ${SCHEDULE[targetIndex]}, at or after this article's ${SCHEDULE[index] === LIVE ? "immediate publication" : SCHEDULE[index]}, so the link would 404 on publication`);
   }
 
   // Descriptive anchors, not repeated keyword.
@@ -283,7 +310,7 @@ ARTICLES.forEach((a, index) => {
 
   report.push({
     slug: L, words: wordCount, primary: primaryCount, h2: h2s.length,
-    metaTitle: a.metaTitle.length, meta: a.metaDescription.length,
+    metaTitle: rendered(a.metaTitle).length, meta: rendered(a.metaDescription).length,
     faqs: a.faqs.length, links: hrefs.length, sd: sd.toFixed(1),
     scheduled: SCHEDULE[index],
     rewriteOf: a.rewriteOf ?? null,
@@ -522,6 +549,9 @@ for (const wave of WAVES) {
   // keeps the date it was first published, which is what its BlogPosting has
   // been telling crawlers all along. updated_at carries the rewrite.
   const isRewrite = members.every(({ a }) => a.rewriteOf);
+  // Rewrites that also change slug. Was hardcoded as "six", which was the
+  // count for the whole sixteen article programme and wrong for every wave.
+  const renamed = members.filter(({ a }) => a.rewriteOf && a.rewriteOf !== a.slug);
   if (!isRewrite && members.some(({ a }) => a.rewriteOf))
     problems.push(`wave "${wave}" mixes rewrites and new articles, which need different SQL`);
 
@@ -583,10 +613,12 @@ ${isRewrite ? `-- These rows are ALREADY PUBLISHED and already indexed. This fil
 -- has been telling crawlers since. updated_at carries the rewrite, and
 -- dateModified follows from it.
 --
--- Six of the slugs change. server/path-redirects.ts sends every old path to
--- its new one with a 301, and scripts/test-redirects.ts proves it over HTTP
--- for GET and for HEAD. Deploy the server BEFORE running this file, or the old
--- URLs 404 in the window between the two.
+${renamed.length > 0 ? `-- ${renamed.length} of these slugs change: ${renamed.map(({ a }) => `${a.rewriteOf} to ${a.slug}`).join(", ")}.
+-- server/path-redirects.ts sends every old path to its new one with a 301, and
+-- scripts/test-redirects.ts proves it over HTTP for GET and for HEAD. Deploy
+-- the server BEFORE running this file, or the old URLs 404 in the window
+-- between the two.` : `-- No slug changes in this wave, so no redirect is involved. Every row keeps
+-- the URL it is already indexed under.`}
 --
 -- RUN THIS BEFORE scripts/fill-post-images.ts, not after. The rewrite replaces
 -- body_en outright, which is the point, and that discards any <figure> the

@@ -36,6 +36,7 @@
 import { storage } from "./storage";
 import { isPostLive } from "@shared/post-visibility";
 import { destinationHeading, HOTEL_INDEX_FALLBACK_HEADING } from "@shared/page-heading";
+import { applyYear, currentYear } from "@shared/year-placeholder";
 import { HOME_INTRO_PARAGRAPH } from "@shared/home-intro";
 import { stripHtml } from "@shared/strip-html";
 import { SITE_URL } from "./seo-meta";
@@ -125,11 +126,13 @@ async function blogPost(slug: string): Promise<ContentResult> {
   if (!post) return NOT_FOUND;
   if (!isPostLive(post)) return PASSTHROUGH;
 
-  const hero = img(post.featuredImage, post.featuredImageAlt || post.titleEn, { eager: true });
+  // The H1 a crawler reads has to carry the real year, never the placeholder.
+  const titleEn = applyYear(post.titleEn);
+  const hero = img(post.featuredImage, post.featuredImageAlt || titleEn, { eager: true });
   return content(
     `<article>` +
-      `<h1>${esc(post.titleEn)}</h1>` +
-      (post.excerpt ? `<p>${esc(post.excerpt)}</p>` : "") +
+      `<h1>${esc(titleEn)}</h1>` +
+      (post.excerpt ? `<p>${esc(applyYear(post.excerpt))}</p>` : "") +
       hero +
       // body_en is trusted HTML: headings, paragraphs, <figure> images with
       // their alt, the price tables and every internal <a href> in the prose.
@@ -144,8 +147,8 @@ async function blogIndex(): Promise<ContentResult> {
   const items = posts
     .map(
       (p) =>
-        `<li><article>${img(p.featuredImage, p.featuredImageAlt || p.titleEn)}` +
-        `<h2>${link(`/blog/${p.slug}`, p.titleEn)}</h2>` +
+        `<li><article>${img(p.featuredImage, p.featuredImageAlt || applyYear(p.titleEn))}` +
+        `<h2>${link(`/blog/${p.slug}`, applyYear(p.titleEn))}</h2>` +
         (p.excerpt ? `<p>${esc(p.excerpt)}</p>` : "") +
         `</article></li>`
     )
@@ -443,11 +446,19 @@ export function clearContentCache(): void {
 }
 
 export async function resolvePageContentCached(pathname: string): Promise<ContentResult> {
-  const key = (pathname.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+  // The year is part of the key, not just part of the value. Titles carry a
+  // {year} placeholder that is filled in at render time, so a page rendered on
+  // 31 December is wrong on 1 January. Keying on the year means every entry
+  // misses at midnight Cairo and re-renders, rather than sitting in the cache
+  // saying 2026 until its TTL happens to expire.
+  const normalised = (pathname.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+  const key = `${currentYear()}:${normalised}`;
   const hit = cache.get(key);
   if (hit && hit.expires > Date.now()) return hit.result;
 
-  const result = await resolvePageContent(key);
+  // The PATH, not the key. The key carries a year prefix that no route
+  // matches, and passing it here rendered every page as a passthrough.
+  const result = await resolvePageContent(normalised);
   // A passthrough is cached too: "there is nothing to render here" is just as
   // expensive to work out as a page, and just as stable.
   if (cache.size >= MAX_ENTRIES) cache.clear();
