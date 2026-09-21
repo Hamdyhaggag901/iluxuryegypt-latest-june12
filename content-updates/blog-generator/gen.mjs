@@ -66,14 +66,6 @@ const OFFICIAL_SOURCES = [
   "wwwnc.cdc.gov",
 ];
 
-// Words a slug is allowed to drop. Deliberately short: these are the words
-// that carry no ranking weight and that every CMS strips when it builds a URL
-// from a title. Anything with meaning has to be in the slug.
-const SLUG_STOPWORDS = new Set([
-  "a", "an", "the", "in", "for", "to", "of", "and", "or", "is", "are",
-  "do", "does", "what", "how", "your", "you",
-]);
-
 const HOMEPAGE_KEYWORDS = [
   "egypt private tours",
   "egypt luxury private tours",
@@ -124,16 +116,18 @@ ARTICLES.forEach((a, index) => {
   // insurance egypt" are the same three words and rank the same. Checking the
   // joined string would have failed that slug, and the only way to satisfy it
   // would have been to rename a URL that is already published and indexed.
-  // Split the keyword on hyphens as well as spaces, because a hyphenated
-  // keyword ("tailor-made egypt tours") is three words in a slug and two
-  // tokens in the phrase, and drop the stopwords a slug conventionally omits:
-  // /blog/what-currency-does-egypt-use carries "currency in egypt" as well as
-  // any URL can, and the missing "in" says nothing about whether it does.
-  const slugWords = new Set(a.slug.split("-"));
-  const missing = a.primary
-    .split(/[\s-]+/)
-    .filter((w) => !SLUG_STOPWORDS.has(w) && !slugWords.has(w));
-  if (missing.length > 0) problems.push(`${L}: primary keyword not in the slug (missing: ${missing.join(", ")})`);
+  // The exact phrase, in the same word order, with hyphens read as spaces.
+  //
+  // This was briefly relaxed to a word-set test so that a slug could carry the
+  // keyword's words in any order and drop the stopwords. That is not the rule:
+  // /blog/egypt-travel-insurance and the keyword "travel insurance egypt" are
+  // not the same phrase, and treating them as interchangeable let a slug and a
+  // primary keyword disagree in the one place a reader and a crawler both see
+  // them together. Hyphens still read as spaces, because "tailor-made egypt
+  // tours" is spelled with three hyphens in a URL and one in the phrase.
+  const slugPhrase = a.slug.replace(/-/g, " ");
+  if (!slugPhrase.includes(a.primary.replace(/-/g, " ")))
+    problems.push(`${L}: primary keyword "${a.primary}" is not in the slug as an exact phrase (slug reads "${slugPhrase}")`);
 
   const h2s = [...a.body.matchAll(/<h2>(.*?)<\/h2>/g)].map((m) => strip(m[1]));
   if (!h2s.some((h) => h.toLowerCase().includes(a.primary)))

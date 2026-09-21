@@ -3,9 +3,12 @@ export default {
   // Same slug, rewritten in place. The URL already carries the keyword's three
   // words, so there is nothing to rename and no redirect to add.
   rewriteOf: "egypt-travel-insurance",
-  primary: "travel insurance egypt",
+  // The slug is already published and indexed, so the keyword moves to match
+  // it rather than the other way round. Same three words either way, and the
+  // exact phrase now appears in the slug, the meta title and the h1.
+  primary: "egypt travel insurance",
   secondary: [
-    "egypt travel insurance",
+    "travel insurance egypt",
     "travel insurance for egypt",
     "best travel insurance for egypt",
     "does egypt require travel insurance",
@@ -13,19 +16,19 @@ export default {
   wave: "rewrite-phase-b",
   category: "Travel Planning",
   tags: ["Travel Insurance", "Egypt Travel Planning", "Before You Go"],
-  titleEn: "Travel Insurance Egypt: What Cover Actually Matters",
-  metaTitle: "Travel Insurance Egypt in {year}: What to Check",
+  titleEn: "Egypt Travel Insurance: What Cover Actually Matters",
+  metaTitle: "Egypt Travel Insurance in {year}: What to Check",
   metaDescription:
-    "A travel insurance egypt policy is judged on four clauses, never on price. Medical evacuation, cancellation, declared conditions, and the activities booked.",
+    "An egypt travel insurance policy is judged on four clauses, never on price. Medical evacuation, cancellation, declared conditions, and the activities booked.",
   excerpt:
     "No insurer names, no commission, no comparison table dressed up as advice. The four clauses that decide whether a policy is any use on a trip through Upper Egypt.",
   heroAlt:
-    "Passport, policy printout and a phone on a desk while arranging travel insurance egypt cover",
+    "Passport, policy printout and a phone on a desk while arranging egypt travel insurance cover",
   wordRange: [1400, 1600],
   body: `
 <p>Yes, buy it, and read one clause before you read the price. A policy for a trip to Egypt needs medical evacuation cover that will actually move you, not simply pay a hospital bill where you happen to be standing. Everything else here is secondary to that single line in the schedule.</p>
 
-<p>Nobody sells a product called travel insurance Egypt. You are buying an ordinary single trip or annual policy, and the work is checking that four specific things sit inside it rather than in the exclusions on page nine.</p>
+<p>Nobody sells a product called Egypt travel insurance. You are buying an ordinary single trip or annual policy, and the work is checking that four specific things sit inside it rather than in the exclusions on page nine.</p>
 
 <p>Those four are medical evacuation, cancellation, pre-existing conditions and activity cover. The rest is mostly noise.</p>
 
@@ -37,7 +40,7 @@ export default {
 
 <p>None of that changes whether you should carry one. Egypt has no reciprocal healthcare arrangement with the United States, the United Kingdom or the European Union. Foreign visitors pay for treatment at the point of use and claim it back afterwards.</p>
 
-<h2>What a Travel Insurance Egypt Policy Has to Cover</h2>
+<h2>What an Egypt Travel Insurance Policy Has to Cover</h2>
 
 <p>Four clauses. That is the whole of it.</p>
 
@@ -138,7 +141,7 @@ export default {
   faqs: [
     { q: "Does Egypt require travel insurance?",
       a: "No. Egypt sets no insurance requirement at the border and immigration will not ask to see a policy. Whether you should carry one is a separate question with a different answer. Egypt holds 0 reciprocal healthcare agreements with the United States, the United Kingdom or the European Union, so foreign visitors pay for treatment at the point of use." },
-    { q: "What should travel insurance for Egypt cover?",
+    { q: "What should egypt travel insurance cover?",
       a: "4 clauses decide it. Medical treatment with emergency evacuation and repatriation, cancellation and curtailment, pre-existing conditions as you declared them, and activity cover naming whatever you actually plan to do. Baggage and delay come as standard almost everywhere and are not a reason to choose one policy over another." },
     { q: "What is the difference between evacuation and repatriation cover?",
       a: "Evacuation moves you to adequate medical care, repatriation moves you home, and 1 policy can carry either without the other. On a trip through Upper Egypt the first matters more, because the serious hospitals are in Cairo and the distance from Aswan or the Western Desert is the real problem rather than the treatment itself." },

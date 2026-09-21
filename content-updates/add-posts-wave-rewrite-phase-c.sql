@@ -6,7 +6,7 @@
 --   egypt-packing-list becomes what-to-pack-for-egypt  (what to pack for egypt)
 --   private-egypt-tour becomes private-tours-in-cairo-egypt  (private tours in cairo egypt)
 --   bespoke-egypt-travel becomes tailor-made-egypt-tours  (tailor-made egypt tours)
---   what-currency-does-egypt-use  (currency in egypt)
+--   what-currency-does-egypt-use becomes currency-in-egypt  (currency in egypt)
 --
 -- These rows are ALREADY PUBLISHED and already indexed. This file rewrites
 -- their body and their SEO fields in place. published_at is never touched, so
@@ -14,7 +14,7 @@
 -- has been telling crawlers since. updated_at carries the rewrite, and
 -- dateModified follows from it.
 --
--- 6 of these slugs change: vaccines-for-egypt-travel to vaccinations-needed-for-egypt, how-to-plan-a-luxury-egypt-trip to planning-a-trip-to-egypt, things-to-know-before-traveling-to-egypt to egypt-travel-tips, egypt-packing-list to what-to-pack-for-egypt, private-egypt-tour to private-tours-in-cairo-egypt, bespoke-egypt-travel to tailor-made-egypt-tours.
+-- 7 of these slugs change: vaccines-for-egypt-travel to vaccinations-needed-for-egypt, how-to-plan-a-luxury-egypt-trip to planning-a-trip-to-egypt, things-to-know-before-traveling-to-egypt to egypt-travel-tips, egypt-packing-list to what-to-pack-for-egypt, private-egypt-tour to private-tours-in-cairo-egypt, bespoke-egypt-travel to tailor-made-egypt-tours, what-currency-does-egypt-use to currency-in-egypt.
 -- server/path-redirects.ts sends every old path to its new one with a 301, and
 -- scripts/test-redirects.ts proves it over HTTP for GET and for HEAD. Deploy
 -- the server BEFORE running this file, or the old URLs 404 in the window
@@ -50,7 +50,7 @@
 --     A guide and two travellers alone at a Saqqara tomb entrance on private tours in cairo egypt
 --   tailor-made-egypt-tours
 --     An itinerary draft and a Nile map on a desk during the planning of tailor-made egypt tours
---   what-currency-does-egypt-use
+--   currency-in-egypt
 --     A hand holding folded Egyptian pound notes at a market stall, the currency in egypt
 --
 -- Safe to run twice. Each UPDATE matches the old slug and the new one, so a
@@ -69,7 +69,7 @@ SELECT slug,
        (body_en LIKE '%<figure%') AS has_images,
        updated_at
 FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'vaccines-for-egypt-travel', 'planning-a-trip-to-egypt', 'how-to-plan-a-luxury-egypt-trip', 'egypt-travel-tips', 'things-to-know-before-traveling-to-egypt', 'what-to-pack-for-egypt', 'egypt-packing-list', 'private-tours-in-cairo-egypt', 'private-egypt-tour', 'tailor-made-egypt-tours', 'bespoke-egypt-travel', 'what-currency-does-egypt-use')
+WHERE slug IN ('vaccinations-needed-for-egypt', 'vaccines-for-egypt-travel', 'planning-a-trip-to-egypt', 'how-to-plan-a-luxury-egypt-trip', 'egypt-travel-tips', 'things-to-know-before-traveling-to-egypt', 'what-to-pack-for-egypt', 'egypt-packing-list', 'private-tours-in-cairo-egypt', 'private-egypt-tour', 'tailor-made-egypt-tours', 'bespoke-egypt-travel', 'currency-in-egypt', 'what-currency-does-egypt-use')
 ORDER BY published_at NULLS LAST, slug;
 
 BEGIN;
@@ -390,7 +390,7 @@ UPDATE posts SET
 
 <p>Keep a small amount of US dollars as backup. It is not for spending, it is for the situations where nothing else works.</p>
 
-<p><a href="/blog/what-currency-does-egypt-use">The currency article</a> covers where to change money and where not to, which is a longer answer than it sounds.</p>
+<p><a href="/blog/currency-in-egypt">The currency article</a> covers where to change money and where not to, which is a longer answer than it sounds.</p>
 
 <h2>Water: the One Rule Nobody Should Bend</h2>
 
@@ -978,9 +978,9 @@ UPDATE posts SET
 -- Both slugs, so a second run finds the row it renamed on the first.
 WHERE slug IN ('bespoke-egypt-travel', 'tailor-made-egypt-tours');
 
--- what-currency-does-egypt-use
+-- what-currency-does-egypt-use becomes currency-in-egypt
 UPDATE posts SET
-  slug = 'what-currency-does-egypt-use',
+  slug = 'currency-in-egypt',
   title_en = 'Currency in Egypt: Cash, Cards and Changing Money',
   body_en = '<p>Egypt uses the Egyptian pound, written LE or EGP. Bring a debit card and withdraw from bank ATMs on arrival rather than changing cash at home. Carry a small reserve of US dollars for emergencies, and get a thick stack of the smallest notes for tipping.</p>
 
@@ -1095,12 +1095,12 @@ UPDATE posts SET
   focus_keyword = 'currency in egypt',
   meta_title = 'Currency in Egypt: What to Carry in {year}',
   meta_description = 'The currency in egypt is the Egyptian pound, and the rate floats. Where to change money, which ATMs to use, what cards are good for, and why small notes matter.',
-  faqs = '[{"id":"b50a627f-d151-5a53-b63d-68327f7a67dc","question":"What currency does Egypt use?","answer":"The Egyptian pound, written LE or EGP and divided into 100 piastres, which you can ignore in practice. Some tourist businesses will take dollars or euros at a rate they choose themselves, so paying in pounds is always cheaper. Notes are what you will handle, and the small ones matter most."},{"id":"e122d1ab-c68c-51d0-bec0-172e7064f2cd","question":"Is it better to change money before you fly or in Egypt?","answer":"In Egypt, almost always. Changing at your home bank is the most expensive of the 3 usual options and airport desks are the second. A bank ATM in Egypt gives you a reasonable rate with 1 fixed fee. Bring at most a very small amount of pounds for the first taxi."},{"id":"ece826c0-0400-57e1-837d-b0747d69285f","question":"What is the exchange rate for the Egyptian pound?","answer":"It floats and it has moved a great deal in recent years, so no travel page should quote you 1 number. Check your banking app or a live currency site on the day. Photographing the rate on your first morning gives you a reference point for the week and stops the arithmetic becoming an argument."},{"id":"7833bc63-b260-599e-9702-57ca1bdac3b9","question":"Should you accept the ATM offer to charge in your own currency?","answer":"No, never. That option is dynamic currency conversion and the rate is set by the machine''s operator rather than by your bank, which means you lose on every withdrawal. Choosing to be billed in Egyptian pounds is cheaper 100 percent of the time, with no exceptions worth looking for."},{"id":"0b17834f-5d43-5e01-a04d-f5c7b81b8eb3","question":"Is it worth bringing US dollars to Egypt?","answer":"A small reserve, yes. Clean untorn notes are useful for a visa on arrival, which is bought in cash at a bank counter, and as a fallback if a card fails. Do not plan to spend them: paying in dollars means accepting somebody else''s rate on all 3 or 4 transactions you use them for."},{"id":"14acb274-5663-567d-961c-8661bc7d4e29","question":"Do you need cash in Egypt or are cards enough?","answer":"Both, in different places. Cards cover hotels, better restaurants, larger shops and pre-booked arrangements. Cash covers markets, taxis, tips, small cafes and minor entrance charges, which is most of the 10 or so transactions in a normal day. Carry 1 backup card kept somewhere separate."},{"id":"78f7fcd7-090b-587a-bbe7-fe376984faa3","question":"Why do you need small notes in Egypt?","answer":"Because tipping is constant and ATMs dispense large notes. With only large notes you will either overtip on all 20 of the small services in a week or spend it asking people to break them. Change 1 large note into small ones at the hotel desk on arrival and again mid trip."},{"id":"9752de27-7acb-5428-b7bd-3d9678317c0a","question":"What should you do with leftover Egyptian pounds?","answer":"Spend them before you leave. Pounds are not easy to change back at a decent rate once you are outside the country, so plan your last withdrawal for the final 2 or 3 days rather than taking a round number out on arrival. Airport shops before security take both pounds and cards."}]'::jsonb,
+  faqs = '[{"id":"07c883db-ecaa-5fdb-8c1e-41929c8fd35c","question":"What currency does Egypt use?","answer":"The currency in Egypt is the Egyptian pound, written LE or EGP and divided into 100 piastres, which you can ignore in practice. Some tourist businesses will take dollars or euros at a rate they choose themselves, so paying in pounds is always cheaper. Notes are what you will handle, and the small ones matter most."},{"id":"2eba4174-8759-568c-afce-5e515decf509","question":"Is it better to change money before you fly or in Egypt?","answer":"In Egypt, almost always. Changing at your home bank is the most expensive of the 3 usual options and airport desks are the second. A bank ATM in Egypt gives you a reasonable rate with 1 fixed fee. Bring at most a very small amount of pounds for the first taxi."},{"id":"d2d7071e-93f0-5024-b6d8-6003e909e69f","question":"What is the exchange rate for the Egyptian pound?","answer":"It floats and it has moved a great deal in recent years, so no travel page should quote you 1 number. Check your banking app or a live currency site on the day. Photographing the rate on your first morning gives you a reference point for the week and stops the arithmetic becoming an argument."},{"id":"f3631057-b298-5f8e-8970-876e54f92021","question":"Should you accept the ATM offer to charge in your own currency?","answer":"No, never. That option is dynamic currency conversion and the rate is set by the machine''s operator rather than by your bank, which means you lose on every withdrawal. Choosing to be billed in Egyptian pounds is cheaper 100 percent of the time, with no exceptions worth looking for."},{"id":"aa424ff0-f4cf-5625-8dba-05d1d9310559","question":"Is it worth bringing US dollars to Egypt?","answer":"A small reserve, yes. Clean untorn notes are useful for a visa on arrival, which is bought in cash at a bank counter, and as a fallback if a card fails. Do not plan to spend them: paying in dollars means accepting somebody else''s rate on all 3 or 4 transactions you use them for."},{"id":"16d6bbe8-bd4a-5713-965d-10036905530f","question":"Do you need cash in Egypt or are cards enough?","answer":"Both, in different places. Cards cover hotels, better restaurants, larger shops and pre-booked arrangements. Cash covers markets, taxis, tips, small cafes and minor entrance charges, which is most of the 10 or so transactions in a normal day. Carry 1 backup card kept somewhere separate."},{"id":"5b8f7003-fdad-5ac3-b0c2-8b218db0a2cf","question":"Why do you need small notes in Egypt?","answer":"Because tipping is constant and ATMs dispense large notes. With only large notes you will either overtip on all 20 of the small services in a week or spend it asking people to break them. Change 1 large note into small ones at the hotel desk on arrival and again mid trip."},{"id":"380445ae-b9ee-56e7-b130-f5b7b0215eec","question":"What should you do with leftover Egyptian pounds?","answer":"Spend them before you leave. Pounds are not easy to change back at a decent rate once you are outside the country, so plan your last withdrawal for the final 2 or 3 days rather than taking a round number out on arrival. Airport shops before security take both pounds and cards."}]'::jsonb,
   schema_type = 'BlogPosting',
   status = 'published',
   updated_at = now()
 -- Both slugs, so a second run finds the row it renamed on the first.
-WHERE slug IN ('what-currency-does-egypt-use');
+WHERE slug IN ('what-currency-does-egypt-use', 'currency-in-egypt');
 
 COMMIT;
 
@@ -1108,12 +1108,12 @@ COMMIT;
 -- Verification. Every "bad" column below must read 0, and the row count must
 -- be 7.
 -- ---------------------------------------------------------------------------
-SELECT count(*) AS rows_present FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use');
+SELECT count(*) AS rows_present FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt');
 
 -- Must be 0. Any row still under an old slug means its UPDATE matched nothing,
 -- which means the row was not there under either name.
 SELECT 'rows still under an old slug' AS check, count(*) AS bad
-FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'vaccines-for-egypt-travel', 'planning-a-trip-to-egypt', 'how-to-plan-a-luxury-egypt-trip', 'egypt-travel-tips', 'things-to-know-before-traveling-to-egypt', 'what-to-pack-for-egypt', 'egypt-packing-list', 'private-tours-in-cairo-egypt', 'private-egypt-tour', 'tailor-made-egypt-tours', 'bespoke-egypt-travel', 'what-currency-does-egypt-use') AND slug NOT IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use');
+FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'vaccines-for-egypt-travel', 'planning-a-trip-to-egypt', 'how-to-plan-a-luxury-egypt-trip', 'egypt-travel-tips', 'things-to-know-before-traveling-to-egypt', 'what-to-pack-for-egypt', 'egypt-packing-list', 'private-tours-in-cairo-egypt', 'private-egypt-tour', 'tailor-made-egypt-tours', 'bespoke-egypt-travel', 'currency-in-egypt', 'what-currency-does-egypt-use') AND slug NOT IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt');
 
 
 SELECT slug,
@@ -1125,7 +1125,7 @@ SELECT slug,
        published_at,
        CASE WHEN body_en LIKE '%<figure%' THEN 'body kept, it has figures in it'
             ELSE 'body written from this file' END AS body_en_outcome
-FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') ORDER BY scheduled_at;
+FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') ORDER BY scheduled_at;
 
 SELECT 'vaccinations-needed-for-egypt' AS slug,
        (SELECT count(*) FROM regexp_matches(body_en, 'vaccinations needed for egypt', 'gi')) AS primary_hits
@@ -1145,51 +1145,51 @@ FROM posts WHERE slug = 'private-tours-in-cairo-egypt';
 SELECT 'tailor-made-egypt-tours' AS slug,
        (SELECT count(*) FROM regexp_matches(body_en, 'tailor-made egypt tours', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'tailor-made-egypt-tours';
-SELECT 'what-currency-does-egypt-use' AS slug,
+SELECT 'currency-in-egypt' AS slug,
        (SELECT count(*) FROM regexp_matches(body_en, 'currency in egypt', 'gi')) AS primary_hits
-FROM posts WHERE slug = 'what-currency-does-egypt-use';
+FROM posts WHERE slug = 'currency-in-egypt';
 
 SELECT 'seo lengths out of range' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') AND (length(meta_title) > 60 OR length(meta_description) NOT BETWEEN 150 AND 160);
 
 SELECT 'faq count out of range' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') AND jsonb_array_length(faqs) NOT BETWEEN 7 AND 8;
 
 -- Answers are written to be quoted on their own by an AI answer engine, which
 -- means 40 to 80 words each. Outside that they are either empty or too long.
 SELECT 'faq answers outside 40-80 words' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f
-WHERE p.slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use')
+WHERE p.slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt')
   AND array_length(regexp_split_to_array(trim(f->>'answer'), '\s+'), 1) NOT BETWEEN 40 AND 80;
 
 -- The SEO overrides must be NULL, not empty strings, or the fallbacks break.
 SELECT 'seo overrides stored as empty strings' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use')
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt')
   AND (canonical_url = '' OR robots = '' OR og_image = '' OR schema_type = '' OR featured_image_alt = '');
 
 SELECT 'faq entries missing id, question or answer' AS check, count(*) AS bad
 FROM posts p, jsonb_array_elements(p.faqs) f
-WHERE p.slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use')
+WHERE p.slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt')
   AND (coalesce(f->>'id','') = '' OR coalesce(f->>'question','') = '' OR coalesce(f->>'answer','') = '');
 
 SELECT 'em or en dash present' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use')
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt')
   AND (body_en ~ '[\u2013\u2014]' OR meta_title ~ '[\u2013\u2014]' OR meta_description ~ '[\u2013\u2014]' OR title_en ~ '[\u2013\u2014]');
 
 -- Tour links must sit at the site root. Anything under the category path 404s.
 SELECT 'tour links under /luxury-egypt-tour-packages/' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') AND body_en ~ 'href="/luxury-egypt-tour-packages/[^"]';
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') AND body_en ~ 'href="/luxury-egypt-tour-packages/[^"]';
 
 -- The hotel listing moved. A link to the old path still works through the 301,
 -- and costs every reader a hop for no reason.
 SELECT 'links to the old /stay path' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') AND body_en ~ 'href="/stay';
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') AND body_en ~ 'href="/stay';
 
 SELECT 'unfilled placeholders' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') AND (body_en LIKE '%data-placeholder=%' OR body_en ~ '\{\{[A-Z_]+\}\}');
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') AND (body_en LIKE '%data-placeholder=%' OR body_en ~ '\{\{[A-Z_]+\}\}');
 
 SELECT 'other language columns left empty' AS check, count(*) AS bad FROM posts
-WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use')
+WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt')
   AND (title_es IS NOT NULL OR title_fr IS NOT NULL OR title_jp IS NOT NULL
        OR body_es IS NOT NULL OR body_fr IS NOT NULL OR body_jp IS NOT NULL);
 
@@ -1197,4 +1197,4 @@ WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egy
 -- replace with a real first hand voice. This is a reminder, not a failure.
 SELECT slug,
        (length(body_en) - length(replace(body_en, '<!-- OWNER:', ''))) / 11 AS owner_notes_awaiting_a_paragraph
-FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'what-currency-does-egypt-use') ORDER BY slug;
+FROM posts WHERE slug IN ('vaccinations-needed-for-egypt', 'planning-a-trip-to-egypt', 'egypt-travel-tips', 'what-to-pack-for-egypt', 'private-tours-in-cairo-egypt', 'tailor-made-egypt-tours', 'currency-in-egypt') ORDER BY slug;

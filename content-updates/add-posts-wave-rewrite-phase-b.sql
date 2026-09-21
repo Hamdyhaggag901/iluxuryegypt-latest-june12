@@ -1,6 +1,6 @@
 -- Wave "rewrite-phase-b": 5 articles, loaded in one file.
 --
---   egypt-travel-insurance  (travel insurance egypt)
+--   egypt-travel-insurance  (egypt travel insurance)
 --   egypt-honeymoon  (egypt honeymoon)
 --   egypt-plug-type  (egypt plug type)
 --   private-pyramid-tours-egypt  (private pyramid tours egypt)
@@ -34,7 +34,7 @@
 -- there is an image to describe; these are the strings to use when there is:
 --
 --   egypt-travel-insurance
---     Passport, policy printout and a phone on a desk while arranging travel insurance egypt cover
+--     Passport, policy printout and a phone on a desk while arranging egypt travel insurance cover
 --   egypt-honeymoon
 --     A couple alone on the upper deck of a dahabiya at sunset on an egypt honeymoon
 --   egypt-plug-type
@@ -68,10 +68,10 @@ BEGIN;
 -- egypt-travel-insurance
 UPDATE posts SET
   slug = 'egypt-travel-insurance',
-  title_en = 'Travel Insurance Egypt: What Cover Actually Matters',
+  title_en = 'Egypt Travel Insurance: What Cover Actually Matters',
   body_en = '<p>Yes, buy it, and read one clause before you read the price. A policy for a trip to Egypt needs medical evacuation cover that will actually move you, not simply pay a hospital bill where you happen to be standing. Everything else here is secondary to that single line in the schedule.</p>
 
-<p>Nobody sells a product called travel insurance Egypt. You are buying an ordinary single trip or annual policy, and the work is checking that four specific things sit inside it rather than in the exclusions on page nine.</p>
+<p>Nobody sells a product called Egypt travel insurance. You are buying an ordinary single trip or annual policy, and the work is checking that four specific things sit inside it rather than in the exclusions on page nine.</p>
 
 <p>Those four are medical evacuation, cancellation, pre-existing conditions and activity cover. The rest is mostly noise.</p>
 
@@ -83,7 +83,7 @@ UPDATE posts SET
 
 <p>None of that changes whether you should carry one. Egypt has no reciprocal healthcare arrangement with the United States, the United Kingdom or the European Union. Foreign visitors pay for treatment at the point of use and claim it back afterwards.</p>
 
-<h2>What a Travel Insurance Egypt Policy Has to Cover</h2>
+<h2>What an Egypt Travel Insurance Policy Has to Cover</h2>
 
 <p>Four clauses. That is the whole of it.</p>
 
@@ -183,10 +183,10 @@ UPDATE posts SET
   excerpt = 'No insurer names, no commission, no comparison table dressed up as advice. The four clauses that decide whether a policy is any use on a trip through Upper Egypt.',
   category = 'Travel Planning',
   tags = ARRAY['Travel Insurance', 'Egypt Travel Planning', 'Before You Go']::text[],
-  focus_keyword = 'travel insurance egypt',
-  meta_title = 'Travel Insurance Egypt in {year}: What to Check',
-  meta_description = 'A travel insurance egypt policy is judged on four clauses, never on price. Medical evacuation, cancellation, declared conditions, and the activities booked.',
-  faqs = '[{"id":"e9f1e5d0-6174-53fd-b781-e630117fefe6","question":"Does Egypt require travel insurance?","answer":"No. Egypt sets no insurance requirement at the border and immigration will not ask to see a policy. Whether you should carry one is a separate question with a different answer. Egypt holds 0 reciprocal healthcare agreements with the United States, the United Kingdom or the European Union, so foreign visitors pay for treatment at the point of use."},{"id":"807070f6-4237-5c8b-80e9-1e20c111dae5","question":"What should travel insurance for Egypt cover?","answer":"4 clauses decide it. Medical treatment with emergency evacuation and repatriation, cancellation and curtailment, pre-existing conditions as you declared them, and activity cover naming whatever you actually plan to do. Baggage and delay come as standard almost everywhere and are not a reason to choose one policy over another."},{"id":"5456f235-13b7-5689-81b7-c799f302c6d7","question":"What is the difference between evacuation and repatriation cover?","answer":"Evacuation moves you to adequate medical care, repatriation moves you home, and 1 policy can carry either without the other. On a trip through Upper Egypt the first matters more, because the serious hospitals are in Cairo and the distance from Aswan or the Western Desert is the real problem rather than the treatment itself."},{"id":"86d241fa-48d4-5677-ba91-0df4a3124379","question":"Is cancel for any reason cover worth buying for Egypt?","answer":"Only when a large share of your trip is non refundable. It costs noticeably more than standard cancellation cover and pays a percentage of the loss rather than all of it, often around half. Book 12 months ahead with heavy deposits and it earns its price. Book late with flexible arrangements and it rarely does."},{"id":"61f1b409-a074-58a2-93d3-5b5d6ce424c7","question":"Which is better for Egypt, an annual policy or single trip cover?","answer":"Single trip cover, unless you already travel more than twice a year. An annual policy is priced for frequency and its per trip limits are sometimes lower, particularly on evacuation, which is the 1 limit that matters most here. Compare the evacuation figure on both before comparing anything else."},{"id":"1a2aec44-90b7-5ab7-9703-6b6a71d92087","question":"Does travel insurance cover a hot air balloon flight in Luxor?","answer":"Often not as standard. A sunrise balloon over the west bank is excluded outright by a surprising number of policies and covered by others only as a named activity you add. Check the wording for the words balloon or aerial before you book the flight, and get the insurer''s answer in writing. 1 email settles it."},{"id":"200f997a-7b87-566d-8d9c-92d31cfa03ee","question":"When should you buy travel insurance for a trip to Egypt?","answer":"The day your first payment leaves your account. Cancellation cover starts on the date of purchase rather than the date of departure, so every 1 of the days you wait leaves deposits uninsured. The medical half does not begin until you travel anyway, which means waiting saves nothing and risks the part that is already live."},{"id":"e8290ef1-b835-5760-a54e-394bde34507b","question":"What do you do if you need to claim while in Egypt?","answer":"Call the emergency number on the certificate before anything else, including the hospital. Most policies require notification before treatment beyond a minor consultation, and the assistance company will usually settle directly with the hospital. Photograph all receipts, prescriptions and notes, and keep 2 copies, because claims are decided on paper months later."}]'::jsonb,
+  focus_keyword = 'egypt travel insurance',
+  meta_title = 'Egypt Travel Insurance in {year}: What to Check',
+  meta_description = 'An egypt travel insurance policy is judged on four clauses, never on price. Medical evacuation, cancellation, declared conditions, and the activities booked.',
+  faqs = '[{"id":"e9f1e5d0-6174-53fd-b781-e630117fefe6","question":"Does Egypt require travel insurance?","answer":"No. Egypt sets no insurance requirement at the border and immigration will not ask to see a policy. Whether you should carry one is a separate question with a different answer. Egypt holds 0 reciprocal healthcare agreements with the United States, the United Kingdom or the European Union, so foreign visitors pay for treatment at the point of use."},{"id":"22d0c617-d8d9-5796-9b8c-ece27d0bd2a2","question":"What should egypt travel insurance cover?","answer":"4 clauses decide it. Medical treatment with emergency evacuation and repatriation, cancellation and curtailment, pre-existing conditions as you declared them, and activity cover naming whatever you actually plan to do. Baggage and delay come as standard almost everywhere and are not a reason to choose one policy over another."},{"id":"5456f235-13b7-5689-81b7-c799f302c6d7","question":"What is the difference between evacuation and repatriation cover?","answer":"Evacuation moves you to adequate medical care, repatriation moves you home, and 1 policy can carry either without the other. On a trip through Upper Egypt the first matters more, because the serious hospitals are in Cairo and the distance from Aswan or the Western Desert is the real problem rather than the treatment itself."},{"id":"86d241fa-48d4-5677-ba91-0df4a3124379","question":"Is cancel for any reason cover worth buying for Egypt?","answer":"Only when a large share of your trip is non refundable. It costs noticeably more than standard cancellation cover and pays a percentage of the loss rather than all of it, often around half. Book 12 months ahead with heavy deposits and it earns its price. Book late with flexible arrangements and it rarely does."},{"id":"61f1b409-a074-58a2-93d3-5b5d6ce424c7","question":"Which is better for Egypt, an annual policy or single trip cover?","answer":"Single trip cover, unless you already travel more than twice a year. An annual policy is priced for frequency and its per trip limits are sometimes lower, particularly on evacuation, which is the 1 limit that matters most here. Compare the evacuation figure on both before comparing anything else."},{"id":"1a2aec44-90b7-5ab7-9703-6b6a71d92087","question":"Does travel insurance cover a hot air balloon flight in Luxor?","answer":"Often not as standard. A sunrise balloon over the west bank is excluded outright by a surprising number of policies and covered by others only as a named activity you add. Check the wording for the words balloon or aerial before you book the flight, and get the insurer''s answer in writing. 1 email settles it."},{"id":"200f997a-7b87-566d-8d9c-92d31cfa03ee","question":"When should you buy travel insurance for a trip to Egypt?","answer":"The day your first payment leaves your account. Cancellation cover starts on the date of purchase rather than the date of departure, so every 1 of the days you wait leaves deposits uninsured. The medical half does not begin until you travel anyway, which means waiting saves nothing and risks the part that is already live."},{"id":"e8290ef1-b835-5760-a54e-394bde34507b","question":"What do you do if you need to claim while in Egypt?","answer":"Call the emergency number on the certificate before anything else, including the hospital. Most policies require notification before treatment beyond a minor consultation, and the assistance company will usually settle directly with the hospital. Photograph all receipts, prescriptions and notes, and keep 2 copies, because claims are decided on paper months later."}]'::jsonb,
   schema_type = 'BlogPosting',
   status = 'published',
   updated_at = now()
@@ -787,7 +787,7 @@ SELECT slug,
 FROM posts WHERE slug IN ('egypt-travel-insurance', 'egypt-honeymoon', 'egypt-plug-type', 'private-pyramid-tours-egypt', 'best-luxury-nile-cruise-egypt') ORDER BY scheduled_at;
 
 SELECT 'egypt-travel-insurance' AS slug,
-       (SELECT count(*) FROM regexp_matches(body_en, 'travel insurance egypt', 'gi')) AS primary_hits
+       (SELECT count(*) FROM regexp_matches(body_en, 'egypt travel insurance', 'gi')) AS primary_hits
 FROM posts WHERE slug = 'egypt-travel-insurance';
 SELECT 'egypt-honeymoon' AS slug,
        (SELECT count(*) FROM regexp_matches(body_en, 'egypt honeymoon', 'gi')) AS primary_hits

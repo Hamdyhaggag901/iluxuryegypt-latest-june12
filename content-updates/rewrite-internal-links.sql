@@ -41,6 +41,7 @@ CREATE TEMP VIEW redirect_map (old_path, new_path) AS VALUES
   ('/blog/vip-cairo-experience',                 '/blog/private-tours-in-cairo-egypt'),
   ('/blog/private-egypt-tour',                   '/blog/private-tours-in-cairo-egypt'),
   ('/blog/bespoke-egypt-travel',                 '/blog/tailor-made-egypt-tours'),
+  ('/blog/what-currency-does-egypt-use',         '/blog/currency-in-egypt'),
   ('/blog/cairo-airport-transfer',               '/'),
   ('/stay',                                      '/luxury-hotels-in-egypt');
 

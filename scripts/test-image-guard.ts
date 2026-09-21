@@ -751,7 +751,7 @@ const REWRITTEN_SLUGS = [
   "egypt-plug-type", "private-pyramid-tours-egypt", "best-luxury-nile-cruise-egypt",
   "vaccinations-needed-for-egypt", "planning-a-trip-to-egypt", "egypt-travel-tips",
   "what-to-pack-for-egypt", "private-tours-in-cairo-egypt", "tailor-made-egypt-tours",
-  "what-currency-does-egypt-use",
+  "currency-in-egypt",
 ];
 
 {
@@ -809,13 +809,13 @@ const REWRITTEN_SLUGS = [
 const WRONG_REWRITES: Array<[string, string, Guard]> = [
   ["US dollars for the Egyptian pound",
    "a stack of US dollar banknotes on a wooden table",
-   guardFor("what-currency-does-egypt-use", "Egypt")],
+   guardFor("currency-in-egypt", "Egypt")],
   ["Turkish lira for the Egyptian pound",
    "Turkish lira banknotes and coins, currency of Turkey",
-   guardFor("what-currency-does-egypt-use", "Egypt")],
+   guardFor("currency-in-egypt", "Egypt")],
   ["euros shown beside pounds",
    "euro banknotes next to Egyptian pound notes, money exchange in Egypt",
-   guardFor("what-currency-does-egypt-use", "Egypt")],
+   guardFor("currency-in-egypt", "Egypt")],
   ["a German wall socket for the Egyptian one",
    "white electrical power socket on a wall in a flat in Berlin, Germany",
    guardFor("egypt-plug-type", "Egypt")],
@@ -854,7 +854,7 @@ for (const [label, desc, guard] of WRONG_REWRITES) {
 const RIGHT_REWRITES: Array<[string, string, Guard]> = [
   ["Egyptian pound banknotes",
    "Egyptian pound banknotes held in a hand at a market in Egypt",
-   guardFor("what-currency-does-egypt-use", "Egypt")],
+   guardFor("currency-in-egypt", "Egypt")],
   ["a socket in an Egyptian hotel room",
    "a two pin electrical wall socket in a hotel room in Cairo, Egypt",
    guardFor("egypt-plug-type", "Egypt")],
@@ -887,7 +887,7 @@ for (const [label, desc, guard] of RIGHT_REWRITES) {
   const cases: Array<[string, string]> = [
     ["is-egypt-safe-for-americans", "lanterns hanging above a lane of stalls in the Khan el Khalili bazaar, Cairo"],
     ["egypt-travel-insurance", "feluccas sailing on the Nile at Aswan, Egypt"],
-    ["what-currency-does-egypt-use", "Egyptian pound banknotes held in a hand at a market in Egypt"],
+    ["currency-in-egypt", "Egyptian pound banknotes held in a hand at a market in Egypt"],
     ["vaccinations-needed-for-egypt", "a boat sailing on the Nile river in Egypt"],
   ];
   for (const [slug, description] of cases) {

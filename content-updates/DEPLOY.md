@@ -212,12 +212,12 @@ npx tsx scripts/fill-post-images.ts --only=is-egypt-safe-for-americans --only=eg
 npx tsx scripts/fill-post-images.ts --only=egypt-plug-type --only=private-pyramid-tours-egypt --only=best-luxury-nile-cruise-egypt
 npx tsx scripts/fill-post-images.ts --only=vaccinations-needed-for-egypt --only=planning-a-trip-to-egypt --only=egypt-travel-tips
 npx tsx scripts/fill-post-images.ts --only=what-to-pack-for-egypt --only=private-tours-in-cairo-egypt --only=tailor-made-egypt-tours
-npx tsx scripts/fill-post-images.ts --only=what-currency-does-egypt-use
+npx tsx scripts/fill-post-images.ts --only=currency-in-egypt
 ```
 
 Two positions are expected to find nothing and that is correct rather than a
 fault: the wall socket on `egypt-plug-type` and the banknotes on
-`what-currency-does-egypt-use`. Both need a provider description naming Egypt
+`currency-in-egypt`. Both need a provider description naming Egypt
 *and* the object, which stock libraries rarely write, and a guard loose enough
 to match one would match anybody's socket. Add those two by hand if you want
 them, and write their alt text yourself: the alt composer builds from place

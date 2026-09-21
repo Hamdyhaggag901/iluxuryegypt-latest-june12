@@ -40,7 +40,7 @@ export default {
 
 <p>Keep a small amount of US dollars as backup. It is not for spending, it is for the situations where nothing else works.</p>
 
-<p><a href="/blog/what-currency-does-egypt-use">The currency article</a> covers where to change money and where not to, which is a longer answer than it sounds.</p>
+<p><a href="/blog/currency-in-egypt">The currency article</a> covers where to change money and where not to, which is a longer answer than it sounds.</p>
 
 <h2>Water: the One Rule Nobody Should Bend</h2>
 

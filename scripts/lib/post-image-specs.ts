@@ -755,7 +755,7 @@ export const POSTS: PostSpec[] = [
   // topic of the page.
   //
   // Two positions below are deliberately long shots: the wall socket on
-  // egypt-plug-type and the banknotes on what-currency-does-egypt-use. Both
+  // egypt-plug-type and the banknotes on currency-in-egypt. Both
   // need a description that names Egypt AND the object, which stock providers
   // rarely write. If they find nothing that is the correct outcome, and the
   // owner adds an image by hand. A loose guard that found something would be
@@ -869,8 +869,8 @@ export const POSTS: PostSpec[] = [
   },
   {
     slug: "egypt-travel-insurance",
-    focusKeyword: "travel insurance egypt",
-    keywordSuffix: " on the kind of trip travel insurance egypt is bought for",
+    focusKeyword: "egypt travel insurance",
+    keywordSuffix: " on the kind of trip egypt travel insurance is bought for",
     images: [
       { role: "featured", place: "Nile at Aswan", city: "Aswan", keyword: true,
         queries: ["Aswan Nile felucca Egypt", "Nile river Aswan Egypt", "Aswan islands Nile water"],
@@ -1147,7 +1147,7 @@ export const POSTS: PostSpec[] = [
     ],
   },
   {
-    slug: "what-currency-does-egypt-use",
+    slug: "currency-in-egypt",
     focusKeyword: "currency in egypt",
     keywordSuffix: ", the currency in egypt",
     images: [

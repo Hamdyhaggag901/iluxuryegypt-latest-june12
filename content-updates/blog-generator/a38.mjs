@@ -1,5 +1,8 @@
 export default {
-  slug: "what-currency-does-egypt-use",
+  // Renamed. The old slug spelled the question people type into a search
+  // box; the keyword with the volume is the answer phrase, and the URL now
+  // carries it exactly. server/path-redirects.ts sends the old path here.
+  slug: "currency-in-egypt",
   rewriteOf: "what-currency-does-egypt-use",
   primary: "currency in egypt",
   secondary: ["egypt currency", "what currency for egypt", "egypt currency to usd"],
@@ -126,7 +129,7 @@ export default {
 `,
   faqs: [
     { q: "What currency does Egypt use?",
-      a: "The Egyptian pound, written LE or EGP and divided into 100 piastres, which you can ignore in practice. Some tourist businesses will take dollars or euros at a rate they choose themselves, so paying in pounds is always cheaper. Notes are what you will handle, and the small ones matter most." },
+      a: "The currency in Egypt is the Egyptian pound, written LE or EGP and divided into 100 piastres, which you can ignore in practice. Some tourist businesses will take dollars or euros at a rate they choose themselves, so paying in pounds is always cheaper. Notes are what you will handle, and the small ones matter most." },
     { q: "Is it better to change money before you fly or in Egypt?",
       a: "In Egypt, almost always. Changing at your home bank is the most expensive of the 3 usual options and airport desks are the second. A bank ATM in Egypt gives you a reasonable rate with 1 fixed fee. Bring at most a very small amount of pounds for the first taxi." },
     { q: "What is the exchange rate for the Egyptian pound?",

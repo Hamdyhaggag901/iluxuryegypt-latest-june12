@@ -6,13 +6,20 @@
 # GET and HEAD both, and that is the whole point of this file. The owner's
 # `curl -sI https://iluxuryegypt.com/stay` returned 200 for weeks while a
 # browser redirected correctly, because -I sends HEAD and every redirect
-# middleware was guarded on `req.method !== "GET"`. Checking only one method
-# is how that went unnoticed. scripts/test-redirects.ts asserts the same
-# 54 cases against a locally booted server; this one asserts them
-# against whatever is actually deployed.
+# middleware was guarded on `req.method !== "GET"`. Checking one method is how
+# that went unnoticed. scripts/test-redirects.ts asserts the same cases against
+# a locally booted server; this one asserts them against what is deployed.
 #
-# Generated from server/path-redirects.ts and server/tour-redirects.ts. If a
-# redirect is added there, regenerate rather than editing this by hand.
+# GENERATED. Every expected target below was computed by calling
+# resolveRedirect() from server/path-redirects.ts, not written by hand. The
+# first version of this file was written by hand and got /stay/<slug> wrong:
+# it expected /luxury-hotels-in-egypt/<slug> because /stay appears in
+# PATH_PREFIX_REDIRECTS, missing that CHILD_PATH_REDIRECTS is consulted first
+# and sends every sub-path of /stay to /hotel instead. Deriving the answer from
+# the function removes that whole class of mistake. Regenerate rather than
+# editing this by hand.
+#
+# 55 redirects, 110 assertions.
 
 set -uo pipefail
 BASE="${1:-https://iluxuryegypt.com}"
@@ -35,7 +42,7 @@ check() {
   done
 }
 
-echo "Checking 54 redirects against $BASE, GET and HEAD each"
+echo "Checking 55 redirects against $BASE, GET and HEAD each"
 echo
 
 check "/blog/do-us-citizens-need-a-visa-for-egypt" "/blog/egypt-visa-for-us-citizens"
@@ -50,6 +57,7 @@ check "/blog/grand-egyptian-museum-private-tour" "/blog/grand-egyptian-museum-to
 check "/blog/vip-cairo-experience" "/blog/private-tours-in-cairo-egypt"
 check "/blog/private-egypt-tour" "/blog/private-tours-in-cairo-egypt"
 check "/blog/bespoke-egypt-travel" "/blog/tailor-made-egypt-tours"
+check "/blog/what-currency-does-egypt-use" "/blog/currency-in-egypt"
 check "/blog/cairo-airport-transfer" "/"
 check "/stay/four-seasons-cairo" "/hotel/four-seasons-cairo"
 check "/luxury-hotels-in-egypt/four-seasons-cairo" "/hotel/four-seasons-cairo"
@@ -78,7 +86,7 @@ check "/destinations/siwa-oasis/classic-egypt" "/egypt-travel-guide/siwa-oasis-e
 check "/destinations" "/egypt-travel-guide"
 check "/destinations/classic-egypt" "/egypt-travel-guide/classic-egypt"
 check "/stay" "/luxury-hotels-in-egypt"
-check "/stay/classic-egypt" "/luxury-hotels-in-egypt/classic-egypt"
+check "/stay/classic-egypt" "/hotel/classic-egypt"
 check "/10-day-egypt-family-tour" "/family-tours-egypt"
 check "/egypt-luxury-family-tour" "/egypt-family-vacation-packages"
 check "/14-day-egypt-family-tour" "/egypt-tours-family"

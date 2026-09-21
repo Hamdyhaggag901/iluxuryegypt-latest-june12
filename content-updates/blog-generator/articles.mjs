@@ -113,7 +113,7 @@ export const SCHEDULE = [
   LIVE, // what-to-pack-for-egypt
   LIVE, // private-tours-in-cairo-egypt
   LIVE, // tailor-made-egypt-tours
-  LIVE, // what-currency-does-egypt-use
+  LIVE, // currency-in-egypt
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.
@@ -152,7 +152,7 @@ export const REWRITTEN_POST_SLUGS = new Set([
   "egypt-plug-type", "private-pyramid-tours-egypt", "best-luxury-nile-cruise-egypt",
   "vaccinations-needed-for-egypt", "planning-a-trip-to-egypt", "egypt-travel-tips",
   "what-to-pack-for-egypt", "private-tours-in-cairo-egypt", "tailor-made-egypt-tours",
-  "what-currency-does-egypt-use",
+  "currency-in-egypt",
 ]);
 
 export const EXISTING_POST_SLUGS = new Set([

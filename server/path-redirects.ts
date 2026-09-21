@@ -93,6 +93,8 @@ export const EXACT_PATH_REDIRECTS: Record<string, string> = {
   // "bespoke", so both rows were rewritten against a keyword that has volume.
   "/blog/private-egypt-tour": "/blog/private-tours-in-cairo-egypt",
   "/blog/bespoke-egypt-travel": "/blog/tailor-made-egypt-tours",
+  // The old slug is the question; the keyword with the volume is the answer.
+  "/blog/what-currency-does-egypt-use": "/blog/currency-in-egypt",
 
   // Wrong audience, removed rather than rewritten. Its readers were looking
   // for an airport taxi, which is not a service this business sells.

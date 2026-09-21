@@ -433,7 +433,7 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `luxury-egypt-tours` | `luxury-egypt-tours` | `luxury egypt tours` | 1818 |
 | `egypt-visa-for-us-citizens` | `do-us-citizens-need-a-visa-for-egypt` | `egypt visa for us citizens` | 1617 |
 | `is-egypt-safe-for-americans` | `is-egypt-safe-for-american-tourists` | `is egypt safe for americans` | 1833 |
-| `egypt-travel-insurance` | `egypt-travel-insurance` | `travel insurance egypt` | 1590 |
+| `egypt-travel-insurance` | `egypt-travel-insurance` | `egypt travel insurance` | 1590 |
 | `egypt-honeymoon` | `egypt-honeymoon` | `egypt honeymoon` | 1850 |
 | `egypt-plug-type` | `egypt-plug-type` | `egypt plug type` | 1119 |
 | `private-pyramid-tours-egypt` | `private-pyramid-tours-egypt` | `private pyramid tours egypt` | 1440 |
@@ -444,4 +444,4 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `what-to-pack-for-egypt` | `egypt-packing-list` | `what to pack for egypt` | 1416 |
 | `private-tours-in-cairo-egypt` | `private-egypt-tour` | `private tours in cairo egypt` | 1402 |
 | `tailor-made-egypt-tours` | `bespoke-egypt-travel` | `tailor-made egypt tours` | 1623 |
-| `what-currency-does-egypt-use` | `what-currency-does-egypt-use` | `currency in egypt` | 1266 |
+| `currency-in-egypt` | `what-currency-does-egypt-use` | `currency in egypt` | 1266 |
