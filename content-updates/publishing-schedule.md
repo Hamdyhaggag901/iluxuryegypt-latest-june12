@@ -438,3 +438,10 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `egypt-plug-type` | `egypt-plug-type` | `egypt plug type` | 1119 |
 | `private-pyramid-tours-egypt` | `private-pyramid-tours-egypt` | `private pyramid tours egypt` | 1440 |
 | `best-luxury-nile-cruise-egypt` | `best-luxury-nile-cruise-egypt` | `best luxury nile cruise` | 1842 |
+| `vaccinations-needed-for-egypt` | `vaccines-for-egypt-travel` | `vaccinations needed for egypt` | 1263 |
+| `planning-a-trip-to-egypt` | `how-to-plan-a-luxury-egypt-trip` | `planning a trip to egypt` | 1815 |
+| `egypt-travel-tips` | `things-to-know-before-traveling-to-egypt` | `egypt travel tips` | 1830 |
+| `what-to-pack-for-egypt` | `egypt-packing-list` | `what to pack for egypt` | 1416 |
+| `private-tours-in-cairo-egypt` | `private-egypt-tour` | `private tours in cairo egypt` | 1402 |
+| `tailor-made-egypt-tours` | `bespoke-egypt-travel` | `tailor-made egypt tours` | 1623 |
+| `what-currency-does-egypt-use` | `what-currency-does-egypt-use` | `currency in egypt` | 1266 |

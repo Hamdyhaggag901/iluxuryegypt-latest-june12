@@ -66,6 +66,14 @@ const OFFICIAL_SOURCES = [
   "wwwnc.cdc.gov",
 ];
 
+// Words a slug is allowed to drop. Deliberately short: these are the words
+// that carry no ranking weight and that every CMS strips when it builds a URL
+// from a title. Anything with meaning has to be in the slug.
+const SLUG_STOPWORDS = new Set([
+  "a", "an", "the", "in", "for", "to", "of", "and", "or", "is", "are",
+  "do", "does", "what", "how", "your", "you",
+]);
+
 const HOMEPAGE_KEYWORDS = [
   "egypt private tours",
   "egypt luxury private tours",
@@ -116,8 +124,15 @@ ARTICLES.forEach((a, index) => {
   // insurance egypt" are the same three words and rank the same. Checking the
   // joined string would have failed that slug, and the only way to satisfy it
   // would have been to rename a URL that is already published and indexed.
+  // Split the keyword on hyphens as well as spaces, because a hyphenated
+  // keyword ("tailor-made egypt tours") is three words in a slug and two
+  // tokens in the phrase, and drop the stopwords a slug conventionally omits:
+  // /blog/what-currency-does-egypt-use carries "currency in egypt" as well as
+  // any URL can, and the missing "in" says nothing about whether it does.
   const slugWords = new Set(a.slug.split("-"));
-  const missing = a.primary.split(/\s+/).filter((w) => !slugWords.has(w));
+  const missing = a.primary
+    .split(/[\s-]+/)
+    .filter((w) => !SLUG_STOPWORDS.has(w) && !slugWords.has(w));
   if (missing.length > 0) problems.push(`${L}: primary keyword not in the slug (missing: ${missing.join(", ")})`);
 
   const h2s = [...a.body.matchAll(/<h2>(.*?)<\/h2>/g)].map((m) => strip(m[1]));
