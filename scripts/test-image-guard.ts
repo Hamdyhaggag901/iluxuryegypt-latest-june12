@@ -737,5 +737,175 @@ console.log("\nO. Every image position exists in the article it belongs to\n");
      covered.length === WAVE_SLUGS.length, `${covered.length} of ${WAVE_SLUGS.length}`);
 }
 
+// ---------------------------------------------------------------------------
+console.log("\nN. The sixteen rewritten articles\n");
+// ---------------------------------------------------------------------------
+// These specs are different in kind from the ones above. Several of the
+// articles are about a topic rather than a place, so the guard is doing all of
+// the work on its own: there is no "is this really Saqqara" intuition to fall
+// back on, only "does this description actually say Egypt and say the thing".
+
+const REWRITTEN_SLUGS = [
+  "best-time-to-visit-egypt", "luxury-egypt-tours", "egypt-visa-for-us-citizens",
+  "is-egypt-safe-for-americans", "egypt-travel-insurance", "egypt-honeymoon",
+  "egypt-plug-type", "private-pyramid-tours-egypt", "best-luxury-nile-cruise-egypt",
+  "vaccinations-needed-for-egypt", "planning-a-trip-to-egypt", "egypt-travel-tips",
+  "what-to-pack-for-egypt", "private-tours-in-cairo-egypt", "tailor-made-egypt-tours",
+  "what-currency-does-egypt-use",
+];
+
+{
+  const missing = REWRITTEN_SLUGS.filter((slug) => !POSTS.some((p) => p.slug === slug));
+  ok("all sixteen rewritten posts have image specs", missing.length === 0, missing.join(", "));
+}
+
+// The focus keyword on a spec and the primary keyword in the generator are the
+// same fact stored twice. They drift silently, and the symptom is an alt that
+// carries a keyword the article is no longer targeting.
+{
+  const mod = await import("../content-updates/blog-generator/articles.mjs" as string);
+  const articles = (mod as { ARTICLES: Array<{ slug: string; primary: string }> }).ARTICLES;
+  const primary = new Map(articles.map((a) => [a.slug, a.primary]));
+  const drift: string[] = [];
+  for (const post of POSTS) {
+    const want = primary.get(post.slug);
+    if (want === undefined) continue;
+    if (want !== post.focusKeyword) drift.push(`${post.slug}: spec "${post.focusKeyword}" vs generator "${want}"`);
+  }
+  ok("every focusKeyword matches the generator's primary keyword", drift.length === 0, drift.join("\n        "));
+}
+
+// Exactly one image per post carries the keyword, and the suffix that puts it
+// there actually contains it. A suffix that does not is a silent no-op: the
+// post ships with no keyword-bearing alt at all.
+{
+  const bad: string[] = [];
+  for (const post of POSTS) {
+    const carriers = post.images.filter((i) => i.keyword).length;
+    if (carriers !== 1) bad.push(`${post.slug} has ${carriers} images flagged keyword (want exactly 1)`);
+    if (!post.keywordSuffix.toLowerCase().includes(post.focusKeyword.toLowerCase()))
+      bad.push(`${post.slug}: keywordSuffix "${post.keywordSuffix}" does not contain "${post.focusKeyword}"`);
+  }
+  ok("one keyword image per post, and the suffix carries the keyword", bad.length === 0, bad.join("\n        "));
+}
+
+// Two figures in the same section would stack on top of each other, because
+// insertFigureAfterH2 puts both immediately before the same following H2.
+{
+  const clashes: string[] = [];
+  for (const post of POSTS) {
+    const seen = new Set<number>();
+    for (const img of post.images) {
+      if (img.afterH2 === undefined) continue;
+      if (seen.has(img.afterH2)) clashes.push(`${post.slug} has two images after H2 #${img.afterH2}`);
+      seen.add(img.afterH2);
+    }
+  }
+  ok("no two images share a position", clashes.length === 0, clashes.join("\n        "));
+}
+
+// The wrong photographs these particular guards have to keep out. Each one is
+// a plausible provider result for the query next to it in the spec.
+const WRONG_REWRITES: Array<[string, string, Guard]> = [
+  ["US dollars for the Egyptian pound",
+   "a stack of US dollar banknotes on a wooden table",
+   guardFor("what-currency-does-egypt-use", "Egypt")],
+  ["Turkish lira for the Egyptian pound",
+   "Turkish lira banknotes and coins, currency of Turkey",
+   guardFor("what-currency-does-egypt-use", "Egypt")],
+  ["euros shown beside pounds",
+   "euro banknotes next to Egyptian pound notes, money exchange in Egypt",
+   guardFor("what-currency-does-egypt-use", "Egypt")],
+  ["a German wall socket for the Egyptian one",
+   "white electrical power socket on a wall in a flat in Berlin, Germany",
+   guardFor("egypt-plug-type", "Egypt")],
+  ["a server rack for the Egyptian socket",
+   "power cables and electrical outlets in a data centre in Egypt",
+   guardFor("egypt-plug-type", "Egypt")],
+  ["a Sudanese pyramid for Giza",
+   "pyramids of Meroe in the desert, Sudan",
+   guardFor("private-pyramid-tours-egypt", "Giza Pyramids")],
+  ["a supermarket for Khan al Khalili",
+   "supermarket aisle with shelves in Cairo, Egypt",
+   guardFor("egypt-travel-tips", "Khan al Khalili")],
+  ["a Coptic church for Islamic Cairo",
+   "Coptic church facade with a cross in Cairo, Egypt",
+   guardFor("egypt-travel-tips", "Islamic Cairo")],
+  ["Karnak for the Theban hills",
+   "Karnak temple columns in Luxor, Egypt",
+   guardFor("what-to-pack-for-egypt", "Theban hills")],
+  ["a Maldives reef for the Red Sea",
+   "coral reef and tropical fish in the Maldives",
+   guardFor("egypt-travel-insurance", "Red Sea reef")],
+  ["an ocean sailing boat for the Nile",
+   "a sailing boat on the open ocean near the Greek islands",
+   guardFor("best-luxury-nile-cruise-egypt", "Nile between Aswan and Luxor")],
+  ["Edfu for Kom Ombo",
+   "the Temple of Horus at Edfu, Egypt, pylon and courtyard",
+   guardFor("best-luxury-nile-cruise-egypt", "Kom Ombo")],
+];
+for (const [label, desc, guard] of WRONG_REWRITES) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is rejected", !v.ok, v.ok ? "WRONGLY ACCEPTED" : `(${v.reason})`);
+}
+
+// And the photographs that should get through, so the guards above are not
+// simply rejecting everything.
+const RIGHT_REWRITES: Array<[string, string, Guard]> = [
+  ["Egyptian pound banknotes",
+   "Egyptian pound banknotes held in a hand at a market in Egypt",
+   guardFor("what-currency-does-egypt-use", "Egypt")],
+  ["a socket in an Egyptian hotel room",
+   "a two pin electrical wall socket in a hotel room in Cairo, Egypt",
+   guardFor("egypt-plug-type", "Egypt")],
+  ["the Giza plateau",
+   "the pyramids of Giza rising from the desert sand under a clear sky in Egypt",
+   guardFor("private-pyramid-tours-egypt", "Giza Pyramids")],
+  ["Khan al Khalili itself",
+   "lanterns hanging above a lane of stalls in the Khan el Khalili bazaar, Cairo",
+   guardFor("egypt-travel-tips", "Khan al Khalili")],
+  ["the Theban hills",
+   "bare desert cliffs above the west bank at Luxor, Egypt",
+   guardFor("what-to-pack-for-egypt", "Theban hills")],
+  ["a Red Sea reef",
+   "coral reef and fish underwater in the Red Sea off Hurghada",
+   guardFor("egypt-travel-insurance", "Red Sea reef")],
+  ["the Nile between the two cities",
+   "palm trees along the bank of the Nile river with a boat passing, Egypt",
+   guardFor("best-luxury-nile-cruise-egypt", "Nile between Aswan and Luxor")],
+];
+for (const [label, desc, guard] of RIGHT_REWRITES) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
+// The awkward suffixes. Three of these focus keywords are not noun phrases
+// that sit naturally at the end of a sentence, and a suffix that makes the alt
+// unusable is worse than no keyword at all, so the composed alt is asserted
+// rather than assumed.
+{
+  const cases: Array<[string, string]> = [
+    ["is-egypt-safe-for-americans", "lanterns hanging above a lane of stalls in the Khan el Khalili bazaar, Cairo"],
+    ["egypt-travel-insurance", "feluccas sailing on the Nile at Aswan, Egypt"],
+    ["what-currency-does-egypt-use", "Egyptian pound banknotes held in a hand at a market in Egypt"],
+    ["vaccinations-needed-for-egypt", "a boat sailing on the Nile river in Egypt"],
+  ];
+  for (const [slug, description] of cases) {
+    const post = POSTS.find((p) => p.slug === slug)!;
+    const spec = post.images.find((i) => i.keyword)!;
+    const result = composeAltForPosition(post, spec, description, false);
+    const composed = "alt" in result ? result.alt : "";
+    ok(`${slug} composes a keyword alt`, "alt" in result,
+       "refused" in result ? result.refused : "");
+    if ("alt" in result) {
+      ok(`  ${slug} alt carries the focus keyword`, result.carriesKeyword, composed);
+      // Alt text is read aloud. Past roughly 150 characters a screen reader
+      // user is being made to sit through a sentence nobody wrote for them.
+      ok(`  ${slug} alt stays under 150 characters`, composed.length <= 150,
+         `${composed.length}: ${composed}`);
+    }
+  }
+}
+
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);
 process.exit(fails === 0 ? 0 : 1);
