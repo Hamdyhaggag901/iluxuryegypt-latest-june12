@@ -1,7 +1,7 @@
 import { writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
-  ARTICLES, SCHEDULE, TOUR_SLUGS, DESTINATION_SLUGS,
+  ARTICLES, SCHEDULE, LIVE, TOUR_SLUGS, DESTINATION_SLUGS,
   EXISTING_POST_SLUGS, RESERVED_KEYWORDS,
 } from "./articles.mjs";
 
@@ -39,6 +39,36 @@ const strip = (html) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(
 const words = (text) => text.split(/\s+/).filter(Boolean);
 const countOf = (haystack, needle) =>
   (haystack.toLowerCase().match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")) || []).length;
+
+/**
+ * Phrases the home page targets. No article may use one, anywhere, because an
+ * article that ranks for them takes the traffic from the page built to convert
+ * it. Checked against every article rather than listed per slug: the
+ * commercial rewrites are the ones at risk, and any of them could drift into
+ * these without anybody noticing.
+ */
+/**
+ * Hosts an article may link out to. Government and public health sources only.
+ *
+ * The visa, safety and vaccination articles summarise rules that change and
+ * that this business does not set. Each one has to point at the authority, so
+ * a reader can check the current position rather than trust a travel company's
+ * summary of it, and so the page carries the signal that it knows where its
+ * own facts come from.
+ */
+const OFFICIAL_SOURCES = [
+  "travel.state.gov",
+  "visa2.egypt.gov.eg",
+  "wwwnc.cdc.gov",
+];
+
+const HOMEPAGE_KEYWORDS = [
+  "egypt private tours",
+  "egypt luxury private tours",
+  "luxury egypt vacation packages",
+  "luxury dahabiya nile cruise",
+  "egypt private tour guide",
+];
 
 const problems = [];
 const notes = [];
@@ -109,7 +139,7 @@ ARTICLES.forEach((a, index) => {
     problems.push(`${L}: contains an em or en dash`);
   for (const phrase of BANNED_PHRASES)
     if (lower.includes(phrase)) problems.push(`${L}: uses the banned phrase "${phrase}"`);
-  for (const reserved of RESERVED_KEYWORDS[L] ?? []) {
+  for (const reserved of [...HOMEPAGE_KEYWORDS, ...(RESERVED_KEYWORDS[L] ?? [])]) {
     // A reserved phrase that is a substring of this article's own primary
     // keyword is unavoidable: "black and white desert egypt" contains "white
     // desert egypt". Only standalone uses count, so those are subtracted.
@@ -126,8 +156,25 @@ ARTICLES.forEach((a, index) => {
   if (promo.length > 2) problems.push(`${L}: ${promo.length} promotional sentences (max 2)`);
 
   // ---- internal links ----
-  const hrefs = [...a.body.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  const allHrefs = [...a.body.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+
+  // Official sources, and only these. An article about visas or vaccinations
+  // that does not link the government page it is summarising is asking to be
+  // trusted on a subject where the reader should check for themselves, and the
+  // rule is a rule so the list cannot quietly grow into affiliate links.
+  const external = allHrefs.filter((h) => /^https?:\/\//.test(h));
+  for (const href of external) {
+    const host = href.replace(/^https?:\/\//, "").split("/")[0].toLowerCase();
+    if (!OFFICIAL_SOURCES.includes(host))
+      problems.push(`${L}: links out to ${host}, which is not one of the official sources this project links to`);
+  }
+
+  // Internal links are what the cap and the shape rules are about.
+  const hrefs = allHrefs.filter((h) => !/^https?:\/\//.test(h));
   if (hrefs.length < 3) problems.push(`${L}: only ${hrefs.length} internal links (min 3)`);
+  // Four is the ceiling. Past that the links stop being recommendations and
+  // start being a menu, and what each one carries is divided down.
+  if (hrefs.length > 4) problems.push(`${L}: ${hrefs.length} internal links (max 4)`);
 
   // The rule that matters most: a tour under the category path is a 404.
   for (const href of hrefs) {
@@ -147,7 +194,8 @@ ARTICLES.forEach((a, index) => {
   // forward link would 404 between its date and the target's. That is why a1
   // carried a {{RELATED_POST_SLUG}} token for so long. Exempt it and say so,
   // rather than papering over a broken link.
-  const publishesFirst = SCHEDULE.every((iso, i) => i === index || Date.parse(iso) >= Date.parse(SCHEDULE[index]));
+  const publishesFirst = SCHEDULE[index] !== LIVE
+    && SCHEDULE.every((iso, i) => i === index || iso === LIVE || Date.parse(iso) >= Date.parse(SCHEDULE[index]));
   if (postLinks.length === 0 && !publishesFirst) problems.push(`${L}: no link to another article`);
   if (postLinks.length === 0 && publishesFirst)
     notes.push(`${L}: publishes first, so it links to no other article. Add a backlink once a sibling is live.`);
@@ -164,19 +212,22 @@ ARTICLES.forEach((a, index) => {
   // moment a later batch was appended with earlier dates: an article added at
   // the end can easily publish before one in the middle, and an index compare
   // would wave through a link that 404s for a week.
-  const mine = Date.parse(SCHEDULE[index]);
+  // A live article can link to anything that is also live, and anything live
+  // can be linked to from anywhere: the reader can reach it today.
+  const mine = SCHEDULE[index] === LIVE ? Infinity : Date.parse(SCHEDULE[index]);
   for (const href of postLinks) {
     const target = href.replace("/blog/", "");
     if (target.includes("{{")) continue;
     if (EXISTING_POST_SLUGS.has(target)) continue; // already live, cannot 404
     const targetIndex = ARTICLES.findIndex((x) => x.slug === target);
     if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is neither in this batch nor a known live article`);
-    else if (Date.parse(SCHEDULE[targetIndex]) >= mine)
+    else if (SCHEDULE[targetIndex] !== LIVE && Date.parse(SCHEDULE[targetIndex]) >= mine)
       problems.push(`${L}: links to /blog/${target}, which publishes ${SCHEDULE[targetIndex]}, at or after this article's ${SCHEDULE[index]}, so the link would 404 on publication`);
   }
 
   // Descriptive anchors, not repeated keyword.
   const anchors = [...a.body.matchAll(/<a href="[^"]+">([^<]+)<\/a>/g)].map((m) => m[1].toLowerCase());
+  void external;
   const keywordAnchors = anchors.filter((x) => x.includes(a.primary));
   if (keywordAnchors.length > 0) problems.push(`${L}: ${keywordAnchors.length} anchor(s) repeat the primary keyword verbatim`);
   if (new Set(anchors).size !== anchors.length) problems.push(`${L}: duplicate anchor text`);
@@ -235,6 +286,7 @@ ARTICLES.forEach((a, index) => {
     metaTitle: a.metaTitle.length, meta: a.metaDescription.length,
     faqs: a.faqs.length, links: hrefs.length, sd: sd.toFixed(1),
     scheduled: SCHEDULE[index],
+    rewriteOf: a.rewriteOf ?? null,
   });
 });
 
@@ -245,7 +297,11 @@ ARTICLES.forEach((a, index) => {
 const cairoTime = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Africa/Cairo", hour: "2-digit", minute: "2-digit", hour12: false,
 });
+// A rewrite carries the marker LIVE instead of a date. It is an edit to a row
+// that is already published and already indexed, so it has no publish hour to
+// get wrong and no slot in the schedule to collide with.
 SCHEDULE.forEach((iso, i) => {
+  if (iso === LIVE) return;
   const local = cairoTime.format(new Date(iso));
   if (local !== "09:00")
     problems.push(`${ARTICLES[i]?.slug ?? `schedule[${i}]`}: ${iso} is ${local} in Cairo, not 09:00. Check the UTC offset against Egyptian summer time.`);
@@ -256,6 +312,7 @@ SCHEDULE.forEach((iso, i) => {
 // accident when a later batch is dated into the gaps of an earlier one.
 const byDay = new Map();
 SCHEDULE.forEach((iso, i) => {
+  if (iso === LIVE) return;
   const day = iso.slice(0, 10);
   if (!byDay.has(day)) byDay.set(day, []);
   byDay.get(day).push(ARTICLES[i]?.slug ?? `schedule[${i}]`);
@@ -454,6 +511,41 @@ for (const wave of WAVES) {
     .filter(({ a }) => a.wave === wave);
 
   const slugList = members.map(({ a }) => pg(a.slug)).join(", ");
+  // Old and new together, for the preview and for the "nothing left behind"
+  // check. On a rewrite that renames a slug, the row to look at before the run
+  // is under the old name and after it under the new one.
+  const allSlugList = [...new Set(members.flatMap(({ a }) => [a.slug, a.rewriteOf].filter(Boolean)))]
+    .map(pg).join(", ");
+
+  // A rewrite wave updates rows that are already published and already indexed
+  // rather than inserting new ones. published_at is never touched: the article
+  // keeps the date it was first published, which is what its BlogPosting has
+  // been telling crawlers all along. updated_at carries the rewrite.
+  const isRewrite = members.every(({ a }) => a.rewriteOf);
+  if (!isRewrite && members.some(({ a }) => a.rewriteOf))
+    problems.push(`wave "${wave}" mixes rewrites and new articles, which need different SQL`);
+
+  const updates = members.map(({ a }) => {
+    const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
+    const slugs = a.rewriteOf === a.slug ? [a.slug] : [a.rewriteOf, a.slug];
+    return `-- ${a.rewriteOf === a.slug ? a.slug : `${a.rewriteOf} becomes ${a.slug}`}
+UPDATE posts SET
+  slug = ${pg(a.slug)},
+  title_en = ${pg(a.titleEn)},
+  body_en = ${pg(a.body.trim())},
+  excerpt = ${pg(a.excerpt)},
+  category = ${pg(a.category)},
+  tags = ARRAY[${a.tags.map(pg).join(", ")}]::text[],
+  focus_keyword = ${pg(a.primary)},
+  meta_title = ${pg(a.metaTitle)},
+  meta_description = ${pg(a.metaDescription)},
+  faqs = ${pg(faqJson)}::jsonb,
+  schema_type = 'BlogPosting',
+  status = 'published',
+  updated_at = now()
+-- Both slugs, so a second run finds the row it renamed on the first.
+WHERE slug IN (${slugs.map(pg).join(", ")});`;
+  }).join("\n\n");
 
   const rows = members.map(({ a, index }) => {
     const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
@@ -481,12 +573,27 @@ FROM posts WHERE slug = ${pg(a.slug)};`).join("\n");
 
   const sql = `-- Wave "${wave}": ${members.length} articles, loaded in one file.
 --
-${members.map(({ a, index }) => `--   ${SCHEDULE[index]}  ${a.slug}  (${a.primary})`).join("\n")}
+${members.map(({ a, index }) => isRewrite
+  ? `--   ${a.rewriteOf === a.slug ? a.slug : `${a.rewriteOf} becomes ${a.slug}`}  (${a.primary})`
+  : `--   ${SCHEDULE[index]}  ${a.slug}  (${a.primary})`).join("\n")}
 --
--- Scheduled via posts.scheduled_at, so every row stays out of the blog list,
+${isRewrite ? `-- These rows are ALREADY PUBLISHED and already indexed. This file rewrites
+-- their body and their SEO fields in place. published_at is never touched, so
+-- each article keeps the date it first went out, which is what its BlogPosting
+-- has been telling crawlers since. updated_at carries the rewrite, and
+-- dateModified follows from it.
+--
+-- Six of the slugs change. server/path-redirects.ts sends every old path to
+-- its new one with a 301, and scripts/test-redirects.ts proves it over HTTP
+-- for GET and for HEAD. Deploy the server BEFORE running this file, or the old
+-- URLs 404 in the window between the two.
+--
+-- RUN THIS BEFORE scripts/fill-post-images.ts, not after. The rewrite replaces
+-- body_en outright, which is the point, and that discards any <figure> the
+-- image script had inserted. Fill the images once the prose is in place.` : `-- Scheduled via posts.scheduled_at, so every row stays out of the blog list,
 -- the sitemap and the server rendered meta until its moment. published_at
 -- carries the same instant as the article's own date. See
--- shared/post-visibility.ts for the visibility rule.
+-- shared/post-visibility.ts for the visibility rule.`}
 --
 -- RUN THE MIGRATION FIRST (Admin > Settings > Run Migrations). This needs
 -- posts.scheduled_at, posts.faqs and posts.schema_markup.
@@ -504,8 +611,10 @@ ${members.map(({ a, index }) => `--   ${SCHEDULE[index]}  ${a.slug}  (${a.primar
 --
 ${members.map(({ a }) => `--   ${a.slug}\n--     ${a.heroAlt}`).join("\n")}
 --
--- Safe to run twice. See the ON CONFLICT block: a row whose body already has
--- figures in it keeps that body rather than losing the images.
+${isRewrite ? `-- Safe to run twice. Each UPDATE matches the old slug and the new one, so a
+-- second run finds the row it renamed on the first and writes the same values
+-- to it again.` : `-- Safe to run twice. See the ON CONFLICT block: a row whose body already has
+-- figures in it keeps that body rather than losing the images.`}
 
 -- ---------------------------------------------------------------------------
 -- Before: what is already in the database for these slugs.
@@ -519,12 +628,12 @@ SELECT slug,
        (body_en LIKE '%<figure%') AS has_images,
        updated_at
 FROM posts
-WHERE slug IN (${slugList})
-ORDER BY scheduled_at;
+WHERE slug IN (${allSlugList})
+ORDER BY ${isRewrite ? "published_at NULLS LAST, slug" : "scheduled_at"};
 
 BEGIN;
 
-INSERT INTO posts (
+${isRewrite ? updates : `INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
   status, scheduled_at, published_at, faqs, schema_type
@@ -553,7 +662,7 @@ ON CONFLICT (slug) DO UPDATE SET
   published_at = EXCLUDED.published_at,
   faqs = EXCLUDED.faqs,
   schema_type = EXCLUDED.schema_type,
-  updated_at = now();
+  updated_at = now();`}
 
 COMMIT;
 
@@ -561,7 +670,13 @@ COMMIT;
 -- Verification. Every "bad" column below must read 0, and the row count must
 -- be ${members.length}.
 -- ---------------------------------------------------------------------------
-SELECT count(*) AS rows_present FROM posts WHERE slug IN (${slugList});
+SELECT count(*) AS rows_present FROM posts WHERE slug IN (${slugList});${isRewrite ? `
+
+-- Must be 0. Any row still under an old slug means its UPDATE matched nothing,
+-- which means the row was not there under either name.
+SELECT 'rows still under an old slug' AS check, count(*) AS bad
+FROM posts WHERE slug IN (${allSlugList}) AND slug NOT IN (${slugList});
+` : ""}
 
 SELECT slug,
        length(meta_title) AS title_len,

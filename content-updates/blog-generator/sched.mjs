@@ -10,7 +10,12 @@ const fmt = (iso) => {
 // ARTICLES is in the order articles were written, which stopped matching the
 // order they publish in once the later waves were appended. The document is
 // about a schedule, so it is sorted by date.
-const ORDER = A.map((a, i) => i).sort((x, y) => Date.parse(S[x].scheduled) - Date.parse(S[y].scheduled));
+// Rewrites of live posts are not scheduled, so they have no place in a
+// publishing schedule. They are listed separately at the bottom.
+const ORDER = A.map((a, i) => i)
+  .filter((i) => S[i].scheduled !== "live")
+  .sort((x, y) => Date.parse(S[x].scheduled) - Date.parse(S[y].scheduled));
+const REWRITES = A.map((a, i) => i).filter((i) => S[i].scheduled === "live");
 const span = (() => {
   const first = new Date(S[ORDER[0]].scheduled);
   const last = new Date(S[ORDER[ORDER.length - 1]].scheduled);
@@ -18,9 +23,9 @@ const span = (() => {
   return `${weeks} weeks`;
 })();
 
-let md = `# Publishing schedule: ${A.length} SEO articles
+let md = `# Publishing schedule: ${ORDER.length} scheduled articles
 
-${A.length} articles across ${span}, most of them two to three days apart.
+${ORDER.length} articles across ${span}, most of them two to three days apart.
 Publishing a batch at once is an unnatural pattern for a site this young, which
 is the only reason they are spread out rather than shipped together.
 
@@ -101,5 +106,18 @@ md += `
 3. Confirm the URL is present in \`/sitemap.xml\`.
 4. Confirm no \`data-placeholder\` markers are visible on the page.
 `;
+if (REWRITES.length > 0) {
+  md += `
+## Rewrites of articles that are already live
+
+Edits to rows that are already published and already indexed. They keep their
+original \`published_at\`, so they are not scheduled and are not listed above.
+
+| Slug | Was | Primary keyword | Words |
+|---|---|---|---|
+${REWRITES.map((i) => `| \`${A[i].slug}\` | \`${A[i].rewriteOf}\` | \`${A[i].primary}\` | ${S[i].words} |`).join("\n")}
+`;
+}
+
 writeFileSync("/home/user/iluxuryegypt-latest-june12/content-updates/publishing-schedule.md", md);
 console.log("written");

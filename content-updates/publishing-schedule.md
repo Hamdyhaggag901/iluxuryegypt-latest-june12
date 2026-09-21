@@ -1,4 +1,4 @@
-# Publishing schedule: 22 SEO articles
+# Publishing schedule: 22 scheduled articles
 
 22 articles across 12 weeks, most of them two to three days apart.
 Publishing a batch at once is an unnatural pattern for a site this young, which
@@ -421,3 +421,15 @@ There are none. Every article is publishable as written.
    and FAQPage are detected.
 3. Confirm the URL is present in `/sitemap.xml`.
 4. Confirm no `data-placeholder` markers are visible on the page.
+
+## Rewrites of articles that are already live
+
+Edits to rows that are already published and already indexed. They keep their
+original `published_at`, so they are not scheduled and are not listed above.
+
+| Slug | Was | Primary keyword | Words |
+|---|---|---|---|
+| `best-time-to-visit-egypt` | `best-time-to-visit-egypt` | `best time to visit egypt` | 2040 |
+| `luxury-egypt-tours` | `luxury-egypt-tours` | `luxury egypt tours` | 1818 |
+| `egypt-visa-for-us-citizens` | `do-us-citizens-need-a-visa-for-egypt` | `egypt visa for us citizens` | 1617 |
+| `is-egypt-safe-for-americans` | `is-egypt-safe-for-american-tourists` | `is egypt safe for americans` | 1833 |

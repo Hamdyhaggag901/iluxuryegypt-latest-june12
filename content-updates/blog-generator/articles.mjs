@@ -27,17 +27,28 @@ import a19 from "./a19.mjs";
 import a20 from "./a20.mjs";
 import a21 from "./a21.mjs";
 import a22 from "./a22.mjs";
+import a23 from "./a23.mjs";
+import a24 from "./a24.mjs";
+import a25 from "./a25.mjs";
+import a26 from "./a26.mjs";
 
 // a14 onwards are the two later waves. They are APPENDED rather than slotted
 // into date order, so the 13 files above regenerate byte for byte. The order of
 // this array no longer matches the order of publication, which is why gen.mjs
 // validates "does this link point at something already live" by date.
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22];
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
 // The order is not arbitrary: an article may only link back to one already
 // published, so anything it wants to point at has to come first.
+/**
+ * Marks an article that is already published. A rewrite of a live post has no
+ * publish date to set: the row keeps the published_at it has carried since it
+ * first went out, and only its body and its SEO fields change.
+ */
+export const LIVE = "live";
+
 export const SCHEDULE = [
   "2026-09-22T09:00:00+03:00", // abu-simbel-tour-from-aswan
   "2026-09-24T09:00:00+03:00", // grand-egyptian-museum-tour
@@ -73,6 +84,12 @@ export const SCHEDULE = [
   "2026-12-05T09:00:00+02:00", // memphis-egypt
   "2026-12-10T09:00:00+02:00", // deir-el-medina
   "2026-12-15T09:00:00+02:00", // bahariya-oasis-egypt
+
+  // Rewrites of articles that are already published. See LIVE above.
+  LIVE, // best-time-to-visit-egypt
+  LIVE, // luxury-egypt-tours
+  LIVE, // egypt-visa-for-us-citizens
+  LIVE, // is-egypt-safe-for-americans
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.
@@ -100,7 +117,22 @@ export const DESTINATION_SLUGS = new Set([
 
 // Articles that were on the site before this batch. An article may link to one
 // of these freely: they are already live, so the link cannot 404 on publication.
+// The sixteen rewritten posts. Every one of these rows is already published;
+// six of them change slug in the same wave, and server/path-redirects.ts sends
+// the old path to the new one. They are listed here so an article may link to
+// one whether or not its own module is in ARTICLES yet, which is what lets the
+// rewrite phases ship one at a time.
+export const REWRITTEN_POST_SLUGS = new Set([
+  "best-time-to-visit-egypt", "luxury-egypt-tours", "egypt-visa-for-us-citizens",
+  "is-egypt-safe-for-americans", "egypt-travel-insurance", "egypt-honeymoon",
+  "egypt-plug-type", "private-pyramid-tours-egypt", "best-luxury-nile-cruise-egypt",
+  "vaccinations-needed-for-egypt", "planning-a-trip-to-egypt", "egypt-travel-tips",
+  "what-to-pack-for-egypt", "private-tours-in-cairo-egypt", "tailor-made-egypt-tours",
+  "what-currency-does-egypt-use",
+]);
+
 export const EXISTING_POST_SLUGS = new Set([
+  ...REWRITTEN_POST_SLUGS,
   "best-luxury-nile-cruise-egypt",
   "luxury-cairo-luxor-aswan-itinerary",
   "best-time-to-visit-egypt",
