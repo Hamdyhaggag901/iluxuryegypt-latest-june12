@@ -63,6 +63,43 @@ export const CHILD_PATH_REDIRECTS: Record<string, string> = {
 };
 
 /**
+ * Redirects for one exact path, with no children and no prefix matching.
+ *
+ * Single blog posts live here rather than in PATH_PREFIX_REDIRECTS. A post has
+ * no sub-pages, so prefix matching would only ever be a way to catch a URL
+ * nobody asked for, and an exact map says what it means.
+ *
+ * Every target must be a path this table does not also hold a key for, so a
+ * visitor is never sent through two redirects to reach the page. The test
+ * suite asserts that, because the chain is the kind of thing that appears
+ * later, when somebody redirects a target that was already a destination.
+ */
+export const EXACT_PATH_REDIRECTS: Record<string, string> = {
+  // Slugs rewritten so the URL carries the keyword the article targets.
+  "/blog/do-us-citizens-need-a-visa-for-egypt": "/blog/egypt-visa-for-us-citizens",
+  "/blog/is-egypt-safe-for-american-tourists": "/blog/is-egypt-safe-for-americans",
+  "/blog/vaccines-for-egypt-travel": "/blog/vaccinations-needed-for-egypt",
+  "/blog/how-to-plan-a-luxury-egypt-trip": "/blog/planning-a-trip-to-egypt",
+  "/blog/things-to-know-before-traveling-to-egypt": "/blog/egypt-travel-tips",
+  "/blog/egypt-packing-list": "/blog/what-to-pack-for-egypt",
+
+  // Posts merged into another article covering the same intent.
+  "/blog/luxury-egypt-vacations": "/blog/luxury-egypt-tours",
+  "/blog/luxury-egypt-anniversary-trip": "/blog/egypt-honeymoon",
+  "/blog/grand-egyptian-museum-private-tour": "/blog/grand-egyptian-museum-tour",
+  "/blog/vip-cairo-experience": "/blog/private-tours-in-cairo-egypt",
+
+  // Repurposed: the homepage owns "egypt private tours", and nobody searches
+  // "bespoke", so both rows were rewritten against a keyword that has volume.
+  "/blog/private-egypt-tour": "/blog/private-tours-in-cairo-egypt",
+  "/blog/bespoke-egypt-travel": "/blog/tailor-made-egypt-tours",
+
+  // Wrong audience, removed rather than rewritten. Its readers were looking
+  // for an airport taxi, which is not a service this business sells.
+  "/blog/cairo-airport-transfer": "/",
+};
+
+/**
  * Where a path should redirect to, or null when it should be served as asked.
  *
  * Separated from the middleware so the mapping can be tested directly: every
@@ -72,7 +109,15 @@ export const CHILD_PATH_REDIRECTS: Record<string, string> = {
  * `query` is the query string including its "?", or "" when there is none. It
  * is carried through to the target so a redirect never drops a utm tag.
  */
-export function resolveRedirect(path: string, query = ""): string | null {
+export function resolveRedirect(rawPath: string, query = ""): string | null {
+  // One trailing slash is the same page. Without this, /stay/ falls through
+  // every table below and is served as a 200 by the SPA catch-all, which is
+  // the same class of bug as the HEAD one described on the middleware.
+  const path = rawPath.length > 1 ? rawPath.replace(/\/+$/, "") : rawPath;
+
+  const exact = EXACT_PATH_REDIRECTS[path];
+  if (exact) return `${exact}${query}`;
+
   for (const [parent, newParent] of Object.entries(CHILD_PATH_REDIRECTS)) {
     if (path.startsWith(`${parent}/`) && path.length > parent.length + 1) {
       return `${newParent}${path.slice(parent.length)}${query}`;
@@ -91,7 +136,19 @@ export function resolveRedirect(path: string, query = ""): string | null {
 
 export function registerPathPrefixRedirects(app: Express) {
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.method !== "GET") return next();
+    // GET and HEAD, not GET alone.
+    //
+    // This is why the owner's `curl -sI https://iluxuryegypt.com/stay` kept
+    // answering 200 while a browser redirected correctly: -I sends HEAD, the
+    // guard here read `req.method !== "GET"` and called next(), and the
+    // request fell through to the SPA catch-all. The redirect was registered,
+    // compiled and deployed the whole time; it simply never ran for the one
+    // request being used to check it.
+    //
+    // HEAD has to answer exactly as GET would, minus the body. Link checkers
+    // and some crawlers use it, and a HEAD that says 200 where a GET says 301
+    // reports a redirect as a live page.
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
 
     // req.url is path + query string as received; slicing off the path portion
     // preserves any query string (e.g. ?utm_source=...) on the target.

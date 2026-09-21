@@ -37,8 +37,10 @@ export const TOUR_SLUG_REDIRECTS: Record<string, string> = {
 // works but is a fragile way to express "only these 3 exact old slugs".
 export function registerTourRedirects(app: Express) {
   app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.method !== "GET") return next();
-    const target = TOUR_SLUG_REDIRECTS[req.path.slice(1)];
+    // GET and HEAD both. See the note in server/path-redirects.ts: a HEAD only
+    // guard is what made `curl -sI` report 200 on a path that redirects.
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    const target = TOUR_SLUG_REDIRECTS[req.path.replace(/\/+$/, "").slice(1)];
     if (!target) return next();
     res.redirect(301, `/${target}`);
   });
