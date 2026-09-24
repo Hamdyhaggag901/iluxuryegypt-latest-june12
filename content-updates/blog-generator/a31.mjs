@@ -2,7 +2,16 @@ export default {
   slug: "best-luxury-nile-cruise-egypt",
   rewriteOf: "best-luxury-nile-cruise-egypt",
   primary: "best luxury nile cruise",
-  secondary: ["best luxury nile cruises", "best luxury nile river cruise"],
+  // The last two are the head terms this page is meant to reach once the five
+  // cluster articles under it are live and linking up. They are secondaries
+  // rather than the primary because a pillar earns a head term through its
+  // cluster, not by claiming it on day one.
+  secondary: [
+    "best luxury nile cruises",
+    "best luxury nile river cruise",
+    "nile cruise egypt",
+    "egypt nile river cruise",
+  ],
   wave: "rewrite-phase-b",
   category: "Travel Planning",
   tags: ["Nile Cruise", "Dahabiya", "Egypt Travel Planning"],
@@ -39,6 +48,8 @@ export default {
 </table>
 
 <p>Everything below is what those rows mean in practice.</p>
+
+<p>Almost every nile cruise egypt sells runs the same 200 kilometres between Aswan and Luxor, past the same three temples. The boat is the variable, and it is the one people spend least time on.</p>
 
 <h2>The Dahabiya Case</h2>
 
@@ -165,6 +176,8 @@ export default {
 <h2>How to Decide in the Next Ten Minutes</h2>
 
 <p>Pick the category first, using the four questions above. That removes most of the internet.</p>
+
+<p>An egypt nile river cruise is one of the few trips where the vessel changes the holiday more than the destination does, because the destination is identical on all of them.</p>
 
 <p>Then get two or three options inside that category and put the eight questions to each. The best luxury nile river cruise for your week is almost always the one whose operator answers the mooring question with a place name.</p>
 

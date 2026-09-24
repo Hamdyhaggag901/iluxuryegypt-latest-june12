@@ -617,6 +617,8 @@ UPDATE posts SET
 
 <p>Everything below is what those rows mean in practice.</p>
 
+<p>Almost every nile cruise egypt sells runs the same 200 kilometres between Aswan and Luxor, past the same three temples. The boat is the variable, and it is the one people spend least time on.</p>
+
 <h2>The Dahabiya Case</h2>
 
 <p>A dahabiya is a sailing boat with a small number of cabins, and it is the oldest way of doing this.</p>
@@ -742,6 +744,8 @@ UPDATE posts SET
 <h2>How to Decide in the Next Ten Minutes</h2>
 
 <p>Pick the category first, using the four questions above. That removes most of the internet.</p>
+
+<p>An egypt nile river cruise is one of the few trips where the vessel changes the holiday more than the destination does, because the destination is identical on all of them.</p>
 
 <p>Then get two or three options inside that category and put the eight questions to each. The best luxury nile river cruise for your week is almost always the one whose operator answers the mooring question with a place name.</p>
 

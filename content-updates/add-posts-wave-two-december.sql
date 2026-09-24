@@ -56,7 +56,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, published_at, faqs, schema_type
+  status, scheduled_at, published_at, updated_at, faqs, schema_type
 ) VALUES
 (
   'hatshepsut-temple',
@@ -194,7 +194,22 @@ INSERT INTO posts (
   'The hatshepsut temple and the monument people call Deir el Bahari are the same building. What is on the terraces, which reliefs matter, and when to be there.',
   'published',
   '2026-12-01T09:00:00+02:00'::timestamptz,
-  '2026-12-01T09:00:00+02:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-12-01T09:00:00+02:00'::timestamptz,
+  '2026-12-01T09:00:00+02:00'::timestamptz,
   '[{"id":"2991ab49-00ee-523f-ad91-e127f43b50a1","question":"Are Hatshepsut''s temple and Deir el Bahari the same place?","answer":"Yes, 1 monument with 2 names. Deir el Bahari is the Arabic name of the site, taken from a Coptic monastery that later stood there, and the temple itself is Hatshepsut''s mortuary temple, ancient name Djeser Djeseru. If an itinerary lists both as separate stops, it has counted 1 morning twice."},{"id":"bf456604-77d9-536d-a7a7-c6a4091f7ef4","question":"How long do you need at the temple of Hatshepsut?","answer":"About 90 minutes, or 2 hours including the Mentuhotep ruins next door. 10 minutes covers the terraces themselves. The other 80 are the Punt reliefs on the middle terrace, the divine birth colonnade opposite them, and the Hathor and Anubis chapels at either end of the same level."},{"id":"c56524d3-1f9c-5203-b442-f624056a148f","question":"Which is better, Hatshepsut''s temple or the Valley of the Kings?","answer":"They answer different questions and most people do both in 1 morning. The royal tombs are painted interiors and have to be done at opening because of the heat. This is exterior architecture and relief carving on 3 open terraces. If you can only pick 1, the tombs give more, but the temple photographs better."},{"id":"1aad56dd-fba0-59c2-94ba-197808065064","question":"What are the Punt reliefs?","answer":"A carved record of a trading voyage Hatshepsut sent to the land of Punt, probably on the Horn of Africa coast. The south colonnade of the middle terrace shows the ships, the stilted houses of Punt, its ruler with Queen Ati, and a cargo list including 31 living myrrh trees carried aboard with their roots wrapped."},{"id":"86d21cb4-2429-5c61-be61-3957fb24c6a2","question":"Why was Hatshepsut''s name erased from her temple?","answer":"It was chiselled out late in the reign of Thutmose III, roughly 20 years after her death, and her statues were smashed and buried in a pit outside. The old revenge story does not fit that 20 year gap. The likelier reason is dynastic, removing a female king so the succession reads cleanly from father to son."},{"id":"9da4fb7a-d321-5565-9dc2-22b20d398069","question":"What is the best time of day to visit?","answer":"Opening time, without qualification. The temple sits in a bay facing east with a 300 metre cliff behind it that reflects heat back onto the terraces, and there is no shade outside the 2 small chapels. By 10am in spring the stone is uncomfortable to touch, and there is nowhere to escape it."},{"id":"4181b549-e5fa-5117-8e76-806bba346e7b","question":"How much of the temple is original?","answer":"A great deal, but the upper colonnade in particular has been substantially reassembled. A Polish and Egyptian mission has worked on the site since 1961, rebuilding from fallen blocks found on the ground. The restoration is documented rather than disguised, and the joins between ancient and replaced stone are visible up close."},{"id":"59deec34-8202-5902-b5f1-dcc81aa3bf6e","question":"Is Hatshepsut buried at her temple?","answer":"No. A mortuary temple was where a ruler''s cult was maintained, not where the body went. Her tomb, KV20, is in the royal valley on the far side of the same hill, roughly 1 kilometre away through the rock, and it is not normally open to visitors. Her architect Senenmut cut his own tomb under the forecourt."}]'::jsonb,
   'BlogPosting'
 ),
@@ -336,7 +351,22 @@ INSERT INTO posts (
   'Memphis egypt was the country''s first capital, founded around 3100 BC beside the Nile. What survives at Mit Rahina today, and why the cemeteries outlived it.',
   'published',
   '2026-12-05T09:00:00+02:00'::timestamptz,
-  '2026-12-05T09:00:00+02:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-12-05T09:00:00+02:00'::timestamptz,
+  '2026-12-05T09:00:00+02:00'::timestamptz,
   '[{"id":"b07c0781-3b18-544f-955f-a3e121e52661","question":"Where is Memphis in Egypt?","answer":"On the west bank of the Nile about 25 kilometres south of central Cairo, centred on the villages of Mit Rahina and Badrashein in Giza Governorate. The drive takes roughly 45 minutes depending on traffic. Saqqara is 3 kilometres further and Dahshur about 10 beyond that, so all 3 sit on 1 route."},{"id":"9b8a78a0-979b-5bdc-839e-cb929e8382d0","question":"What is the difference between Memphis Egypt and Memphis Tennessee?","answer":"One is an ancient Egyptian city founded around 3100 BC on the Nile, the other an American one named after it in 1819. They share a name and nothing else. Egypt''s Memphis was the capital for most of 3000 years and is now the village of Mit Rahina, 25 kilometres south of Cairo."},{"id":"1d074937-09ca-5f25-8079-92fd636ea9c5","question":"What is left of ancient Memphis today?","answer":"A museum garden and a great deal of unexcavated ground. The garden holds a 10 metre fallen colossus of Ramesses II under a roof, an alabaster sphinx of around 80 tonnes, sarcophagi, column capitals and the Apis bull embalming table. The city itself lies under farmland and villages, much of it below the water table."},{"id":"dd06a4ea-5ba4-5063-ac1e-ab753f3d66d7","question":"Why was Memphis the capital of Egypt?","answer":"Because of where it sits. The site is the hinge between the narrow Nile valley and the Delta, so anything moving north or south on the river passes it, and whoever holds it controls both halves of the country. It was founded as a unification capital around 3100 BC for exactly that reason."},{"id":"7eac8c9e-9150-50ab-af07-32a578be5d81","question":"Which is better to visit, Memphis or Saqqara?","answer":"Saqqara, clearly, and they are not really alternatives. Saqqara is a vast necropolis worth 2 or 3 hours. Memphis takes 40 minutes and is the city those tombs belonged to. Visiting Memphis first is what makes Saqqara legible, so the answer for most people is both, in that order."},{"id":"79d87bfe-ac8c-5dfc-b00f-94ad947c80e3","question":"Why did Memphis disappear?","answer":"3 reasons together. It was built in mud brick, which does not survive. Its stone was quarried away for medieval Cairo after Alexandria and then Fustat drew power elsewhere. And the Nile shifted east while the water table rose, leaving much of the remaining city waterlogged and beyond current excavation methods."},{"id":"60184509-cf0b-5d39-b022-ff6a2b02d13b","question":"Does the word Egypt come from Memphis?","answer":"Indirectly, yes, through 1 temple. The building at the city''s centre was Hut ka Ptah, the house of the spirit of Ptah. Greek speakers rendered that as Aigyptos, which became Egypt in English and its equivalents across Europe. The Arabic name Misr comes from a separate Semitic root thousands of years older."},{"id":"99080fc7-269d-5c67-8c06-966793ce3a3b","question":"How long should you spend at Memphis?","answer":"About 40 minutes, as the first of 3 stops on a day trip. 15 minutes in the colossus hall, 10 at the alabaster sphinx, the rest in the garden. Building 2 hours into a schedule for it wastes time that Saqqara, 3 kilometres up the road, will use far better."}]'::jsonb,
   'BlogPosting'
 ),
@@ -448,7 +478,22 @@ INSERT INTO posts (
   'Deir el medina housed the men who cut the royal tombs, and they left the best record of daily life in Egypt. What survives, and which tombs to ask for.',
   'published',
   '2026-12-10T09:00:00+02:00'::timestamptz,
-  '2026-12-10T09:00:00+02:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-12-10T09:00:00+02:00'::timestamptz,
+  '2026-12-10T09:00:00+02:00'::timestamptz,
   '[{"id":"011e53ff-aef5-5f4b-aead-103d017e07d9","question":"What is Deir el Medina?","answer":"The walled village of the craftsmen who cut and decorated the royal tombs at Luxor, occupied for about 450 years from the early Eighteenth Dynasty. Around 70 houses line a single street, with up to 120 at its peak. Its ancient name was Set Maat, the place of truth, and the men worked an 8 day week."},{"id":"4d447041-c335-529d-9fa5-2753bbd6aadd","question":"Is Deir el Medina worth visiting?","answer":"Yes, and it is the most human site on the west bank. The ruins themselves are low walls, so the value is in what was found here: tens of thousands of written notes covering wages, absences, lawsuits and love poems. Allow 90 minutes with 2 of the painted tombs and the small Ptolemaic temple."},{"id":"ec1147c3-277b-52b1-84fc-3b22c5bf03f6","question":"Which is better, Deir el Medina or the Valley of the Kings?","answer":"The royal valley for spectacle, this village for understanding it. They are 2 halves of 1 story, since the men who lived here cut those tombs and walked over the hill to work. If you have 2 west bank mornings, do the tombs first and the village second, when you know what they made."},{"id":"4efe1cef-5a7a-5a06-bf6a-3227654c8d58","question":"Which tombs are open at Deir el Medina?","answer":"Usually 2 of 3, sold in pairs and rotated. Sennedjem TT1 has a vaulted chamber painted on every surface with the owner ploughing in the Field of Reeds. Pashedu TT3 shows him drinking from a pool under a date palm. Inherkhau TT359 has the great cat killing the serpent Apophis."},{"id":"9d2558ba-dd55-50de-84d9-47f7759123aa","question":"What are ostraca and why do they matter?","answer":"Flakes of limestone and broken pottery used as free scrap paper by the villagers. Tens of thousands survive, many from 1 rubbish filled shaft, and they are notes rather than official records: work rosters, absence registers giving reasons such as a scorpion bite, laundry lists, sketches and poetry. Nothing else from ancient Egypt records daily life at this level."},{"id":"ea0b3781-4da2-5544-a68b-774adf803281","question":"Was there really a strike in ancient Egypt?","answer":"Yes, in year 29 of Ramesses III, around 1157 BC. Rations arrived late, the workmen walked out and sat down at the mortuary temples until they were paid, and it happened more than once that year. The scribe Amennakht wrote it up on a papyrus now in Turin. It is the oldest documented labour action known."},{"id":"fecf30c7-30c8-5c11-a2b7-f15bfa796a4b","question":"Why is it called Deir el Medina if it was a workers village?","answer":"Because the name describes a later building. Deir means monastery in Arabic, and Coptic monks took over the small Ptolemaic temple of Hathor at the north end of the site centuries after the village was abandoned. The temple is roughly 1000 years younger than the houses it is named for."},{"id":"9244f81a-0cd9-5ddf-8253-f3326ca49ba0","question":"How long do you need at Deir el Medina?","answer":"About 60 minutes for the village and temple, or 90 with 2 tombs. The site is compact, with 1 street to walk and a short climb to the cemetery. There is no shade over the ruins and the valley is enclosed, so it is hotter by 10am than most west bank sites."}]'::jsonb,
   'BlogPosting'
 ),
@@ -558,7 +603,22 @@ INSERT INTO posts (
   'Most people treat bahariya oasis egypt as a fuel stop on the way to the desert. It has hot springs, a Greco Roman cemetery and dinosaurs. Stay a night instead.',
   'published',
   '2026-12-15T09:00:00+02:00'::timestamptz,
-  '2026-12-15T09:00:00+02:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-12-15T09:00:00+02:00'::timestamptz,
+  '2026-12-15T09:00:00+02:00'::timestamptz,
   '[{"id":"4541927c-4b06-54d4-b1a8-903b831ce7a8","question":"Is Bahariya Oasis worth staying in, or just passing through?","answer":"Worth at least 1 night and better with 2. Most visitors change vehicles and drive straight out to the desert, which misses the hot springs, the Greco Roman mummy museum, 2 open Twenty Sixth Dynasty tombs and the sunset view from the English Mountain. The springs alone justify the stop."},{"id":"ff437b03-2fbc-5d0c-80d1-113099edae09","question":"How far is Bahariya Oasis from Cairo?","answer":"About 365 kilometres southwest, which is 4 to 5 hours by road on tarmac the whole way. It is the closest of the Western Desert oases to the capital, and that proximity is why it became the gateway to the White Desert even though Farafra sits nearer to the chalk formations."},{"id":"c01bf5b3-6f27-5842-a4f9-6aed8b555a43","question":"What are the Golden Mummies of Bahariya?","answer":"A Greco Roman cemetery found in 1996 and excavated from 1999, dating roughly from the 1st to the 4th century AD. The name comes from gilded cartonnage masks over painted chest plates. Estimates run into the thousands of burials with only a fraction excavated, and a selection is displayed in a small museum in Bawiti."},{"id":"60ae6429-d5a0-5edc-aa9c-5a8d41ad23d2","question":"Which is better, Bahariya or Siwa?","answer":"Bahariya for a short trip, Siwa for a real one. Bahariya is 4 to 5 hours from Cairo and works as a 2 night stop attached to the desert. Siwa is roughly 10 hours away, has its own language and culture, a fortress town and a salt lake, and deserves 3 or 4 nights on its own terms."},{"id":"1e0d0a79-299f-59ab-8b63-562af01526c1","question":"Can you swim in the springs at Bahariya?","answer":"Yes, in several, and the 2 types are used differently. The cold springs such as Bir al Ghaba are for swimming, and the hot boreholes such as Bir Sigam are for soaking, with some running too hot to enter immediately. These are semi public places in a conservative rural area, so women should plan to swim covered or choose a hotel with its own pool."},{"id":"9ac5ce89-9736-574f-be62-316e03ed631d","question":"What kind of hotels are there in Bahariya?","answer":"Small, simple and family run, often mud brick, with several out in the palm groves rather than in Bawiti itself. There is no international chain and no bar. The 1 feature worth asking about is whether the property has its own spring fed pool, because that decides what the evenings are like."},{"id":"2e1ae67f-0036-52f2-8f94-00b6788a7443","question":"When is the best time to visit Bahariya Oasis?","answer":"December to February, with warm days around 20 degrees and cold nights. That is also the season for the desert camping most visitors combine it with. Summer from June to August is very hot, the region slows down, and most desert operators suspend overnight trips into the sand altogether."},{"id":"5f0e1a52-ff6b-5466-b05d-b4160952d394","question":"Do you need cash in the oasis?","answer":"Yes, and this catches people out. Card acceptance in Bahariya is limited in a way it no longer is in Cairo or Luxor, and the small hotels, the museum, the tomb tickets and the springs are cash places. Draw what you need for 2 or 3 days before leaving the capital."}]'::jsonb,
   'BlogPosting'
 )

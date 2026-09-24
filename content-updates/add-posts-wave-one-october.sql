@@ -59,7 +59,7 @@ BEGIN;
 INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, published_at, faqs, schema_type
+  status, scheduled_at, published_at, updated_at, faqs, schema_type
 ) VALUES
 (
   'valley-of-the-queens',
@@ -177,7 +177,22 @@ INSERT INTO posts (
   'The valley of the queens holds the best preserved painted tomb in Egypt. Which tombs open, what the Nefertari ticket buys, and the hour to be at the gate.',
   'published',
   '2026-10-15T09:00:00+03:00'::timestamptz,
-  '2026-10-15T09:00:00+03:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-10-15T09:00:00+03:00'::timestamptz,
+  '2026-10-15T09:00:00+03:00'::timestamptz,
   '[{"id":"970bf2ef-bf02-5ec4-bfd6-b4081e4b922d","question":"Is the Valley of the Queens worth visiting?","answer":"Yes, mainly for 1 tomb. Nefertari''s QV66 is the best preserved painted interior surviving from the ancient world, with around 500 square metres of original colour. The 3 tombs on the general ticket take about 40 minutes between them and are genuinely good, but they are not the reason to make the trip."},{"id":"45001098-ba60-5783-a9e4-c16397dbf1a8","question":"Which is better, the Valley of the Queens or the Valley of the Kings?","answer":"The Kings for scale and for the number of tombs open, the Queens for the single finest painted interior in Egypt. Most visitors with 2 west bank mornings do both. With only 1 morning, the royal tombs give you more for the time, unless painted decoration is specifically why you came."},{"id":"87dee58b-ad98-5b0b-be13-89e85e261330","question":"How much does the Nefertari tomb ticket cost?","answer":"It is sold separately from the general valley ticket and is several times the price of any other single entry on the west bank. The exact figure is revised most years, so confirm it within about 1 month of travelling. Daily visitor numbers are capped, which is the more important practical point."},{"id":"e33fb15c-2660-5de8-8fd7-3d2941fe01ee","question":"How long can you stay inside Nefertari''s tomb?","answer":"Around 10 minutes per group, and the limit is enforced. Entry numbers are capped each day and the stay is kept short because breath and body heat raise humidity, which is what damaged the plaster in the first place. Plan what you want to look at before you go down the stair."},{"id":"f8b56d65-d505-5e7d-babc-c47ac337f5bf","question":"Which tombs are open in the Valley of the Queens?","answer":"Usually 4. Nefertari''s QV66 on its own ticket, plus QV55 for prince Amunherkhepshef, QV44 for prince Khaemwaset and QV52 for Queen Tyti on the general ticket. The 3 on the general ticket rotate for conservation, so the exact set changes and is confirmed at the gate on the day."},{"id":"d6f0edcd-00e5-5563-bcb3-9c5edc1c1303","question":"How long do you need at the Valley of the Queens?","answer":"About 90 minutes with the Nefertari ticket, or 45 without it. The 3 general ticket tombs are small and shallow, taking roughly 10 minutes each, and the walk from the gate to the furthest open tomb is only a few hundred metres of level ground. Allow longer in summer for the heat."},{"id":"1bcf00cc-a4bb-5861-b25b-7b42b50961a2","question":"What is the best time of day to visit?","answer":"Opening time, and it is not close. The valley is a bowl with almost no shade and it holds heat badly, so between April and October the 3 hours after 8am are the difference between comfortable and unbearable. Late afternoon is the fallback, but last entry is earlier than most people expect."},{"id":"122cb37c-b93a-5d39-be0e-2eab0921130e","question":"Where is the Valley of the Queens?","answer":"On the Theban west bank at Luxor, at the southern end, about 1 kilometre past the temple of Medinet Habu on a short spur road. It is the furthest of the main west bank sites from the Nile ferry crossing, which is 1 reason itineraries drop it when a morning runs late."}]'::jsonb,
   'BlogPosting'
 ),
@@ -281,7 +296,22 @@ INSERT INTO posts (
   'An egypt diving red sea primer: water temperature month by month, which wrecks and reefs are worth the boat time, and how a few dive days follow a Nile week.',
   'published',
   '2026-10-16T09:00:00+03:00'::timestamptz,
-  '2026-10-16T09:00:00+03:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-10-16T09:00:00+03:00'::timestamptz,
+  '2026-10-16T09:00:00+03:00'::timestamptz,
   '[{"id":"67efc13a-32f9-5e13-82d7-0396f0ebcd65","question":"When is the best time for diving in the Red Sea in Egypt?","answer":"Spring and autumn. March to May and September to November give water around 25 to 27 degrees, air that is warm without being punishing, and the calmest crossings to offshore sites. July and August have the warmest water at 28 or 29 degrees but brutal air temperatures, and winter drops to about 22 with more wind cancellations."},{"id":"cab21693-7cfb-548a-8582-6e19fdb0c0e7","question":"Do you need a diving licence to dive in the Red Sea?","answer":"Not for an introductory dive, which takes an afternoon, reaches about 6 metres and is run with an instructor alongside you. Anything beyond that needs certification. A full open water course takes 3 to 4 days here, covering theory, confined water sessions and 4 open water dives, and the conditions make it an easy place to learn."},{"id":"8b79987a-4177-526e-a35c-36327a824544","question":"Which is better for diving, Hurghada or Marsa Alam?","answer":"Hurghada for convenience, Marsa Alam for the diving itself. Hurghada has the most flights, the most dive centres and transfers measured in minutes. Marsa Alam is 3 to 4 hours further south with fewer boats on better reefs, plus Elphinstone and the dugong seagrass beds. First trip, Hurghada. Second trip, go south."},{"id":"4b0c09e3-452e-5a30-b746-3ac3c5971283","question":"Is the Thistlegorm worth the trip?","answer":"Yes, and it is the 1 dive most people plan a whole week around. A British supply ship sunk in 1941, sitting upright in about 30 metres with motorcycles, trucks and railway stock still in the holds. It is a long day boat run from Sharm el Sheikh or an overnight trip from Hurghada, and the early dive beats the crowd."},{"id":"cf6b0096-b560-55d4-924b-7a3c48907a57","question":"How long should you allow for a diving stop in Egypt?","answer":"3 days minimum, 5 if the diving is the point of the trip. 2 days leaves no margin, and 1 windy day on this coast cancels the offshore sites and turns a short stop into nothing. 3 days gives you 5 or 6 dives plus a buffer for weather."},{"id":"ddca129e-05cc-5d97-8bd8-03482fe09a0b","question":"How long after diving can you fly?","answer":"At least 18 hours after repetitive diving, and many operators ask for 24 after several days in the water. This is the most common planning mistake on the Red Sea coast, because it means your last dive cannot be the day before an international flight home. Build the final 2 days of the itinerary around it."},{"id":"7d457af5-00b9-57d5-9622-db11ea7f2305","question":"Are there sharks in the Egyptian Red Sea?","answer":"Yes, and encounters are uncommon rather than routine. Oceanic whitetips appear around offshore pinnacles such as Elphinstone in autumn, and reef sharks turn up on southern sites. Grey reef and whitetip reef sharks are the usual sightings. The 3 big offshore reefs are where the odds are best, and they are advanced dives with current."},{"id":"5e60ad78-78c4-51c2-8a1a-f6dc5ef4063a","question":"Can you snorkel instead of diving?","answer":"Yes, and on this coast it is a real alternative rather than a consolation. The reef tops sit in 3 to 5 metres of water carrying the same fish life the divers see below them. Several resorts have house reefs you walk into from the beach, and a boat snorkel day covers 2 or 3 sites."}]'::jsonb,
   'BlogPosting'
 ),
@@ -391,7 +421,22 @@ INSERT INTO posts (
   'The black and white desert egypt route runs from volcanic hills to chalk towers in a single afternoon. Distances, the overnight camp, and what the cold does.',
   'published',
   '2026-10-19T09:00:00+03:00'::timestamptz,
-  '2026-10-19T09:00:00+03:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-10-19T09:00:00+03:00'::timestamptz,
+  '2026-10-19T09:00:00+03:00'::timestamptz,
   '[{"id":"478ce8f0-f712-5781-a38b-daa4f3a0fd75","question":"Is the Black and White Desert worth the trip from Cairo?","answer":"Yes, if you can give it 2 nights. It is a 4 to 5 hour drive each way to Bahariya, and a day trip that turns round mid afternoon misses the last hour of light and the night sky, which are the 2 best parts. With 2 nights it is the strongest landscape contrast available to a temple itinerary."},{"id":"2bdd87a6-3ba8-50c3-bc0d-e84a9243ac00","question":"Which is better, the White Desert or Siwa Oasis?","answer":"Different trips entirely. The White Desert is 1 extraordinary landscape and a night camping in it, reachable in 2 or 3 days from Cairo. Siwa is a town, a culture, springs and a salt lake, roughly 10 hours from Cairo and worth 3 or 4 nights. Choose the desert for scenery, Siwa for place."},{"id":"1f533b2f-9979-5ae5-9469-7e74a43b348a","question":"How cold does it get camping in the White Desert?","answer":"Close to freezing on winter nights, from December to February, with wind. Daytime in those months is pleasant at around 20 degrees, which catches people out. Pack a down or fleece layer, a hat, socks to sleep in and a windproof shell. Camps supply blankets but they are not sleeping bags."},{"id":"022479df-d92e-5fd8-aaf2-4c04c4139fdc","question":"Can you camp in the White Desert independently?","answer":"No. It has been a national park since 2002 and overnight stays run through licensed operators who hold the permits. The practical reasons are the same as the legal ones: there is no phone signal, no water and no marked track, and the off road driving between formations needs someone who knows the ground."},{"id":"69d0eb79-74d6-5e54-8bbe-8a5cbc892041","question":"How long does the Black and White Desert trip take?","answer":"2 nights is the realistic minimum and 3 is better. Day 1 is the 5 hour drive from Cairo plus the Black Desert and Crystal Mountain, night 1 is the camp, day 2 covers sunrise and the drive back. A third day adds Bahariya itself, including the springs and the Golden Mummies museum."},{"id":"4ad771be-8101-5535-82de-c9155915cdcb","question":"What is the Black Desert made of?","answer":"Dark dolerite, a volcanic rock, broken into fragments that cap and coat hundreds of low conical hills over an orange sandstone plain. It sits about 20 minutes south of Bahariya. The smaller cones take around 10 minutes to climb and the view from the top across the rest of the field is what the stop is for."},{"id":"e5445319-daa9-537b-9b80-08de8e52da9d","question":"What is the best time of year to visit the Western Desert?","answer":"October to November and March to May. Those 4 months give warm days around 25 degrees and cold but tolerable nights. December to February has the most comfortable daytime temperatures but nights near freezing. June to August is genuinely dangerous in open desert and most operators suspend overnight trips then."},{"id":"7e545ba5-e535-541e-9e82-740d5d9180df","question":"Is there phone signal or electricity at the camps?","answer":"Neither. Camps are temporary, carried in and out by the operator, with no structures, no plumbing and no power beyond a vehicle. Bring a power bank and a head torch. The lack of signal is the trade for the 1 thing everybody remembers, which is a sky with no light pollution for 100 kilometres."}]'::jsonb,
   'BlogPosting'
 ),
@@ -493,7 +538,22 @@ INSERT INTO posts (
   'The tombs of the nobles show harvests, banquets and hunting rather than gods. Which chambers to pick on the Luxor hillside, plus the cliff tombs above Aswan.',
   'published',
   '2026-10-21T09:00:00+03:00'::timestamptz,
-  '2026-10-21T09:00:00+03:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-10-21T09:00:00+03:00'::timestamptz,
+  '2026-10-21T09:00:00+03:00'::timestamptz,
   '[{"id":"9066134a-1f75-5bda-89e6-30c937a812d8","question":"Are the Tombs of the Nobles worth visiting?","answer":"Yes, and they answer a different question from the royal tombs. These are painted with harvests, banquets, craftsmen and cattle counts rather than gods, so they show how Egypt worked rather than what it believed. 3 tombs take about 90 minutes and you will often share the hillside with almost nobody."},{"id":"f7ff86b7-4626-5c01-8da3-d58b0664b03f","question":"Which is better, the Tombs of the Nobles or the Valley of the Kings?","answer":"The royal valley for scale and for the sheer ambition of the decoration, the nobles'' hill for daily life and for colour on flat plaster. Most visitors with 2 west bank mornings do both. With only 1 morning the royal tombs win, but the officials'' chambers are the better second visit."},{"id":"19161266-d1ee-5186-ae86-2217c92845fd","question":"Which Tombs of the Nobles should you choose?","answer":"Nakht TT52, Menna TT69, Ramose TT55 and Rekhmire TT100. Nakht holds the blind harper and the 3 musicians. Menna has the harvest sequence. Ramose has the unfinished wall where Egyptian art visibly changes mid room. Rekhmire covers foreign tribute and craftsmen. Tickets are sold in groups of 2 or 3, so the combinations decide part of it."},{"id":"4808167d-ce02-500d-879a-2327ef7a7cff","question":"How long do you need at the Tombs of the Nobles?","answer":"About 90 minutes for 3 tombs. Each chamber takes roughly 10 to 15 minutes, and the rest is walking between entrances on a dusty slope. The tombs are small, with low ceilings that require stooping in places, so the time is spent looking rather than covering ground."},{"id":"0eee5bbf-b81d-59a9-96f8-7993ebda7ca5","question":"Where are the Tombs of the Nobles at Aswan?","answer":"At Qubbet el Hawa, in the cliff on the west bank of the Nile opposite Aswan town. They hold the Old and Middle Kingdom governors of Elephantine, including Harkhuf, who led 4 expeditions into Nubia. Reaching them means a boat across the river and a climb, and the view over the cataract is worth it."},{"id":"f974a610-d84c-5248-b7bf-f5b3a015c284","question":"Can you take photographs inside?","answer":"In some chambers yes, in others no, and the rule changes from year to year. Where it is allowed a separate photo ticket is usually required, and guardians enforce whatever the current arrangement is rather than last season''s. Carry a torch either way, because lighting is minimal and the best details sit 2 metres or more above your head."},{"id":"496ec524-4042-5d66-9d9f-487eb78e156d","question":"Why is the painting so well preserved?","answer":"Because it is paint on plaster in sealed chambers rather than relief cut into stone exposed to weather. The limestone of this hill is poor quality, so decorators plastered the walls first. The colour has barely faded in over 3000 years, and in the better tombs it looks close to the day it was applied."},{"id":"7fff2a2a-3154-5a2e-bc18-4f203742ca92","question":"Where exactly is the Luxor site?","answer":"In the hill of Sheikh Abd el Qurna on the Theban west bank, between the Ramesseum and the approach road to Hatshepsut''s temple. Several hundred tombs are cut into the slope, with numbers running past 400, and a handful are open at any time. Every standard west bank itinerary drives past the entrance."}]'::jsonb,
   'BlogPosting'
 ),
@@ -597,7 +657,22 @@ INSERT INTO posts (
   'The open air museum memphis egypt keeps at Mit Rahina holds a fallen colossus and an alabaster sphinx. What is there, how long it takes, what to pair it with.',
   'published',
   '2026-10-24T09:00:00+03:00'::timestamptz,
-  '2026-10-24T09:00:00+03:00'::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  '2026-10-24T09:00:00+03:00'::timestamptz,
+  '2026-10-24T09:00:00+03:00'::timestamptz,
   '[{"id":"58d47270-f800-5e76-a949-f5be7f462bf4","question":"Is the Memphis open air museum worth visiting?","answer":"Yes, as a 40 minute stop rather than a destination. It holds 2 objects of the first rank, a 10 metre fallen colossus of Ramesses II and the largest known alabaster statue, and it gives Saqqara 3 kilometres away the context it otherwise lacks. Visited on its own it will feel thin."},{"id":"dee49ff6-7f5c-5112-8b5f-40410492159a","question":"How long do you need at Memphis?","answer":"About 40 minutes. 15 in the colossus hall, 10 around the alabaster sphinx, and the rest walking the garden of statuary and sarcophagi. There is a small indoor room that takes 5 minutes. Nobody needs longer, and building an hour and a half into a schedule for it wastes time better spent at Saqqara."},{"id":"7149bce0-a9eb-56d6-93a9-5b14fc7eae21","question":"Which is better, Memphis or Saqqara?","answer":"Saqqara, by a wide margin, and the honest answer is that they are not alternatives. Saqqara is a vast necropolis worth 2 or 3 hours. Memphis is the city those tombs belonged to and takes 40 minutes. Doing Memphis first makes Saqqara make sense, which is the whole argument for the stop."},{"id":"6808e2df-fe2f-5e0e-8d39-3682118473c1","question":"What is on display at the Memphis museum?","answer":"2 major objects and a garden of fragments. The fallen limestone colossus of Ramesses II sits in a covered hall with a viewing gallery. The alabaster sphinx of around 80 tonnes stands outside. Around them are sarcophagi, Hathor headed capitals and sphinxes, plus the alabaster embalming table used for the Apis bulls, which most people walk straight past."},{"id":"f510d8d2-8ed9-5189-b393-d1e16235d889","question":"Why is so little of ancient Memphis left?","answer":"It was built in mud brick, and the stone that was not mud brick was quarried away to build medieval Cairo. The capital stood for over 2000 years, and what remains above ground today is a village, palm groves and farmland. The water table has risen since antiquity, leaving much of the city waterlogged."},{"id":"2d09b281-c132-5d74-8211-9209b01b2b92","question":"How far is Memphis from Cairo?","answer":"Roughly 25 kilometres south of central Cairo, at the village of Mit Rahina, which is about 45 minutes by road depending on traffic. Saqqara is 3 kilometres further and Dahshur about 10 beyond that, so all 3 sit on 1 route and are normally done as a single day trip."},{"id":"508122ff-8f7c-5157-99a9-4855c9203e40","question":"Can you stand the Ramesses colossus upright?","answer":"No, because its lower legs are missing. It was found face down in mud in 1820 and has been displayed lying on its back ever since, now under a purpose built roof with a raised walkway along 1 side. A second colossus from the same site was moved to the new museum near the pyramids."},{"id":"ba1c5e97-9c54-5847-abe2-a22517b8b014","question":"Is the site accessible for limited mobility?","answer":"Largely yes, which is unusual for an ancient site here. The garden is flat, the distances are short, and the colossus hall has a ramp as well as steps up to the viewing gallery. Saqqara, the next stop on most itineraries, is the opposite, with sand, steep descents and 1 long climb."}]'::jsonb,
   'BlogPosting'
 )

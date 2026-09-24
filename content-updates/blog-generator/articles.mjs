@@ -43,12 +43,17 @@ import a35 from "./a35.mjs";
 import a36 from "./a36.mjs";
 import a37 from "./a37.mjs";
 import a38 from "./a38.mjs";
+import a39 from "./a39.mjs";
+import a40 from "./a40.mjs";
+import a41 from "./a41.mjs";
+import a42 from "./a42.mjs";
+import a43 from "./a43.mjs";
 
 // a14 onwards are the two later waves. They are APPENDED rather than slotted
 // into date order, so the 13 files above regenerate byte for byte. The order of
 // this array no longer matches the order of publication, which is why gen.mjs
 // validates "does this link point at something already live" by date.
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38];
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
@@ -114,6 +119,15 @@ export const SCHEDULE = [
   LIVE, // private-tours-in-cairo-egypt
   LIVE, // tailor-made-egypt-tours
   LIVE, // currency-in-egypt
+
+  // The Nile cluster. New posts, one every three days from 3 November.
+  // +02:00 on every row: Egypt leaves summer time on 30 October 2026, so
+  // these are the first batch where 09:00 Cairo is +02:00 rather than +03:00.
+  "2026-11-03T09:00:00+02:00", // dahabiya-nile-cruise
+  "2026-11-06T09:00:00+02:00", // nile-cruise-luxor-to-aswan
+  "2026-11-09T09:00:00+02:00", // 7-night-nile-cruise
+  "2026-11-12T09:00:00+02:00", // lake-nasser-cruise
+  "2026-11-15T09:00:00+02:00", // best-time-to-go-to-egypt-nile-cruise
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.

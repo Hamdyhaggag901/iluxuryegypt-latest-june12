@@ -645,6 +645,28 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
           Boolean(f && f.question?.trim() && f.answer?.trim())
       );
       const graph: object[] = [jsonLd];
+
+      // A post may carry extra JSON-LD of its own in schema_markup: today that
+      // is the ItemList on each cluster pillar, naming the articles under it in
+      // order. It is appended rather than substituted, so a pillar keeps its
+      // BlogPosting, its FAQPage and its BreadcrumbList and gains one node.
+      //
+      // Parsed here rather than trusted, because this column is editable in the
+      // admin and a malformed override would otherwise put broken JSON into
+      // every crawl of the page. Bad JSON is dropped with a log and the rest of
+      // the graph still renders.
+      const rawSchema = post.schemaMarkup?.trim();
+      if (rawSchema) {
+        try {
+          const extra: unknown = JSON.parse(rawSchema);
+          for (const node of Array.isArray(extra) ? extra : [extra]) {
+            if (node && typeof node === "object") graph.push(node as object);
+          }
+        } catch {
+          console.error(`[seo-meta] /blog/${post.slug}: schema_markup is not valid JSON, ignoring it`);
+        }
+      }
+
       if (postFaqs.length > 0) {
         graph.push({
           "@context": "https://schema.org",

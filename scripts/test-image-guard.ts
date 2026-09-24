@@ -907,5 +907,57 @@ for (const [label, desc, guard] of RIGHT_REWRITES) {
   }
 }
 
+// ---------------------------------------------------------------------------
+console.log("\nO. The Nile cluster\n");
+// ---------------------------------------------------------------------------
+const NILE_CLUSTER = [
+  "dahabiya-nile-cruise", "nile-cruise-luxor-to-aswan", "7-night-nile-cruise",
+  "lake-nasser-cruise", "best-time-to-go-to-egypt-nile-cruise",
+];
+{
+  const missing = NILE_CLUSTER.filter((slug) => !POSTS.some((p) => p.slug === slug));
+  ok("all five Nile cluster articles have image specs", missing.length === 0, missing.join(", "));
+}
+for (const [label, desc, guard] of [
+  ["a Maldives sailing boat for the Nile",
+   "a traditional sailing boat on turquoise water in the Maldives",
+   guardFor("dahabiya-nile-cruise", "Nile River")],
+  ["a cruise ship for a dahabiya",
+   "a large white cruise ship moored on the Nile at Luxor, Egypt",
+   guardFor("dahabiya-nile-cruise", "Nile River")],
+  ["Lake Qarun for Lake Nasser again",
+   "Lake Qarun in the Faiyum, Egypt, water and shore",
+   guardFor("lake-nasser-cruise", "Lake Nasser")],
+  ["Nasser Square in Cairo for the lake",
+   "Nasser square in central Cairo, Egypt",
+   guardFor("lake-nasser-cruise", "Lake Nasser")],
+  ["Edfu standing in for Kom Ombo",
+   "the Temple of Horus at Edfu, Egypt, pylon and courtyard",
+   guardFor("nile-cruise-luxor-to-aswan", "Kom Ombo")],
+  ["Karnak for the Theban hills",
+   "Karnak temple columns in Luxor, Egypt",
+   guardFor("best-time-to-go-to-egypt-nile-cruise", "Theban hills")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is rejected", !v.ok, v.ok ? "WRONGLY ACCEPTED" : `(${v.reason})`);
+}
+for (const [label, desc, guard] of [
+  ["a sailing boat on the Nile",
+   "a traditional wooden sailing boat with a lateen sail on the Nile river in Egypt",
+   guardFor("dahabiya-nile-cruise", "Nile River")],
+  ["Lake Nasser itself",
+   "Lake Nasser seen from the shore near Abu Simbel in Egypt",
+   guardFor("lake-nasser-cruise", "Lake Nasser")],
+  ["Kom Ombo itself",
+   "carved relief on a temple wall at Kom Ombo, Egypt",
+   guardFor("nile-cruise-luxor-to-aswan", "Kom Ombo")],
+  ["Dendera's ceiling",
+   "the painted astronomical ceiling of the temple at Dendera, Egypt",
+   guardFor("7-night-nile-cruise", "Dendera")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);
 process.exit(fails === 0 ? 0 : 1);

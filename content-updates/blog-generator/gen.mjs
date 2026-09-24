@@ -1,4 +1,4 @@
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
   ARTICLES, SCHEDULE, LIVE, TOUR_SLUGS, DESTINATION_SLUGS,
@@ -70,18 +70,148 @@ const HOMEPAGE_KEYWORDS = [
   "egypt private tours",
   "egypt luxury private tours",
   "luxury egypt vacation packages",
-  "luxury dahabiya nile cruise",
   "egypt private tour guide",
 ];
+
+// "luxury dahabiya nile cruise" used to be the fifth entry above. The owner
+// moved it off the homepage and onto /blog/dahabiya-nile-cruise, which is a
+// 720 a month head term the homepage was never going to rank for while also
+// selling five other things. Only that article may use the phrase, so it is
+// reserved TO a slug rather than FROM every slug.
+const KEYWORDS_OWNED_BY_ONE_ARTICLE = {
+  "luxury dahabiya nile cruise": "dahabiya-nile-cruise",
+};
+
+// ---------------------------------------------------------------------------
+// Page furniture
+// ---------------------------------------------------------------------------
+// An article written from October 2026 onwards supplies `takeaways` and
+// `related` and gets its table of contents, its key takeaways box, its author
+// line and its related posts block BUILT here rather than typed into the body.
+//
+// Built rather than written because three of the four have to agree with
+// something else and a human cannot be relied on to keep them agreeing: the
+// contents list has to name exactly the H2s that exist, in order, with ids
+// that match; the author line has to carry the same date as dateModified; and
+// the related block has to stay inside the article's own cluster. An article
+// without `takeaways` is one of the 38 written before this existed and is
+// passed through untouched, so none of those files change.
+
+// Paths that 301 somewhere else. Parsed out of server/path-redirects.ts and
+// server/tour-redirects.ts rather than copied, because a copy drifts and the
+// drift is invisible: a link to an old path still works, it just spends a
+// redirect on every reader and every crawl, and nothing ever complains.
+const REDIRECTED_PATHS = (() => {
+  const root = "/home/user/iluxuryegypt-latest-june12/server";
+  const paths = new Set();
+  const src = readFileSync(`${root}/path-redirects.ts`, "utf8");
+  for (const block of ["EXACT_PATH_REDIRECTS", "CHILD_PATH_REDIRECTS", "PATH_PREFIX_REDIRECTS"]) {
+    const m = src.match(new RegExp(block + "[^=]*= \\{([\\s\\S]*?)\\n\\};"));
+    if (m) for (const e of m[1].matchAll(/"([^"]+)":\s*"[^"]+"/g)) paths.add(e[1]);
+  }
+  const tours = readFileSync(`${root}/tour-redirects.ts`, "utf8");
+  for (const e of tours.matchAll(/^\s+"([a-z0-9-]+)":\s*"[a-z0-9-]+",/gm)) paths.add(`/${e[1]}`);
+  return paths;
+})();
+
+const AUTHOR_NAME = "Hamdy Haggag";
+const AUTHOR_BIO =
+  "Written by Hamdy Haggag, who has planned and run private journeys in Egypt " +
+  "for more than a decade and still takes the first call for every itinerary.";
+
+/** A stable, readable id for an H2, unique within its own page. */
+function headingId(text, taken) {
+  const base = strip(text).toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "section";
+  let id = base, n = 2;
+  while (taken.has(id)) id = `${base}-${n++}`;
+  taken.add(id);
+  return id;
+}
+
+/**
+ * The body as it is actually stored: prose plus furniture.
+ *
+ * Returns the prose separately so the word range is measured on what the
+ * author wrote plus the takeaways, and not on a contents list and a byline.
+ */
+function renderBody(a, publishDate) {
+  if (!a.takeaways) return { body: a.body, prose: a.body, toc: [] };
+
+  const taken = new Set();
+  const toc = [];
+  const withIds = a.body.replace(/<h2>(.*?)<\/h2>/g, (_m, inner) => {
+    const id = headingId(inner, taken);
+    toc.push({ id, text: strip(inner) });
+    return `<h2 id="${id}">${inner}</h2>`;
+  });
+
+  const date = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Cairo", day: "numeric", month: "long", year: "numeric",
+  }).format(new Date(publishDate));
+
+  // The byline carries the same date as dateModified in the schema, which the
+  // wave SQL sets to the publication date rather than to the moment the row
+  // was inserted. A visible date that disagrees with the one in the JSON-LD is
+  // the kind of mismatch that gets a rich result dropped.
+  const byline =
+    `<p class="post-byline">By <span>${AUTHOR_NAME}</span>. ` +
+    `Last updated: <time datetime="${String(publishDate).slice(0, 10)}">${date}</time>.</p>`;
+
+  const takeaways =
+    `<aside class="key-takeaways" aria-label="Key takeaways">` +
+    `<h2 id="key-takeaways">Key takeaways</h2><ul>` +
+    a.takeaways.map((t) => `<li>${t}</li>`).join("") +
+    `</ul></aside>`;
+
+  const contents =
+    `<nav class="toc" aria-label="On this page"><p>On this page</p><ol>` +
+    toc.map((h) => `<li><a href="#${h.id}">${h.text}</a></li>`).join("") +
+    `</ol></nav>`;
+
+  const related =
+    `<aside class="related-posts" aria-label="Related reading">` +
+    `<h2 id="related-reading">Related reading</h2><ul>` +
+    a.related.map((r) => `<li><a href="${r.href}">${r.anchor}</a></li>`).join("") +
+    `</ul></aside>`;
+
+  const bio = `<p class="author-bio">${AUTHOR_BIO}</p>`;
+
+  // Order matters. The 40 to 60 word answer is the first thing after the h1,
+  // because that is what a featured snippet lifts; the takeaways sit under it;
+  // the contents list comes after both so a phone reader meets the answer
+  // before a navigation block.
+  const [answer, ...rest] = withIds.trim().split(/\n\n/);
+  const body = [byline, answer, takeaways, contents, ...rest, related, bio].join("\n\n");
+
+  // The takeaways are content and count toward the length. The byline, the
+  // contents list, the related block and the bio are furniture and do not.
+  return { body, prose: `${a.body}\n\n${takeaways}`, toc };
+}
 
 const problems = [];
 const notes = [];
 const report = [];
 const placeholders = [];
 
-ARTICLES.forEach((a, index) => {
+// Rendered ONCE, here, and read by both the validation loop below and the SQL
+// emitter further down.
+//
+// It was briefly rendered inside the validation loop only. Everything passed
+// and nothing reached the database: the guards checked a body with a contents
+// list, a takeaways box and a byline in it, and the SQL wrote the raw prose.
+// The generator was checking one string and shipping another, which is the
+// worst shape a bug like this can have, because the report says it worked.
+const RENDERED = ARTICLES.map((a, index) =>
+  renderBody(a, SCHEDULE[index] === LIVE ? "2026-09-24T09:00:00+03:00" : SCHEDULE[index]));
+const STORED = ARTICLES.map((a, i) => ({ ...a, body: RENDERED[i].body }));
+
+STORED.forEach((a, index) => {
   const L = a.slug;
-  const text = strip(a.body);
+  // Validated AS STORED, furniture included, so a link or a keyword in the
+  // takeaways counts exactly as one in a paragraph. The word range is the one
+  // exception and uses the prose, so a contents list cannot pad an article.
+  const text = strip(RENDERED[index].prose);
   const lower = text.toLowerCase();
   const wordCount = words(text).length;
   const first100 = words(text).slice(0, 100).join(" ").toLowerCase();
@@ -129,7 +259,7 @@ ARTICLES.forEach((a, index) => {
   if (!slugPhrase.includes(a.primary.replace(/-/g, " ")))
     problems.push(`${L}: primary keyword "${a.primary}" is not in the slug as an exact phrase (slug reads "${slugPhrase}")`);
 
-  const h2s = [...a.body.matchAll(/<h2>(.*?)<\/h2>/g)].map((m) => strip(m[1]));
+  const h2s = [...a.body.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((m) => strip(m[1]));
   if (!h2s.some((h) => h.toLowerCase().includes(a.primary)))
     problems.push(`${L}: no H2 carries the primary keyword`);
 
@@ -151,7 +281,7 @@ ARTICLES.forEach((a, index) => {
   if (h2s.length === 0) problems.push(`${L}: no H2 headings`);
   const perH2 = wordCount / h2s.length;
   if (perH2 > 320) problems.push(`${L}: ${perH2.toFixed(0)} words per H2 (want under about 300)`);
-  if (/<h2>\s*(Overview|Introduction|Conclusion|Summary)\s*<\/h2>/i.test(a.body))
+  if (/<h2[^>]*>\s*(Overview|Introduction|Conclusion|Summary)\s*<\/h2>/i.test(a.body))
     problems.push(`${L}: has a generic H2 (Overview/Introduction/Conclusion/Summary)`);
 
   // Paragraphs of five or more sentences read as a wall on a phone.
@@ -172,6 +302,12 @@ ARTICLES.forEach((a, index) => {
     problems.push(`${L}: contains an em or en dash`);
   for (const phrase of BANNED_PHRASES)
     if (lower.includes(phrase)) problems.push(`${L}: uses the banned phrase "${phrase}"`);
+  for (const [phrase, owner] of Object.entries(KEYWORDS_OWNED_BY_ONE_ARTICLE)) {
+    if (L === owner) continue;
+    if (countOf(lower, phrase) > 0 || a.metaTitle.toLowerCase().includes(phrase) || a.titleEn.toLowerCase().includes(phrase))
+      problems.push(`${L}: uses "${phrase}", which belongs to /blog/${owner}`);
+  }
+
   for (const reserved of [...HOMEPAGE_KEYWORDS, ...(RESERVED_KEYWORDS[L] ?? [])]) {
     // A reserved phrase that is a substring of this article's own primary
     // keyword is unavoidable: "black and white desert egypt" contains "white
@@ -203,11 +339,28 @@ ARTICLES.forEach((a, index) => {
   }
 
   // Internal links are what the cap and the shape rules are about.
-  const hrefs = allHrefs.filter((h) => !/^https?:\/\//.test(h));
-  if (hrefs.length < 3) problems.push(`${L}: only ${hrefs.length} internal links (min 3)`);
-  // Four is the ceiling. Past that the links stop being recommendations and
-  // start being a menu, and what each one carries is divided down.
-  if (hrefs.length > 4) problems.push(`${L}: ${hrefs.length} internal links (max 4)`);
+  //
+  // The related posts block is counted separately from the four link cap, and
+  // that is a deliberate reading of two rules that would otherwise contradict
+  // each other. The cap exists so that links inside prose stay
+  // recommendations rather than a menu; a related reading block at the foot of
+  // the article is site furniture, the same kind of thing as the contents list
+  // above it, and every article carries an identical one. Counting it against
+  // the editorial budget would mean an article could carry one link in its
+  // actual text.
+  const relatedBlock = a.body.match(/<aside class="related-posts"[\s\S]*?<\/aside>/)?.[0] ?? "";
+  const relatedHrefs = [...relatedBlock.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  const hrefs = allHrefs
+    .filter((h) => !/^https?:\/\//.test(h))
+    .filter((h) => !h.startsWith("#"))
+    .filter((h, i, all) => {
+      // Remove exactly as many occurrences as the related block contributes,
+      // so a prose link to the same target still counts.
+      const before = all.slice(0, i).filter((x) => x === h).length;
+      return before >= relatedHrefs.filter((x) => x === h).length;
+    });
+  if (hrefs.length < 3) problems.push(`${L}: only ${hrefs.length} internal prose links (min 3)`);
+  if (hrefs.length > 4) problems.push(`${L}: ${hrefs.length} internal prose links (max 4)`);
 
   // The rule that matters most: a tour under the category path is a 404.
   for (const href of hrefs) {
@@ -218,9 +371,27 @@ ARTICLES.forEach((a, index) => {
     if (!href.startsWith("/")) problems.push(`${L}: ${href} is not a site relative link`);
   }
 
+  // Never link at a path that redirects. It works, and it costs the reader and
+  // the crawler a hop for nothing, and it leaks a little of whatever the link
+  // was passing on.
+  for (const href of allHrefs.filter((h) => h.startsWith("/"))) {
+    const bare = href.split("?")[0].replace(/\/+$/, "") || "/";
+    if (REDIRECTED_PATHS.has(bare))
+      problems.push(`${L}: links to ${href}, which 301s somewhere else. Link the final URL.`);
+    for (const parent of REDIRECTED_PATHS)
+      if (parent !== "/" && bare.startsWith(`${parent}/`))
+        problems.push(`${L}: links to ${href}, under ${parent} which 301s. Link the final URL.`);
+  }
+
   const tourLinks = hrefs.filter((h) => TOUR_SLUGS.has(h.replace(/^\//, "")));
   const destLinks = hrefs.filter((h) => h.startsWith("/egypt-travel-guide/") && DESTINATION_SLUGS.has(h.split("/")[2]));
-  const postLinks = hrefs.filter((h) => h.startsWith("/blog/"));
+  // Every internal blog link, related block included. The cap does not count
+  // the related block, but "would this link 404 on the day this article goes
+  // live" certainly does: a related reading list pointing at a sibling that
+  // publishes nine days later is three dead links in the footer of the page.
+  const postLinks = [...new Set(
+    allHrefs.filter((h) => h.startsWith("/blog/"))
+  )];
   if (tourLinks.length === 0) problems.push(`${L}: no link to a tour`);
   if (destLinks.length === 0) problems.push(`${L}: no link to a destination page`);
   // The first article to publish has no earlier sibling to link to, and a
@@ -255,14 +426,20 @@ ARTICLES.forEach((a, index) => {
     const target = href.replace("/blog/", "");
     if (target.includes("{{")) continue;
     if (EXISTING_POST_SLUGS.has(target)) continue; // already live, cannot 404
-    const targetIndex = ARTICLES.findIndex((x) => x.slug === target);
+    const targetIndex = STORED.findIndex((x) => x.slug === target);
     if (targetIndex === -1) problems.push(`${L}: links to /blog/${target}, which is neither in this batch nor a known live article`);
     else if (SCHEDULE[targetIndex] !== LIVE && Date.parse(SCHEDULE[targetIndex]) >= mine)
       problems.push(`${L}: links to /blog/${target}, which publishes ${SCHEDULE[targetIndex]}, at or after this article's ${SCHEDULE[index] === LIVE ? "immediate publication" : SCHEDULE[index]}, so the link would 404 on publication`);
   }
 
   // Descriptive anchors, not repeated keyword.
-  const anchors = [...a.body.matchAll(/<a href="[^"]+">([^<]+)<\/a>/g)].map((m) => m[1].toLowerCase());
+  // Editorial anchors only. A contents list entry has to repeat its heading
+  // word for word, keyword included, or it is describing somewhere else; and a
+  // page full of "#jump" links is not what the repeated anchor rule is about.
+  const editorialBody = a.body
+    .replace(/<nav class="toc"[\s\S]*?<\/nav>/g, "")
+    .replace(/href="#[^"]*"/g, 'href="#"');
+  const anchors = [...editorialBody.matchAll(/<a href="[^"]+">([^<]+)<\/a>/g)].map((m) => m[1].toLowerCase());
   void external;
   const keywordAnchors = anchors.filter((x) => x.includes(a.primary));
   if (keywordAnchors.length > 0) problems.push(`${L}: ${keywordAnchors.length} anchor(s) repeat the primary keyword verbatim`);
@@ -310,6 +487,60 @@ ARTICLES.forEach((a, index) => {
     if (seenQ.has(key)) problems.push(`${N} duplicates an earlier question`);
     seenQ.add(key);
   });
+
+  // ---- structure, for the articles that carry furniture ----
+  if (a.takeaways) {
+    // Every H2 needs an id and the contents list has to name all of them, in
+    // order. A contents list that has drifted from the headings is worse than
+    // none: it sends a reader to an anchor that is not there.
+    const ids = [...a.body.matchAll(/<h2 id="([^"]+)">/g)].map((m) => m[1]);
+    const headings = [...a.body.matchAll(/<h2[^>]*>/g)].length;
+    if (ids.length !== headings)
+      problems.push(`${L}: ${headings} H2s but ${ids.length} have an id`);
+    if (new Set(ids).size !== ids.length)
+      problems.push(`${L}: duplicate H2 id, so a jump link is ambiguous`);
+
+    const jumps = [...(a.body.match(/<nav class="toc"[\s\S]*?<\/nav>/)?.[0] ?? "")
+      .matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+    if (jumps.length === 0) problems.push(`${L}: no table of contents`);
+    const missing = jumps.filter((j) => !ids.includes(j));
+    if (missing.length > 0)
+      problems.push(`${L}: contents list points at ${missing.join(", ")}, which is not an H2 id`);
+    // The takeaways box and the related block carry an H2 for the outline and
+    // for screen readers, but neither is a place a reader jumps TO, so neither
+    // belongs in the contents list.
+    const FURNITURE_IDS = ["key-takeaways", "related-reading"];
+    const unlisted = ids.filter((id) => !jumps.includes(id) && !FURNITURE_IDS.includes(id));
+    if (unlisted.length > 0)
+      problems.push(`${L}: H2s missing from the contents list: ${unlisted.join(", ")}`);
+
+    if (a.takeaways.length < 3 || a.takeaways.length > 5)
+      problems.push(`${L}: ${a.takeaways.length} key takeaways (want 3-5)`);
+    for (const t of a.takeaways)
+      if (words(strip(t)).length > 30) problems.push(`${L}: a takeaway is ${words(strip(t)).length} words, too long to be lifted`);
+
+    if (!a.related || a.related.length !== 3)
+      problems.push(`${L}: ${a.related?.length ?? 0} related posts (want exactly 3)`);
+    for (const r of a.related ?? []) {
+      if (r.href === `/blog/${L}`) problems.push(`${L}: related posts link to the article itself`);
+      if (r.anchor.toLowerCase().includes(a.primary))
+        problems.push(`${L}: related anchor "${r.anchor}" repeats the primary keyword verbatim`);
+    }
+
+    if (!/class="post-byline"/.test(a.body)) problems.push(`${L}: no visible author and updated line`);
+    if (!/class="author-bio"/.test(a.body)) problems.push(`${L}: no author bio`);
+
+    // The excerpt is what the blog index and the cards show, so it is a real
+    // summary with a real length rather than the first sentence of the body.
+    if (a.excerpt.length < 150 || a.excerpt.length > 160)
+      problems.push(`${L}: excerpt ${a.excerpt.length} chars (want 150-160)`);
+    if (a.body.trim().startsWith(a.excerpt.slice(0, 40)))
+      problems.push(`${L}: excerpt is the opening of the body rather than a summary`);
+
+    // Exactly one image alt carries the primary keyword, and the hero is it.
+    if (!a.heroAlt.toLowerCase().includes(a.primary))
+      problems.push(`${L}: the hero alt does not carry the primary keyword`);
+  }
 
   // ---- placeholders ----
   for (const m of a.body.matchAll(/data-placeholder="([^"]+)">([^<]+)</g))
@@ -376,14 +607,14 @@ for (const r of report) {
 // ---------------------------------------------------------------------------
 // SQL
 // ---------------------------------------------------------------------------
-ARTICLES.forEach((a, index) => {
+STORED.forEach((a, index) => {
   const faqJson = JSON.stringify(a.faqs.map((f) => ({ id: faqId(a.slug, f.q), question: f.q, answer: f.a })));
   const tags = `ARRAY[${a.tags.map(pg).join(", ")}]::text[]`;
 
   // "N of M" counts only the articles that ship as their own file. Counting
   // every article in ARTICLES would rewrite the header of all thirteen earlier
   // files every time a wave is added, for no change anyone asked for.
-  const standalone = ARTICLES.filter((x) => !x.wave).length;
+  const standalone = STORED.filter((x) => !x.wave).length;
   const sql = `-- ${a.titleEn}
 -- Blog post ${index + 1} of ${standalone}. Primary keyword: ${a.primary}
 --
@@ -539,10 +770,10 @@ WHERE slug = ${pg(a.slug)}
 // (shared/post-visibility.ts), but seo-meta.ts reads published_at for
 // datePublished in the BlogPosting, and without it an article scheduled for
 // December would tell a crawler it was written on the day the row was created.
-const WAVES = [...new Set(ARTICLES.map((a) => a.wave).filter(Boolean))];
+const WAVES = [...new Set(STORED.map((a) => a.wave).filter(Boolean))];
 
 for (const wave of WAVES) {
-  const members = ARTICLES
+  const members = STORED
     .map((a, index) => ({ a, index }))
     .filter(({ a }) => a.wave === wave);
 
@@ -600,7 +831,22 @@ WHERE slug IN (${slugs.map(pg).join(", ")});`;
   ${pg(a.metaDescription)},
   'published',
   ${pg(SCHEDULE[index])}::timestamptz,
-  ${pg(SCHEDULE[index])}::timestamptz AT TIME ZONE 'Africa/Cairo',
+  -- published_at and updated_at both take the scheduled moment as written.
+  --
+  -- published_at used to carry "AT TIME ZONE 'Africa/Cairo'" here, which is
+  -- what you reach for when a value needs moving INTO Cairo time and is wrong
+  -- for a string that already says +02:00. It converted the timestamptz to a
+  -- naive local time and then let the server read it back as UTC, so every
+  -- article in the two earlier waves stored 11:00 Cairo rather than 09:00.
+  -- Nothing had noticed because scheduled_at, which decides visibility, never
+  -- had the conversion and was always right; only datePublished in the
+  -- BlogPosting was two hours out.
+  --
+  -- updated_at matches, so dateModified agrees with the "Last updated" line
+  -- the article prints under its title. A row inserted today for November
+  -- would otherwise claim it was last touched in September.
+  ${pg(SCHEDULE[index])}::timestamptz,
+  ${pg(SCHEDULE[index])}::timestamptz,
   ${pg(faqJson)}::jsonb,
   'BlogPosting'
 )`;
@@ -677,7 +923,7 @@ BEGIN;
 ${isRewrite ? updates : `INSERT INTO posts (
   slug, title_en, body_en, excerpt, category, tags,
   focus_keyword, meta_title, meta_description,
-  status, scheduled_at, published_at, faqs, schema_type
+  status, scheduled_at, published_at, updated_at, faqs, schema_type
 ) VALUES
 ${rows}
 ON CONFLICT (slug) DO UPDATE SET

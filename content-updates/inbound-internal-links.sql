@@ -6,7 +6,8 @@
 -- move a page, and an article that links out four times and is linked to zero
 -- times is a page the site itself does not vouch for.
 --
--- 40 links, across 19 source pages, to 16 targets. Every target has at
+-- 55 links, across 19 source pages, to 21 targets. The last 15 point at the
+-- five Nile cluster articles. Every target has at
 -- least two sources and most have three, so one source page being missing
 -- or already at its link cap does not leave a target with one inbound link.
 --
@@ -108,7 +109,22 @@ INSERT INTO inbound_links (source_table, source_slug, target_slug, anchor, sente
   ('tours', 'egypt-family-vacation-packages', 'egypt-plug-type', 'the adapter question, settled', 'Families arrive with more chargers than anyone, so {{A}} is worth five minutes before you pack.'),
   ('tours', 'best-luxury-egypt-tours', 'is-egypt-safe-for-americans', 'what the advisory actually says', 'If the question has come up at home, {{A}} covers the current position and the regions that are genuinely excluded.'),
   ('tours', 'egypt-small-group-tour', 'vaccinations-needed-for-egypt', 'what to ask a travel clinic', 'Nothing is required at the border, but {{A}} covers the appointment worth booking four to six weeks out.'),
-  ('tours', 'white-desert-luxury-camping', 'what-to-pack-for-egypt', 'what the desert nights need', 'Nights out here are colder than anyone expects from the daytime photographs, and {{A}} covers the layer that matters.');
+  ('tours', 'white-desert-luxury-camping', 'what-to-pack-for-egypt', 'what the desert nights need', 'Nights out here are colder than anyone expects from the daytime photographs, and {{A}} covers the layer that matters.'),
+  ('destinations', 'aswan-egypt-attractions', 'dahabiya-nile-cruise', 'sailing north under canvas', 'Most sailings leave from here, and {{A}} covers what a small boat changes about the week.'),
+  ('destinations', 'aswan-egypt-attractions', 'lake-nasser-cruise', 'the quieter water south of the dam', 'South of the High Dam the water is emptier again, and {{A}} covers the rescued Nubian temples along it.'),
+  ('destinations', 'attractions-in-luxor', 'nile-cruise-luxor-to-aswan', 'the route between the two cities', 'Most visitors arrive or leave by river, and {{A}} sets out which temple lands on which morning.'),
+  ('destinations', 'attractions-in-luxor', '7-night-nile-cruise', 'how many nights the river deserves', 'Whether to give the water four nights or seven is the question worth settling first, and {{A}} answers it.'),
+  ('tours', 'egypt-nile-cruise-packages', 'dahabiya-nile-cruise', 'choosing a sailing boat over a ship', 'The vessel changes this week more than the route does, and {{A}} covers the smallest of the three categories.'),
+  ('tours', 'egypt-nile-cruise-packages', 'best-time-to-go-to-egypt-nile-cruise', 'picking the month', 'The deck decides the season on a river boat, and {{A}} goes through it month by month.'),
+  ('tours', 'egypt-private-tour-packages', 'nile-cruise-luxor-to-aswan', 'the sailing, day by day', 'Every one of these routes has the river in the middle of it, and {{A}} covers what those days hold.'),
+  ('tours', 'best-luxury-egypt-tours', '7-night-nile-cruise', 'four nights on the water against seven', 'How long to spend on the river is the decision that moves this itinerary most, and {{A}} works through it.'),
+  ('tours', '12-days-egypt-tour', 'lake-nasser-cruise', 'adding the southern lake', 'Twelve days is enough to add the quieter water below Aswan, and {{A}} covers what that leg involves.'),
+  ('tours', '10-day-egypt-tour', 'best-time-to-go-to-egypt-nile-cruise', 'when to sail', 'The month matters more on the water than anywhere else on this route, and {{A}} explains why.'),
+  ('tours', 'luxury-small-group-tours-egypt', 'dahabiya-nile-cruise', 'what a small hull changes', 'If the size of the boat matters to you, {{A}} is the page to read before choosing a departure.'),
+  ('tours', '7-day-egypt-tour', 'nile-cruise-luxor-to-aswan', 'the river half of this week', 'The sailing is the middle of this itinerary, and {{A}} covers the temples it reaches.'),
+  ('destinations', 'alexandria-egypt-attractions', 'best-time-to-go-to-egypt-nile-cruise', 'the season on the river', 'If the Nile is also on your itinerary, {{A}} covers a narrower window than the one that applies up here.'),
+  ('tours', 'egypt-small-group-tour', '7-night-nile-cruise', 'the length of the sailing', 'Departures run to different river lengths, and {{A}} covers what each one actually adds.'),
+  ('tours', 'family-tours-egypt', 'lake-nasser-cruise', 'the southern alternative', 'For families returning to Egypt, {{A}} covers a quieter week than the classic route.');
 
 -- Mirrors client/src/lib/legacy-text-to-html.ts. See the note above.
 CREATE OR REPLACE FUNCTION pg_temp.to_html(raw text) RETURNS text AS $$

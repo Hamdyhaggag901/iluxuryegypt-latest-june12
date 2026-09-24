@@ -1,6 +1,6 @@
-# Publishing schedule: 22 scheduled articles
+# Publishing schedule: 27 scheduled articles
 
-22 articles across 12 weeks, most of them two to three days apart.
+27 articles across 12 weeks, most of them two to three days apart.
 Publishing a batch at once is an unnatural pattern for a site this young, which
 is the only reason they are spread out rather than shipped together.
 
@@ -35,10 +35,15 @@ sitemap fetch after the moment passes. No manual step is needed for that.
 | 16 | Friday, 23 October 2026, 09:00 Cairo time | `islamic-cairo` | `islamic cairo` | 1535 |
 | 17 | Saturday, 24 October 2026, 09:00 Cairo time | `open-air-museum-memphis-egypt` | `open air museum memphis egypt` | 1450 |
 | 18 | Monday, 26 October 2026, 09:00 Cairo time | `alexandria-day-trip-from-cairo` | `alexandria day trip from cairo` | 1390 |
-| 19 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
-| 20 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
-| 21 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
-| 22 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
+| 19 | Tuesday, 3 November 2026, 09:00 Cairo time | `dahabiya-nile-cruise` | `dahabiya nile cruise` | 1872 |
+| 20 | Friday, 6 November 2026, 09:00 Cairo time | `nile-cruise-luxor-to-aswan` | `nile cruise luxor to aswan` | 1803 |
+| 21 | Monday, 9 November 2026, 09:00 Cairo time | `7-night-nile-cruise` | `7 night nile cruise` | 1019 |
+| 22 | Thursday, 12 November 2026, 09:00 Cairo time | `lake-nasser-cruise` | `lake nasser cruise` | 1425 |
+| 23 | Sunday, 15 November 2026, 09:00 Cairo time | `best-time-to-go-to-egypt-nile-cruise` | `best time to go to egypt nile cruise` | 1401 |
+| 24 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
+| 25 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
+| 26 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
+| 27 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
 
 The order is deliberate. Each article links back to ones already published and
 never forward to one still scheduled, because a link to a post that has not
@@ -338,7 +343,91 @@ reached its date would 404. The generator enforces this.
   - article: `/blog/grand-egyptian-museum-tour` &mdash; anchor "Grand Egyptian Museum guide"
   - tour: `/egypt-private-tours` &mdash; anchor "private day trips"
 
-### 19. Hatshepsut Temple at Deir el Bahari: One Monument, Two Names
+### 19. Dahabiya Nile Cruise: Choosing Your Boat
+
+- **Goes live:** Tuesday, 3 November 2026, 09:00 Cairo time
+- **URL:** `/blog/dahabiya-nile-cruise`
+- **Primary keyword:** `dahabiya nile cruise` (4 uses in the body)
+- **Secondary:** `luxury dahabiya nile cruise`, `nile river cruise dahabiya`, `best dahabiya nile cruise`, `dahabiya nile cruise price`, `luxury small boat nile cruise`
+- **SEO title:** Dahabiya Nile Cruise: How to Choose the Boat (44 chars)
+- **Meta description:** 155 chars
+- **Length:** 1872 words, 16 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-nile-cluster.sql`
+- **Internal links:**
+  - article: `/blog/best-luxury-nile-cruise-egypt` &mdash; anchor "full comparison of the three boat categories"
+  - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "Aswan guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 20. Nile Cruise Luxor to Aswan: What You See and When
+
+- **Goes live:** Friday, 6 November 2026, 09:00 Cairo time
+- **URL:** `/blog/nile-cruise-luxor-to-aswan`
+- **Primary keyword:** `nile cruise luxor to aswan` (4 uses in the body)
+- **Secondary:** `aswan to luxor cruise`, `nile cruise aswan to luxor`, `nile cruise from luxor to aswan`, `nile river cruise aswan to luxor`, `luxor to aswan nile cruise`
+- **SEO title:** Nile Cruise Luxor to Aswan: The Route, Day by Day (49 chars)
+- **Meta description:** 154 chars
+- **Length:** 1803 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-nile-cluster.sql`
+- **Internal links:**
+  - article: `/blog/best-luxury-nile-cruise-egypt` &mdash; anchor "side by side comparison of the three"
+  - article: `/blog/dahabiya-nile-cruise` &mdash; anchor "the sailing boat option in particular"
+  - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 21. 7 Night Nile Cruise: Is the Longer Sailing Worth It
+
+- **Goes live:** Monday, 9 November 2026, 09:00 Cairo time
+- **URL:** `/blog/7-night-nile-cruise`
+- **Primary keyword:** `7 night nile cruise` (4 uses in the body)
+- **Secondary:** `4 night nile cruise`, `7 night nile river cruise`, `4 night nile river cruise`
+- **SEO title:** 7 Night Nile Cruise: What the Extra Nights Buy (46 chars)
+- **Meta description:** 155 chars
+- **Length:** 1019 words, 10 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-nile-cluster.sql`
+- **Internal links:**
+  - article: `/blog/best-luxury-nile-cruise-egypt` &mdash; anchor "The comparison of the three boat categories"
+  - article: `/blog/dahabiya-nile-cruise` &mdash; anchor "the sailing boat option"
+  - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 22. Lake Nasser Cruise: Nubia on the Quieter Water
+
+- **Goes live:** Thursday, 12 November 2026, 09:00 Cairo time
+- **URL:** `/blog/lake-nasser-cruise`
+- **Primary keyword:** `lake nasser cruise` (5 uses in the body)
+- **Secondary:** `lake nasser cruises`, `lake nasser cruise ships`, `lake nasser cruise boats`, `lake nasser cruises packages`, `lake nasser cruise and stay`
+- **SEO title:** Lake Nasser Cruise: The Quiet Alternative (41 chars)
+- **Meta description:** 160 chars
+- **Length:** 1425 words, 13 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-nile-cluster.sql`
+- **Internal links:**
+  - article: `/blog/nile-cruise-luxor-to-aswan` &mdash; anchor "The classic route between the cities"
+  - article: `/blog/best-luxury-nile-cruise-egypt` &mdash; anchor "the comparison of boat categories"
+  - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "Aswan guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 23. Best Time to Go to Egypt Nile Cruise, Month by Month
+
+- **Goes live:** Sunday, 15 November 2026, 09:00 Cairo time
+- **URL:** `/blog/best-time-to-go-to-egypt-nile-cruise`
+- **Primary keyword:** `best time to go to egypt nile cruise` (4 uses in the body)
+- **Secondary:** `best time for nile cruise`, `best time to cruise the nile`, `best time to visit egypt nile cruise`
+- **SEO title:** Best Time to Go to Egypt Nile Cruise: Months (44 chars)
+- **Meta description:** 156 chars
+- **Length:** 1401 words, 13 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-nile-cluster.sql`
+- **Internal links:**
+  - article: `/blog/best-luxury-nile-cruise-egypt` &mdash; anchor "comparison of the three boat categories"
+  - article: `/blog/best-time-to-visit-egypt` &mdash; anchor "The month by month guide for the country"
+  - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "Aswan guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 24. Hatshepsut Temple at Deir el Bahari: One Monument, Two Names
 
 - **Goes live:** Tuesday, 1 December 2026, 09:00 Cairo time
 - **URL:** `/blog/hatshepsut-temple`
@@ -354,7 +443,7 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 20. Memphis Egypt: The Ancient Capital, Not the One in Tennessee
+### 25. Memphis Egypt: The Ancient Capital, Not the One in Tennessee
 
 - **Goes live:** Saturday, 5 December 2026, 09:00 Cairo time
 - **URL:** `/blog/memphis-egypt`
@@ -371,7 +460,7 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "Cairo area guide"
   - tour: `/10-day-egypt-tour` &mdash; anchor "longer Egypt itineraries"
 
-### 21. Deir el Medina: The Village That Built the Royal Tombs
+### 26. Deir el Medina: The Village That Built the Royal Tombs
 
 - **Goes live:** Thursday, 10 December 2026, 09:00 Cairo time
 - **URL:** `/blog/deir-el-medina`
@@ -388,7 +477,7 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 22. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
+### 27. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
 
 - **Goes live:** Tuesday, 15 December 2026, 09:00 Cairo time
 - **URL:** `/blog/bahariya-oasis-egypt`
@@ -437,7 +526,7 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `egypt-honeymoon` | `egypt-honeymoon` | `egypt honeymoon` | 1850 |
 | `egypt-plug-type` | `egypt-plug-type` | `egypt plug type` | 1119 |
 | `private-pyramid-tours-egypt` | `private-pyramid-tours-egypt` | `private pyramid tours egypt` | 1440 |
-| `best-luxury-nile-cruise-egypt` | `best-luxury-nile-cruise-egypt` | `best luxury nile cruise` | 1842 |
+| `best-luxury-nile-cruise-egypt` | `best-luxury-nile-cruise-egypt` | `best luxury nile cruise` | 1908 |
 | `vaccinations-needed-for-egypt` | `vaccines-for-egypt-travel` | `vaccinations needed for egypt` | 1263 |
 | `planning-a-trip-to-egypt` | `how-to-plan-a-luxury-egypt-trip` | `planning a trip to egypt` | 1815 |
 | `egypt-travel-tips` | `things-to-know-before-traveling-to-egypt` | `egypt travel tips` | 1830 |
