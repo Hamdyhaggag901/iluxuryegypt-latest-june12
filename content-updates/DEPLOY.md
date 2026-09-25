@@ -167,7 +167,7 @@ The inbound-link file is step 7, deliberately after the images.
 bash /root/iluxury/content-updates/verify-redirects.sh https://iluxuryegypt.com
 ```
 
-54 redirects, both methods, 108 assertions. It prints the expected and actual
+55 redirects, both methods, 110 assertions. It prints the expected and actual
 `Location` for each and exits non-zero on any failure.
 
 Spot-check three of the renames by hand if you want to see it working:
@@ -234,8 +234,11 @@ the per-article SQL keeps a body that already contains `<figure`.
 psql "$DATABASE_URL" -f /root/iluxury/content-updates/inbound-internal-links.sql
 ```
 
-40 contextual links from 19 destination guides and tour pages to the sixteen
-articles. It prints source, anchor text, target and outcome for every one.
+82 contextual links from 19 destination guides and tour pages, to 30 articles.
+40 of them are for the sixteen rewritten articles; the other 42 point at the
+fourteen cluster articles and are harmless to run early, because the file skips
+any target row that does not exist yet. It prints source, anchor text, target
+and outcome for every one.
 
 - lower-case outcomes are fine: `added` or `skipped: already links there`
 - **UPPER-CASE outcomes need you**: a source slug that does not exist, or a page

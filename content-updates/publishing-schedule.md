@@ -1,6 +1,6 @@
-# Publishing schedule: 33 scheduled articles
+# Publishing schedule: 36 scheduled articles
 
-33 articles across 12 weeks, most of them two to three days apart.
+36 articles across 12 weeks, most of them two to three days apart.
 Publishing a batch at once is an unnatural pattern for a site this young, which
 is the only reason they are spread out rather than shipped together.
 
@@ -48,8 +48,11 @@ sitemap fetch after the moment passes. No manual step is needed for that.
 | 29 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
 | 30 | Thursday, 3 December 2026, 09:00 Cairo time | `5-star-hotels-in-egypt` | `5 star hotels in egypt` | 1419 |
 | 31 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
-| 32 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
-| 33 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
+| 32 | Sunday, 6 December 2026, 09:00 Cairo time | `fayoum-oasis-egypt` | `fayoum oasis egypt` | 1625 |
+| 33 | Wednesday, 9 December 2026, 09:00 Cairo time | `valley-of-the-whales` | `valley of the whales` | 1600 |
+| 34 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
+| 35 | Saturday, 12 December 2026, 09:00 Cairo time | `aswan-old-cataract-hotel-egypt` | `aswan old cataract hotel egypt` | 1525 |
+| 36 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
 
 The order is deliberate. Each article links back to ones already published and
 never forward to one still scheduled, because a link to a post that has not
@@ -580,7 +583,40 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "Cairo area guide"
   - tour: `/10-day-egypt-tour` &mdash; anchor "longer Egypt itineraries"
 
-### 32. Deir el Medina: The Village That Built the Royal Tombs
+### 32. Fayoum Oasis Egypt: What Is Actually There
+
+- **Goes live:** Sunday, 6 December 2026, 09:00 Cairo time
+- **URL:** `/blog/fayoum-oasis-egypt`
+- **Primary keyword:** `fayoum oasis egypt` (4 uses in the body)
+- **Secondary:** `qarun lake fayoum egypt`, `el fayoum egypt`, `al fayoum oasis egypt`, `fayoum day trip from cairo`
+- **SEO title:** Fayoum Oasis Egypt: A Day Trip Worth Making (43 chars)
+- **Meta description:** 155 chars
+- **Length:** 1625 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-planning-cluster.sql`
+- **Internal links:**
+  - article: `/blog/planning-a-trip-to-egypt` &mdash; anchor "The planning guide"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "The Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 33. Valley of the Whales: What Is Actually on Show
+
+- **Goes live:** Wednesday, 9 December 2026, 09:00 Cairo time
+- **URL:** `/blog/valley-of-the-whales`
+- **Primary keyword:** `valley of the whales` (3 uses in the body)
+- **Secondary:** `wadi el hitan`, `valley of the whales egypt`, `the valley of the whales`, `wadi el hitan egypt`
+- **SEO title:** Valley of the Whales: The Fossils, Honestly (43 chars)
+- **Meta description:** 159 chars
+- **Length:** 1600 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-planning-cluster.sql`
+- **Internal links:**
+  - article: `/blog/fayoum-oasis-egypt` &mdash; anchor "The wider Fayoum guide"
+  - article: `/blog/planning-a-trip-to-egypt` &mdash; anchor "The planning guide"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "The Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 34. Deir el Medina: The Village That Built the Royal Tombs
 
 - **Goes live:** Thursday, 10 December 2026, 09:00 Cairo time
 - **URL:** `/blog/deir-el-medina`
@@ -597,7 +633,25 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 33. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
+### 35. Aswan Old Cataract Hotel Egypt: History and Terrace
+
+- **Goes live:** Saturday, 12 December 2026, 09:00 Cairo time
+- **URL:** `/blog/aswan-old-cataract-hotel-egypt`
+- **Primary keyword:** `aswan old cataract hotel egypt` (3 uses in the body)
+- **Secondary:** `old cataract hotel aswan`, `old cataract aswan`, `agatha christie hotel egypt`
+- **SEO title:** Aswan Old Cataract Hotel Egypt: The Story (41 chars)
+- **Meta description:** 160 chars
+- **Length:** 1525 words, 12 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-planning-cluster.sql`
+- **Internal links:**
+  - article: `/blog/best-hotels-in-aswan` &mdash; anchor "The wider comparison of where to stay here"
+  - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "The Aswan guide"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we use"
+  - tour: `/hotel/old-cataract-aswan` &mdash; anchor "this one's own record"
+
+### 36. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
 
 - **Goes live:** Tuesday, 15 December 2026, 09:00 Cairo time
 - **URL:** `/blog/bahariya-oasis-egypt`
@@ -638,7 +692,7 @@ original `published_at`, so they are not scheduled and are not listed above.
 
 | Slug | Was | Primary keyword | Words |
 |---|---|---|---|
-| `best-time-to-visit-egypt` | `best-time-to-visit-egypt` | `best time to visit egypt` | 2040 |
+| `best-time-to-visit-egypt` | `best-time-to-visit-egypt` | `best time to visit egypt` | 2047 |
 | `luxury-egypt-tours` | `luxury-egypt-tours` | `luxury egypt tours` | 1818 |
 | `egypt-visa-for-us-citizens` | `do-us-citizens-need-a-visa-for-egypt` | `egypt visa for us citizens` | 1617 |
 | `is-egypt-safe-for-americans` | `is-egypt-safe-for-american-tourists` | `is egypt safe for americans` | 1833 |
@@ -649,7 +703,7 @@ original `published_at`, so they are not scheduled and are not listed above.
 | `best-luxury-nile-cruise-egypt` | `best-luxury-nile-cruise-egypt` | `best luxury nile cruise` | 1908 |
 | `vaccinations-needed-for-egypt` | `vaccines-for-egypt-travel` | `vaccinations needed for egypt` | 1263 |
 | `planning-a-trip-to-egypt` | `how-to-plan-a-luxury-egypt-trip` | `planning a trip to egypt` | 1815 |
-| `egypt-travel-tips` | `things-to-know-before-traveling-to-egypt` | `egypt travel tips` | 1830 |
+| `egypt-travel-tips` | `things-to-know-before-traveling-to-egypt` | `egypt travel tips` | 1834 |
 | `what-to-pack-for-egypt` | `egypt-packing-list` | `what to pack for egypt` | 1416 |
 | `private-tours-in-cairo-egypt` | `private-egypt-tour` | `private tours in cairo egypt` | 1402 |
 | `tailor-made-egypt-tours` | `bespoke-egypt-travel` | `tailor-made egypt tours` | 1623 |

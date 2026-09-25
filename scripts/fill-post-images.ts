@@ -56,7 +56,7 @@ import {
   resolveSourceOrder, retiredProviders, requestsUsed,
 } from "./lib/provider-images";
 import {
-  POSTS, figureExistsAfterH2, insertFigureAfterH2, figureAtAfterH2,
+  POSTS, figureExistsAfterH2, insertFigureAfterH2, figureAtAfterH2, articleH2Positions,
   type PostSpec, type ImageSpec,
 } from "./lib/post-image-specs";
 import { isPinnedUrl, isPinnedFigure, pinnedImagesLost } from "./lib/pinned-images";
@@ -143,7 +143,7 @@ async function processPost(
     let featured: string | null = featuredAsLoaded;
     let featuredAlt: string | null = rows[0].featured_image_alt ?? null;
 
-    const h2Count = (body.match(/<h2>/g) || []).length;
+    const h2Count = articleH2Positions(body).length;
     const altsUsed = new Set<string>();
     let keywordSpent = false;
 

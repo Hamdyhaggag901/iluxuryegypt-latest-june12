@@ -12,7 +12,7 @@
 import {
   checkRelevance, composeAlt, hasToken, unsplashDescription, auditPlaceGuards, type Guard,
 } from "./lib/provider-images";
-import { POSTS } from "./lib/post-image-specs";
+import { POSTS, articleH2Positions, insertFigureAfterH2 } from "./lib/post-image-specs";
 import { isPinnedFigure, isPinnedUrl, pinnedImagesLost } from "./lib/pinned-images";
 import {
   decideAction, outcomeFor, replaceFigureAfterH2, figureHtmlFor, composeAltForPosition,
@@ -1017,6 +1017,116 @@ for (const [label, desc, guard] of [
 ] as Array<[string, string, Guard]>) {
   const v = checkRelevance(desc, guard);
   ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nQ. The planning cluster: Fayoum, the fossils and the Old Cataract\n");
+// ---------------------------------------------------------------------------
+// Three distinct ways to get these wrong. Fayoum's lake and Wadi Rayan look
+// like any lake and any dune field. The Valley of the Whales is the only
+// article on this site whose subject word returns photographs of live animals
+// in the open ocean. And the Old Cataract is a brand this site does not
+// represent, so its specs ask for Aswan and never for a hotel.
+
+const PLANNING_CLUSTER = ["fayoum-oasis-egypt", "valley-of-the-whales", "aswan-old-cataract-hotel-egypt"];
+{
+  const missing = PLANNING_CLUSTER.filter((slug) => !POSTS.some((p) => p.slug === slug));
+  ok("all three Phase C articles have image specs", missing.length === 0, missing.join(", "));
+}
+for (const [label, desc, guard] of [
+  ["a humpback whale at sea for the fossil valley",
+   "a humpback whale breaching in the open ocean off the coast",
+   guardFor("valley-of-the-whales", "Wadi El Hitan")],
+  ["a museum whale skeleton for the fossil valley",
+   "a fossil whale skeleton on display in a natural history museum gallery",
+   guardFor("valley-of-the-whales", "Wadi El Hitan")],
+  ["Wadi Rum for Wadi Rayan",
+   "sand dunes and red rock formations in Wadi Rum, Jordan",
+   guardFor("fayoum-oasis-egypt", "Wadi Rayan")],
+  ["the Great Pyramid for Hawara",
+   "the Great Pyramid of Khufu at Giza seen across the desert sand",
+   guardFor("fayoum-oasis-egypt", "Hawara pyramid")],
+  ["a generic lake for Lake Qarun",
+   "a calm lake at sunset with reeds along the shoreline",
+   guardFor("fayoum-oasis-egypt", "Lake Qarun")],
+  ["cataract eye surgery for the Old Cataract",
+   "a surgeon performing cataract surgery on a patient's eye with a lens implant",
+   guardFor("aswan-old-cataract-hotel-egypt", "Nile at Aswan")],
+  ["a hotel lobby in Aswan for the Old Cataract",
+   "the marble lobby and reception interior of a hotel in Aswan, Egypt",
+   guardFor("aswan-old-cataract-hotel-egypt", "Nile at Aswan")],
+  ["a Nile cruise ship for the feluccas",
+   "a large Nile cruise ship moored on the river at Aswan, Egypt",
+   guardFor("aswan-old-cataract-hotel-egypt", "Feluccas at Aswan")],
+  ["Philae for the Aswan corniche",
+   "the temple of Philae on its island near Aswan, Egypt",
+   guardFor("aswan-old-cataract-hotel-egypt", "Aswan corniche")],
+  ["the White Desert for Wadi Rayan",
+   "white chalk rock formations in the White Desert near Farafra, Egypt",
+   guardFor("valley-of-the-whales", "Wadi Rayan")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is rejected", !v.ok, v.ok ? "WRONGLY ACCEPTED" : `(${v.reason})`);
+}
+for (const [label, desc, guard] of [
+  ["Lake Qarun itself",
+   "the shore of Lake Qarun in Fayoum, Egypt, with reeds and still water",
+   guardFor("fayoum-oasis-egypt", "Lake Qarun")],
+  ["the Wadi El Rayan waterfalls",
+   "the waterfalls between the two lakes of Wadi El Rayan in Fayoum, Egypt",
+   guardFor("fayoum-oasis-egypt", "Wadi Rayan")],
+  ["the pyramid at Hawara",
+   "the eroded mudbrick pyramid of Amenemhat III at Hawara in Fayoum, Egypt",
+   guardFor("fayoum-oasis-egypt", "Hawara pyramid")],
+  ["the fossil site itself",
+   "sandstone formations and the fossil trail at Wadi Al Hitan in the Egyptian Western Desert",
+   guardFor("valley-of-the-whales", "Wadi El Hitan")],
+  ["a Basilosaurus in the sand",
+   "a Basilosaurus skeleton lying in the desert sand at Wadi Al Hitan, Egypt",
+   guardFor("valley-of-the-whales", "Wadi El Hitan")],
+  ["the Nile below the bluff at Aswan",
+   "granite rocks and the Nile river at Aswan, Egypt, in evening light",
+   guardFor("aswan-old-cataract-hotel-egypt", "Nile at Aswan")],
+  ["feluccas off Elephantine",
+   "feluccas under sail on the Nile beside Elephantine island at Aswan, Egypt",
+   guardFor("aswan-old-cataract-hotel-egypt", "Feluccas at Aswan")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
+// ---------------------------------------------------------------------------
+console.log("\nR. Where a figure is allowed to land\n");
+// ---------------------------------------------------------------------------
+// articleH2Positions replaced a /<h2>/g that matched nothing at all in an
+// article written from October 2026 onwards, because those carry <h2 id="...">
+// so the contents list has somewhere to jump to. The symptom was quiet: every
+// body figure in all fourteen new articles failed its range check and was
+// skipped with a note. These four cases pin both halves of the fix.
+{
+  const legacy = "<p>a</p><h2>One</h2><p>b</p><h2>Two</h2><p>c</p>";
+  ok("an older article without ids still counts both H2s", articleH2Positions(legacy).length === 2);
+
+  const furnished =
+    '<p class="post-byline">by</p><p>answer</p>' +
+    '<aside class="key-takeaways"><h2 id="key-takeaways">Key takeaways</h2><ul><li>x</li></ul></aside>' +
+    '<nav class="toc"><ol><li><a href="#one">One</a></li></ol></nav>' +
+    '<h2 id="one">One</h2><p>b</p><h2 id="two">Two</h2><p>c</p>' +
+    '<aside class="related-posts"><h2 id="related-reading">Related reading</h2><ul><li>y</li></ul></aside>';
+  ok("a furnished article counts its own two H2s and neither aside",
+     articleH2Positions(furnished).length === 2, String(articleH2Positions(furnished).length));
+
+  const withHub = furnished +
+    '<aside class="cluster-hub"><h2 id="planning">Planning</h2><ol><li>z</li></ol></aside>';
+  ok("a cluster hub added later does not shift the count",
+     articleH2Positions(withHub).length === 2, String(articleH2Positions(withHub).length));
+
+  // And the figure lands inside section one rather than at the foot of the
+  // page, which is where the old pattern put every one of them.
+  const placed = insertFigureAfterH2(furnished, 1, "<figure>F</figure>");
+  ok("the figure lands before the second H2, not after the related block",
+     placed.indexOf("<figure>F</figure>") < placed.indexOf('<h2 id="two">') &&
+     placed.indexOf("<figure>F</figure>") > placed.indexOf('<h2 id="one">'));
 }
 
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);

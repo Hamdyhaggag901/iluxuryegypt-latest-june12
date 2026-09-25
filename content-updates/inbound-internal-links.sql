@@ -1,4 +1,5 @@
--- Inbound internal links to the sixteen rewritten articles.
+-- Inbound internal links to the sixteen rewritten articles and to the three
+-- clusters written after them.
 --
 -- The outbound links live in each article's own body and are generated. These
 -- are the other direction: one contextual link TO each rewritten article from
@@ -6,12 +7,20 @@
 -- move a page, and an article that links out four times and is linked to zero
 -- times is a page the site itself does not vouch for.
 --
--- 73 links, across 19 source pages, to 27 targets. The last 18 point at the
--- six hotels cluster articles. Every target has at
--- least two sources and most have three, so one source page being missing
--- or already at its link cap does not leave a target with one inbound link.
+-- 82 links, across 19 source pages, to 30 targets: 40 to the sixteen rewritten
+-- articles, 15 to the Nile cluster, 18 to the hotels cluster and 9 to the three
+-- Phase C ones. Every target has at least two sources and most have three, so
+-- one source page being missing or already at its link cap does not leave a
+-- target with one inbound link.
 --
--- RUN THIS LAST.
+-- RUN THIS LAST, AND RUN IT AGAIN AFTER EACH CLUSTER GOES LIVE.
+--
+-- A link to an article that has not reached its scheduled moment is a dead
+-- link on a destination guide, so this file skips any target that is not live
+-- and says so in the report. Every other row is unaffected, and the file is
+-- idempotent, so the sequence is: run it with the rewrite waves, then run it
+-- again after 15 November, 3 December and 12 December, and each time the
+-- articles that have since gone live pick up their inbound links.
 --
 -- Run it after the three wave files and after scripts/fill-post-images.ts.
 -- The wave files assign body_en from the generator, which knows nothing about
@@ -142,7 +151,23 @@ INSERT INTO inbound_links (source_table, source_slug, target_slug, anchor, sente
   ('tours', 'egypt-tours-family', 'cairo-hotel-with-pyramid-view', 'the view, and what it costs', 'Children remember the pyramids from the window, and {{A}} covers which hotels genuinely have that.'),
   ('tours', 'egypt-private-tours', 'best-hotels-in-luxor-egypt', 'the Luxor bank question', 'Luxor nights are where private itineraries diverge most, and {{A}} explains the two options.'),
   ('destinations', 'alexandria-egypt-attractions', '5-star-hotels-in-egypt', 'what five stars guarantees', 'The classification works the same way here as everywhere else in Egypt, and {{A}} covers what it does and does not cover.'),
-  ('destinations', 'siwa-oasis-egypt', '5-star-hotels-in-egypt', 'why the rating stops helping out here', 'A desert camp is judged on its site and its crew rather than on facilities, which is part of what {{A}} explains.');
+  ('destinations', 'siwa-oasis-egypt', '5-star-hotels-in-egypt', 'why the rating stops helping out here', 'A desert camp is judged on its site and its crew rather than on facilities, which is part of what {{A}} explains.'),
+  -- The three Phase C articles. Sources chosen from the least loaded pages
+  -- rather than the most obvious ones, because a source already carrying four
+  -- internal links is skipped by the cap below and a link that is skipped is
+  -- not a link. The Aswan hotel is the exception: its two natural homes are
+  -- the Aswan guide and the cruise packages page, both of which may well be at
+  -- the cap, and putting that article on an unrelated page to dodge the
+  -- ceiling would be worse than having it skipped and reported.
+  ('tours', 'white-desert-luxury-camping', 'fayoum-oasis-egypt', 'the desert day that starts an hour from Cairo', 'If the Western Desert is what brought you here, {{A}} covers a shorter version of the same landscape.'),
+  ('destinations', 'siwa-oasis-egypt', 'fayoum-oasis-egypt', 'the oasis that is not really one', 'Siwa is the real thing and the drive is long; {{A}} covers the depression most visitors reach instead.'),
+  ('tours', 'egypt-private-tours', 'fayoum-oasis-egypt', 'what a day southwest of Cairo holds', 'A private car makes this one workable in a day, and {{A}} sets out what is worth the drive.'),
+  ('tours', 'white-desert-luxury-camping', 'valley-of-the-whales', 'the fossil site inside Wadi Rayan', 'The same desert holds a UNESCO site of whale skeletons, and {{A}} covers what is actually on show there.'),
+  ('destinations', 'siwa-oasis-egypt', 'valley-of-the-whales', 'the other protected desert', 'Egypt has more than one protected desert worth the drive, and {{A}} covers the one with the fossils.'),
+  ('tours', 'egypt-tours-family', 'valley-of-the-whales', 'skeletons in the open desert', 'Children who like fossils get more out of this than out of a museum, and {{A}} explains what the walk involves.'),
+  ('destinations', 'aswan-egypt-attractions', 'aswan-old-cataract-hotel-egypt', 'the hotel on the granite bluff', 'The building above the south end of the corniche is the one everybody photographs, and {{A}} covers its history and its terrace.'),
+  ('tours', 'egypt-private-tours', 'aswan-old-cataract-hotel-egypt', 'the sunset hour in Aswan', 'An afternoon here is easy to arrange on a private day, and {{A}} explains how the terrace visit works.'),
+  ('tours', 'egypt-nile-cruise-packages', 'aswan-old-cataract-hotel-egypt', 'where the Aswan nights go', 'Sailings start or finish in Aswan, and {{A}} covers the most famous address in the town.');
 
 -- Mirrors client/src/lib/legacy-text-to-html.ts. See the note above.
 CREATE OR REPLACE FUNCTION pg_temp.to_html(raw text) RETURNS text AS $$
@@ -182,8 +207,38 @@ DECLARE
   converted  text;
   links      integer;
   paragraph  text;
+  tgt        record;
 BEGIN
   FOR r IN SELECT * FROM inbound_links ORDER BY source_table, source_slug, target_slug LOOP
+    -- The target has to be LIVE, not merely present.
+    --
+    -- This file used to write the anchor whatever the target was, which was
+    -- safe while every target was an article that had been published for
+    -- months. It stopped being safe the moment the three clusters were added:
+    -- those fourteen rows are inserted with status='published' and a
+    -- scheduled_at weeks in the future, so a link written today would sit on a
+    -- destination guide pointing at a 404 until the article's own morning.
+    -- That is the same mistake the generator's link-recency guard exists to
+    -- prevent inside an article body, and there was no equivalent out here.
+    --
+    -- The rule is shared/post-visibility.ts, restated: published, and either
+    -- no scheduled_at or one that has passed. Skipping is lower case, not
+    -- upper: it needs no decision, it needs the file run again after that
+    -- date, which is safe because every other row is already idempotent.
+    SELECT p.status, p.scheduled_at INTO tgt FROM posts p WHERE p.slug = r.target_slug;
+    IF NOT FOUND THEN
+      INSERT INTO inbound_outcome VALUES (r.source_table, r.source_slug, r.target_slug, r.anchor,
+        'SKIPPED: no post with that slug. Run its wave file first.');
+      CONTINUE;
+    END IF;
+    IF tgt.status IS DISTINCT FROM 'published'
+       OR (tgt.scheduled_at IS NOT NULL AND tgt.scheduled_at > now()) THEN
+      INSERT INTO inbound_outcome VALUES (r.source_table, r.source_slug, r.target_slug, r.anchor,
+        format('skipped: target is not live yet (%s). Re-run this file after that date.',
+               coalesce(to_char(tgt.scheduled_at AT TIME ZONE 'Africa/Cairo', 'YYYY-MM-DD HH24:MI'), tgt.status)));
+      CONTINUE;
+    END IF;
+
     -- Read the current description from whichever table this source lives in.
     IF r.source_table = 'destinations' THEN
       SELECT d.description INTO body FROM destinations d WHERE d.slug = r.source_slug;
@@ -245,8 +300,16 @@ ORDER BY source_table, source_slug, target_slug;
 SELECT 'links added' AS check, count(*) AS n FROM inbound_outcome WHERE outcome LIKE 'added%';
 SELECT 'needs a decision' AS check, count(*) AS n FROM inbound_outcome WHERE outcome LIKE 'SKIPPED%';
 
--- Every target must end up with at least two inbound links, counted across
--- both source tables. A target below 2 is one this file failed to place.
+-- Targets this run deliberately left alone because they are not live yet.
+-- These are not failures. Re-run the file after the date shown and they land.
+SELECT DISTINCT target_slug, outcome
+FROM inbound_outcome WHERE outcome LIKE 'skipped: target is not live%'
+ORDER BY target_slug;
+
+-- Every LIVE target must end up with at least two inbound links, counted
+-- across both source tables. A target below 2 is one this file failed to
+-- place. A target that is still scheduled is excluded, because a link to it
+-- would be a dead link and its absence is the correct state today.
 SELECT t.target_slug, count(*) AS inbound_links
 FROM (SELECT DISTINCT target_slug FROM inbound_links) t
 JOIN LATERAL (
@@ -254,11 +317,14 @@ JOIN LATERAL (
   UNION ALL
   SELECT 1 FROM tours tr WHERE tr.description LIKE '%/blog/' || t.target_slug || '%'
 ) hits ON true
+WHERE EXISTS (SELECT 1 FROM posts p WHERE p.slug = t.target_slug
+              AND p.status = 'published'
+              AND (p.scheduled_at IS NULL OR p.scheduled_at <= now()))
 GROUP BY t.target_slug
 ORDER BY count(*), t.target_slug;
 
--- Must be 0. A target with fewer than two inbound links after this ran.
-SELECT 'targets with fewer than 2 inbound links' AS check, count(*) AS bad FROM (
+-- Must be 0. A LIVE target with fewer than two inbound links after this ran.
+SELECT 'live targets with fewer than 2 inbound links' AS check, count(*) AS bad FROM (
   SELECT t.target_slug
   FROM (SELECT DISTINCT target_slug FROM inbound_links) t
   LEFT JOIN LATERAL (
@@ -266,6 +332,9 @@ SELECT 'targets with fewer than 2 inbound links' AS check, count(*) AS bad FROM 
     UNION ALL
     SELECT 1 FROM tours tr WHERE tr.description LIKE '%/blog/' || t.target_slug || '%'
   ) hits ON true
+  WHERE EXISTS (SELECT 1 FROM posts p WHERE p.slug = t.target_slug
+                AND p.status = 'published'
+                AND (p.scheduled_at IS NULL OR p.scheduled_at <= now()))
   GROUP BY t.target_slug
   HAVING count(hits) < 2
 ) low;

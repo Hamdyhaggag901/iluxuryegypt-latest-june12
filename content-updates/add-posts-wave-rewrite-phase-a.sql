@@ -215,7 +215,7 @@ UPDATE posts SET
 
 <p>For the shoulder months, four to six is usually enough. For summer, you can move at short notice.</p>
 
-<p>Whatever month you land on, the packing changes more than people expect between them. The <a href="/blog/what-to-pack-for-egypt">packing guide</a> works month by month, and the <a href="/blog/egypt-travel-tips">practical tips</a> cover the things that catch first time visitors out whatever the season. For how the Luxor sites divide across a stay, the <a href="/egypt-travel-guide/attractions-in-luxor">Luxor area guide</a> is the place to start.</p>
+<p>Whatever month you land on, the packing changes more than people expect between them. The <a href="/blog/egypt-travel-tips">practical tips</a> cover the things that catch first time visitors out whatever the season, and <a href="/blog/planning-a-trip-to-egypt">the full planning guide</a> puts the month back alongside the rest of the decisions. For how the Luxor sites divide across a stay, the <a href="/egypt-travel-guide/attractions-in-luxor">Luxor area guide</a> is the place to start.</p>
 
 <p>Our <a href="/best-luxury-egypt-tours">longer Egypt itineraries</a> are built around early starts in every month, because the difference between leaving at seven and leaving at nine is larger than the difference between two adjacent months.</p>
 

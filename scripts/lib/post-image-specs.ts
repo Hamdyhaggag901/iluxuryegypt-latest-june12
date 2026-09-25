@@ -1447,8 +1447,141 @@ export const POSTS: PostSpec[] = [
                  deny: ["aquarium", "tank", "zoo", "maldives", "caribbean", "bahamas", "great barrier", "fiji", "swimming pool", "lobby", "interior"] } },
     ],
   },
+  {
+    slug: "fayoum-oasis-egypt",
+    focusKeyword: "fayoum oasis egypt",
+    keywordSuffix: " in the depression fayoum oasis egypt fills",
+    images: [
+      { role: "featured", place: "Lake Qarun", city: "Fayoum", keyword: true,
+        queries: ["Lake Qarun Fayoum Egypt shore", "Birket Qarun Fayoum water", "Qarun lake Egypt reeds"],
+        // "qarun" and the three spellings of Fayoum are the only tokens that
+        // can confirm this. A lake is a lake, and "lake" in requirePlace would
+        // take any lake anywhere, which is why it sits in require instead.
+        guard: { requirePlace: ["qarun", "fayoum", "faiyum", "fayyum"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "qarun"],
+                 require: [["lake", "water", "shore", "shoreline", "reed", "reeds", "bird", "birds", "boat"]],
+                 deny: ["nile", "cairo", "aswan", "luxor", "pyramid", "temple", "red sea", "sinai", "siwa",
+                        "bahariya", "lobby", "interior", "resort", "swimming pool", "hotel"] } },
+      { role: "body", afterH2: 4, place: "Wadi Rayan", city: "Fayoum",
+        queries: ["Wadi El Rayan waterfalls Egypt", "Wadi Rayan lakes desert Fayoum", "Wadi El Rayan protected area Egypt"],
+        // "wadi rum" is in OUTSIDE_EGYPT and is rejected before this list is
+        // reached, which is the point of that ordering: the two names are one
+        // letter apart in a search box.
+        guard: { requirePlace: ["wadi rayan", "wadi el rayan", "wadi al rayan", "fayoum", "faiyum", "fayyum"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "qarun", "wadi el hitan"],
+                 require: [["waterfall", "waterfalls", "falls", "lake", "lakes", "dune", "dunes", "desert", "water"]],
+                 deny: ["nile", "cairo", "aswan", "luxor", "pyramid", "temple", "red sea", "white desert",
+                        "black desert", "siwa", "bahariya", "resort", "swimming pool", "interior"] } },
+      { role: "body", afterH2: 9, place: "Hawara pyramid", city: "Fayoum",
+        queries: ["Hawara pyramid Egypt mudbrick", "Meidum pyramid Egypt desert", "Karanis Fayoum ruins Egypt"],
+        // Giza and Dahshur are what a search for "Egyptian pyramid" actually
+        // returns, and none of them is this.
+        guard: { requirePlace: ["hawara", "meidum", "karanis", "fayoum", "faiyum", "fayyum"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "hawara", "meidum", "qarun"],
+                 require: [["pyramid", "mudbrick", "mud brick", "ruins", "ruin", "temple", "stone", "desert", "wall", "walls"]],
+                 deny: ["giza", "great pyramid", "sphinx", "dahshur", "saqqara", "step pyramid", "bent pyramid",
+                        "red pyramid", "cairo", "luxor", "aswan", "museum", "lobby", "interior"] } },
+    ],
+  },
+  {
+    slug: "valley-of-the-whales",
+    focusKeyword: "valley of the whales",
+    keywordSuffix: " on the desert floor the valley of the whales is laid out across",
+    images: [
+      // "whale" is not a place. In requirePlace it would confirm any
+      // photograph of any whale in any ocean, which is the single worst
+      // failure available to this article.
+      { role: "featured", place: "Wadi El Hitan", city: "Fayoum", keyword: true,
+        queries: ["Wadi Al Hitan fossil site Egypt", "Valley of the Whales Egypt desert", "Wadi El Hitan sandstone formations"],
+        guard: { requirePlace: ["wadi el hitan", "wadi al hitan", "wadi hitan"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "wadi el hitan"],
+                 require: [["fossil", "fossils", "skeleton", "bone", "bones", "desert", "sandstone", "rock", "trail"]],
+                 deny: ["ocean", "sea", "underwater", "diving", "dolphin", "aquarium", "museum", "gallery",
+                        "exhibit", "cairo", "luxor", "aswan", "pyramid", "temple", "iceland", "norway"] } },
+      { role: "body", afterH2: 3, place: "Wadi El Hitan", city: "Fayoum",
+        queries: ["Basilosaurus skeleton Wadi Al Hitan", "fossil whale skeleton Wadi El Hitan Egypt", "whale fossil desert Egypt"],
+        // "replica" and "model" are denied because the article's own rule is
+        // not to overstate what is on show, and a cast in a museum hall is
+        // exactly the picture that would do it.
+        guard: { requirePlace: ["wadi el hitan", "wadi al hitan", "wadi hitan"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "wadi el hitan"],
+                 require: [["fossil", "fossils", "skeleton", "vertebrae", "bone", "bones", "basilosaurus", "dorudon"]],
+                 deny: ["ocean", "sea", "underwater", "diving", "dolphin", "aquarium", "museum", "gallery",
+                        "exhibit", "exhibition", "replica", "model", "cairo", "luxor", "aswan", "smithsonian"] } },
+      { role: "body", afterH2: 10, place: "Wadi Rayan", city: "Fayoum",
+        queries: ["Wadi El Rayan desert dunes Egypt", "Wadi Rayan protected area sand Egypt", "Fayoum desert dunes Egypt"],
+        guard: { requirePlace: ["wadi rayan", "wadi el rayan", "wadi al rayan", "fayoum", "faiyum", "fayyum"],
+                 allowPlaces: ["fayoum", "faiyum", "fayyum", "qarun", "wadi el hitan"],
+                 require: [["dune", "dunes", "sand", "desert", "track", "escarpment", "plateau"]],
+                 deny: ["white desert", "black desert", "siwa", "bahariya", "farafra", "pyramid", "temple",
+                        "cairo", "aswan", "luxor", "resort", "camel safari"] } },
+    ],
+  },
+  {
+    slug: "aswan-old-cataract-hotel-egypt",
+    focusKeyword: "aswan old cataract hotel egypt",
+    keywordSuffix: " below the bluff the aswan old cataract hotel egypt stands on",
+    images: [
+      // Every one of these is the setting rather than the building. The hotel
+      // is somebody else's brand, this site is not its agent, and a guard that
+      // asked for "hotel" would accept any hotel exterior anywhere. Nothing
+      // here claims to show the property itself.
+      //
+      // "cataract" is kept out of requirePlace and denied in its medical
+      // sense: an image search for the word returns eye surgery before it
+      // returns the Nile.
+      { role: "featured", place: "Nile at Aswan", city: "Aswan", keyword: true,
+        queries: ["Nile at Aswan granite islands Egypt", "Aswan river rocks Elephantine Egypt", "Nile Aswan water sunset Egypt"],
+        guard: { requirePlace: ["aswan", "elephantine"],
+                 allowPlaces: ["aswan", "elephantine", "nubia"],
+                 require: [["nile", "river", "water", "granite", "rock", "island", "islands", "bluff", "bank"]],
+                 deny: ["cataract surgery", "eye", "lens", "ophthalmic", "lobby", "suite", "bedroom", "interior",
+                        "reception", "buffet", "swimming pool", "cairo", "luxor", "cruise ship"] } },
+      { role: "body", afterH2: 3, place: "Feluccas at Aswan", city: "Aswan",
+        queries: ["felucca sails Aswan Nile Egypt", "feluccas sailing Aswan sunset", "sailing boats Nile Aswan Egypt"],
+        guard: { requirePlace: ["aswan", "elephantine"],
+                 allowPlaces: ["aswan", "elephantine", "nubia"],
+                 require: [["felucca", "sail", "sails", "sailing", "boat", "boats"]],
+                 deny: ["cruise ship", "steamer", "dahabiya", "lobby", "interior", "reception",
+                        "cairo", "luxor", "red sea", "marina"] } },
+      { role: "body", afterH2: 7, place: "Aswan corniche", city: "Aswan",
+        queries: ["Aswan corniche waterfront Egypt", "Aswan town river front Egypt", "Aswan west bank dunes Nile"],
+        guard: { requirePlace: ["aswan", "elephantine"],
+                 allowPlaces: ["aswan", "elephantine", "nubia"],
+                 require: [["corniche", "waterfront", "town", "street", "dune", "dunes", "bank", "shore", "palm", "palms"]],
+                 deny: ["temple", "philae", "abu simbel", "pyramid", "high dam", "lobby", "interior",
+                        "cairo", "luxor", "resort", "swimming pool"] } },
+    ],
+  },
 ];
 
+
+/**
+ * The positions of the article's own H2 openings, ignoring furniture.
+ *
+ * Two things broke the old `/<h2>/g`. First, every article written from
+ * October 2026 onwards carries `<h2 id="...">` so its contents list has
+ * something to jump to, and an attribute-less pattern matches none of them:
+ * `afterH2` then failed its range check on all fourteen of the new articles
+ * and every body figure was silently skipped. Second, the key takeaways box,
+ * the related reading block and the cluster hub each carry an H2 of their
+ * own, and counting those would shift `afterH2` by one in the furniture
+ * articles and not in the older ones, which is exactly the kind of off by one
+ * that puts a photograph of Philae under a heading about packing.
+ *
+ * So: match an H2 with or without attributes, and drop any that sits inside an
+ * <aside>. All three pieces of furniture are asides and nothing else is.
+ */
+export function articleH2Positions(body: string): number[] {
+  return [...body.matchAll(/<h2\b[^>]*>/g)]
+    .map((m) => m.index!)
+    .filter((at) => {
+      const head = body.slice(0, at);
+      // Inside an aside when the nearest <aside before this point has not yet
+      // been closed.
+      return head.lastIndexOf("<aside") <= head.lastIndexOf("</aside>");
+    });
+}
 
 /**
  * True when a figure already sits at the end of section `h2Index`, which is
@@ -1456,7 +1589,7 @@ export const POSTS: PostSpec[] = [
  * that already worked rather than replacing them.
  */
 export function figureExistsAfterH2(body: string, h2Index: number): boolean {
-  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const positions = articleH2Positions(body);
   const next = positions[h2Index];
   if (next === undefined) return /<\/figure>\s*$/.test(body.trimEnd());
   return /<\/figure>\s*$/.test(body.slice(0, next).trimEnd());
@@ -1473,7 +1606,7 @@ export function figureExistsAfterH2(body: string, h2Index: number): boolean {
 export function figureAtAfterH2(
   body: string, h2Index: number
 ): { start: number; end: number; html: string } | null {
-  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const positions = articleH2Positions(body);
   const next = positions[h2Index];
   const head = next === undefined ? body : body.slice(0, next);
   return figureEndingAt(head, head.length);
@@ -1488,7 +1621,7 @@ export function figureAtAfterH2(
  * person placed mid section by hand in the editor is left alone.
  */
 export function removeFigureAfterH2(body: string, h2Index: number): string {
-  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const positions = articleH2Positions(body);
   const next = positions[h2Index];
   const head = next === undefined ? body : body.slice(0, next);
   const tail = next === undefined ? "" : body.slice(next);
@@ -1507,7 +1640,7 @@ export function removeFigureAfterH2(body: string, h2Index: number): string {
 
 /** Inserts a figure after the Nth H2's section, or at the end if there is no next H2. */
 export function insertFigureAfterH2(body: string, h2Index: number, figure: string): string {
-  const positions = [...body.matchAll(/<h2>/g)].map((m) => m.index!);
+  const positions = articleH2Positions(body);
   if (positions.length === 0) return body + figure;
   // Place it just before the H2 that follows the target section, so the figure
   // sits inside the section it illustrates rather than above the next heading.

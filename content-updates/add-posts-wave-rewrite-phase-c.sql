@@ -524,7 +524,7 @@ UPDATE posts SET
 
 <p>These are the things that matter once you have arrived. The things that matter before you leave are a different list.</p>
 
-<p><a href="/blog/what-to-pack-for-egypt">The packing guide</a> covers what to bring, including the scarf and the small notes mentioned above, and <a href="/egypt-travel-guide/cairo-travel-guide">the Cairo guide</a> covers the city itself in the detail this page does not.</p>
+<p><a href="/blog/planning-a-trip-to-egypt">The planning guide</a> covers the order these decisions come in, from the month down to the small notes mentioned above, and <a href="/egypt-travel-guide/cairo-travel-guide">the Cairo guide</a> covers the city itself in the detail this page does not.</p>
 
 <p>Guests on our <a href="/best-luxury-egypt-tours">longer Egypt tours</a> have a guide who handles most of what is on this page before it becomes a question, which is the real argument for one. The rest of these egypt travel tips are worth knowing anyway, because the good days are the ones where you are not asking anybody anything.</p>',
   excerpt = 'Tipping, cash, water, dress and the selling. The handful of things that decide whether a day here runs smoothly, and the ones that turn out not to matter at all.',

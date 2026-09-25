@@ -54,12 +54,15 @@ import a46 from "./a46.mjs";
 import a47 from "./a47.mjs";
 import a48 from "./a48.mjs";
 import a49 from "./a49.mjs";
+import a50 from "./a50.mjs";
+import a51 from "./a51.mjs";
+import a52 from "./a52.mjs";
 
 // a14 onwards are the two later waves. They are APPENDED rather than slotted
 // into date order, so the 13 files above regenerate byte for byte. The order of
 // this array no longer matches the order of publication, which is why gen.mjs
 // validates "does this link point at something already live" by date.
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49];
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
@@ -142,6 +145,11 @@ export const SCHEDULE = [
   "2026-11-27T09:00:00+02:00", // best-hotels-in-luxor-egypt
   "2026-11-30T09:00:00+02:00", // best-hotels-in-aswan
   "2026-12-03T09:00:00+02:00", // 5-star-hotels-in-egypt
+
+  // Fayoum and the Old Cataract.
+  "2026-12-06T09:00:00+02:00", // fayoum-oasis-egypt
+  "2026-12-09T09:00:00+02:00", // valley-of-the-whales
+  "2026-12-12T09:00:00+02:00", // aswan-old-cataract-hotel-egypt
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.

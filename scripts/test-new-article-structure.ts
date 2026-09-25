@@ -20,12 +20,13 @@ const { resolvePageMeta, injectMetaTags } = await import("../server/seo-meta");
 const { resolvePageContent, injectPageContent } = await import("../server/seo-content");
 import fs from "fs";
 import path from "path";
+import { POSTS, articleH2Positions } from "./lib/post-image-specs";
 
 // The five Phase A rows exactly as the wave SQL stores them, read back from
 // the generated SQL so this checks what ships rather than a hand-made stub.
 // Both new waves, so the hotels cluster is covered by the same assertions as
 // the Nile one rather than by a second copy of this file.
-const sql = ["nile-cluster", "hotels-cluster"]
+const sql = ["nile-cluster", "hotels-cluster", "planning-cluster"]
   .map((w) => fs.readFileSync(path.resolve(import.meta.dirname, `../content-updates/add-posts-wave-${w}.sql`), "utf8"))
   .join("\n");
 const bodies = [...sql.matchAll(/^  '([a-z0-9-]+)',\n  '((?:[^']|'')*)',\n  '((?:[^']|'')*)',/gm)]
@@ -86,6 +87,29 @@ for (const row of bodies) {
      (row.body.match(/class="toc"/g) ?? []).length === 1);
   ok("table of contents rendered server side", html.includes('class="toc"'));
   ok("key takeaways rendered server side", html.includes('class="key-takeaways"'));
+
+  // Every image spec position has to exist in the body that actually ships.
+  //
+  // This is the assertion the /<h2>/g bug needed. The placer counted H2s with
+  // a pattern that matches no heading in a furniture article, so afterH2
+  // failed its range check on all fourteen of them and every body figure was
+  // skipped with a note nobody was going to read. Counting against the stored
+  // body, with the same helper the placer uses, is the only version of this
+  // check that can fail when that breaks.
+  const spec = POSTS.find((x) => x.slug === row.slug);
+  if (spec) {
+    const positions = articleH2Positions(row.body);
+    const bad = spec.images
+      .filter((i) => i.role === "body")
+      .filter((i) => i.afterH2! < 1 || i.afterH2! >= positions.length)
+      .map((i) => `afterH2 ${i.afterH2} against ${positions.length} H2s`);
+    ok("every body image position exists in the stored body", bad.length === 0, bad.join(", "));
+    ok("the H2 count excludes the takeaways and related blocks",
+       positions.length === (row.body.match(/<h2\b[^>]*>/g) ?? []).length - 2,
+       `${positions.length} article H2s of ${(row.body.match(/<h2\b[^>]*>/g) ?? []).length} total`);
+  } else {
+    ok("has an image spec", false, `${row.slug} is not in post-image-specs.ts`);
+  }
 }
 console.log(fails === 0 ? "\nAll schema cases passed." : `\n${fails} failure(s)`);
 process.exit(fails === 0 ? 0 : 1);
