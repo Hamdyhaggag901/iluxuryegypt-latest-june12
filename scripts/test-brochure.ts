@@ -10,6 +10,7 @@ void ENV_REPORT;
 
 import fs from "fs/promises";
 import zlib from "zlib";
+import puppeteer from "puppeteer";
 import { BROCHURE_TOUR_SLUGS } from "../shared/brochure-tours";
 import { renderBrochureHtml } from "../server/brochure/template";
 import {
@@ -18,7 +19,7 @@ import {
   generateBrochurePdfWithMeta,
 } from "../server/brochure/generate";
 const { storage } = await import("../server/storage");
-import type { Hotel } from "../shared/schema";
+import type { Hotel, ItineraryDay } from "../shared/schema";
 
 let fails = 0;
 const ok = (n: string, c: boolean, d = "") => { if (!c) fails++; console.log(`${c ? "PASS" : "FAIL"}  ${n}${d ? "  " + d : ""}`); };
@@ -77,9 +78,30 @@ function pdfGlyphs(pdf: Buffer): Set<string> {
       continue; // A font file or an image, not a CMap.
     }
     if (!body.includes("beginbfchar") && !body.includes("beginbfrange")) continue;
-    for (const m of body.matchAll(/<[0-9a-fA-F]+>\s*<([0-9a-fA-F]+)>/g)) {
-      for (const hex of m[1].match(/.{4}/g) ?? []) {
-        glyphs.add(String.fromCharCode(parseInt(hex, 16)));
+
+    // bfchar entries are pairs, `<src> <dst>`.
+    for (const block of body.matchAll(/beginbfchar([\s\S]*?)endbfchar/g)) {
+      for (const m of block[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>/g)) {
+        for (const hex of m[2].match(/.{4}/g) ?? []) glyphs.add(String.fromCharCode(parseInt(hex, 16)));
+      }
+    }
+
+    // bfrange entries are TRIPLES, `<lo> <hi> <dst>`, and reading them as
+    // pairs is how an earlier version of this lost F, G, q and r: it matched
+    // <lo> <hi> and treated the range's end as a codepoint. The destination
+    // increments across the range, or is given as an explicit array.
+    for (const block of body.matchAll(/beginbfrange([\s\S]*?)endbfrange/g)) {
+      for (const m of block[1].matchAll(/<([0-9a-fA-F]+)>\s*<([0-9a-fA-F]+)>\s*(?:<([0-9a-fA-F]+)>|\[([^\]]*)\])/g)) {
+        const lo = parseInt(m[1], 16);
+        const hi = parseInt(m[2], 16);
+        if (m[3] !== undefined) {
+          const base = parseInt(m[3].slice(-4), 16);
+          for (let i = 0; i <= hi - lo; i++) glyphs.add(String.fromCharCode(base + i));
+        } else if (m[4] !== undefined) {
+          for (const dst of m[4].matchAll(/<([0-9a-fA-F]+)>/g)) {
+            for (const hex of dst[1].match(/.{4}/g) ?? []) glyphs.add(String.fromCharCode(parseInt(hex, 16)));
+          }
+        }
       }
     }
   }
@@ -109,10 +131,13 @@ for (const slug of BROCHURE_TOUR_SLUGS) {
 
   const magic = pdf.subarray(0, 4).toString("latin1");
   const pages = pdfPageCount(pdf);
-  // cover + intro + N days + inclusions + hotels + route + team + closing
-  const expected = 1 + 1 + days + 1 + 1 + 1 + 1 + 1;
+  // cover + journey + N days + ceil(hotels/2) + route + team + inclusions + closing
+  const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+  const hotelCount = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter(Boolean).length;
+  const hotelPages = Math.ceil(hotelCount / 2);
+  const expected = 1 + 1 + days + hotelPages + 1 + 1 + 1 + 1;
   console.log(
-    `  ${slug.padEnd(32)} ${days} days  ${String(pdf.length).padStart(8)} bytes  ${String(pages).padStart(2)} pages  ${String(first[slug]).padStart(5)}ms${cached ? "  (cached)" : ""}`
+    `  ${slug.padEnd(32)} ${days} days  ${hotelCount} hotels  ${String(pdf.length).padStart(8)} bytes  ${String(pages).padStart(2)} pages  ${String(first[slug]).padStart(5)}ms${cached ? "  (cached)" : ""}`
   );
   ok(`${slug}: starts with %PDF`, magic === "%PDF", magic);
   ok(`${slug}: page count matches its ${days} day itinerary`, pages === expected, `got ${pages}, expected ${expected}`);
@@ -149,21 +174,23 @@ console.log("\n=== 3. A PENDING_UPLOAD image renders the navy fallback, never a 
   // Counted on the rendered class attribute, not the bare string: the
   // stylesheet declares .photo-fallback twice and the first version of this
   // check counted those as panels.
-  const fallbacks = (html.match(/class="photo photo-fallback/g) ?? []).length;
+  const fallbacks = (html.match(/class="[^"]*\bfallback\b/g) ?? []).length;
 
   console.log(`  ${pendingDays} day images and ${pendingHotels} hotel images are missing or PENDING_UPLOAD`);
   ok("no src attribute anywhere points at PENDING_UPLOAD", !/src="[^"]*PENDING_UPLOAD/.test(html));
   ok("no src attribute is empty", !/src=""/.test(html));
   ok("every missing image became a navy fallback panel",
      fallbacks === pendingDays + pendingHotels, `${fallbacks} fallbacks for ${pendingDays + pendingHotels} missing images`);
-  ok("the fallback carries the place name", /photo-fallback[^>]*><span>[^<]+<\/span>/.test(html));
+  ok("the fallback carries the place name", /\bfallback"><span>[^<]+<\/span>/.test(html));
 
   // The last day has no accommodation. An empty "Stay" line would read as a
   // missing value rather than as a departure day.
   const lastDay = days[days.length - 1] ?? {};
   ok("the last day has no accommodation in the data", !lastDay.accommodation);
-  const stayLines = (html.match(/foot-label">Stay</g) ?? []).length;
-  ok("and prints no Stay line for it", stayLines === days.length - 1, `${stayLines} Stay lines for ${days.length} days`);
+  // The approved design carries no accommodation line on a day page at all, so
+  // the last day cannot print an empty one and neither can any other.
+  const stayLines = (html.match(/\bStay\b/g) ?? []).length;
+  ok("no day page prints a Stay line", stayLines === 0, `${stayLines} Stay lines`);
 }
 
 console.log("\n=== 6. No prices and no currency symbols anywhere in any brochure ===\n");
@@ -198,15 +225,159 @@ for (const slug of BROCHURE_TOUR_SLUGS) {
   ok(`${slug}: the printed PDF carries readable text (${glyphs.size} glyphs)`, missing.length === 0, missing.join(""));
 }
 
+console.log("\n=== 3b. A URL that fails to load also becomes the navy panel ===\n");
+{
+  // PENDING_UPLOAD and empty are caught statically. This is the other half:
+  // a present, well formed URL that does not resolve. It is not hypothetical,
+  // it is what a deleted upload looks like, and the only place it shows up is
+  // as a broken image in a document already sent to a client.
+  const tour = (await storage.getTourBySlug(BROCHURE_TOUR_SLUGS[0]))!;
+  const broken = {
+    ...tour,
+    heroImage: "https://127.0.0.1:9/does-not-resolve.jpg",
+    itinerary: (tour.itinerary as ItineraryDay[]).map((d) => ({ ...d, image: "https://127.0.0.1:9/nope.jpg" })),
+  } as typeof tour;
+  const html = renderBrochureHtml(broken, []);
+  ok("the markup still carries an img, so this is a runtime swap not a static one",
+     (html.match(/<img /g) ?? []).length > 0);
+  ok("every img has an onerror and a label to fall back to",
+     (html.match(/<img [^>]*onerror="brochureFallback\(this\)"[^>]*data-fallback="/g) ?? []).length === (html.match(/<img /g) ?? []).length);
+
+  const browser = await puppeteer.launch({
+    headless: "new" as unknown as boolean,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  });
+  const page = await browser.newPage();
+  try {
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const counts = await page.evaluate(() => ({
+      imgs: document.querySelectorAll("img").length,
+      panels: document.querySelectorAll(".fallback").length,
+      broken: [...document.querySelectorAll("img")].filter((i) => !(i as HTMLImageElement).naturalWidth).length,
+    }));
+    console.log(`  after load: ${counts.imgs} img, ${counts.panels} panels, ${counts.broken} broken`);
+    ok("no broken image survives to the print", counts.broken === 0, `${counts.broken} broken`);
+    ok("each failed image became a panel", counts.imgs === 0 && counts.panels > 0, `${counts.imgs} img left`);
+    const label = await page.evaluate(() => document.querySelector(".fallback span")?.textContent ?? "");
+    ok("the panel carries the place name", label.trim().length > 0, JSON.stringify(label));
+  } finally {
+    await page.close().catch(() => undefined);
+    await browser.close().catch(() => undefined);
+  }
+}
+
+console.log("\n=== 7. The approved layout, per tour ===\n");
+for (const slug of BROCHURE_TOUR_SLUGS) {
+  const tour = (await storage.getTourBySlug(slug))!;
+  const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+  const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+  const html = renderBrochureHtml(tour, hotels);
+  const days = (tour.itinerary as ItineraryDay[]) ?? [];
+  console.log(`  --- ${slug} (${days.length} days, ${hotels.length} hotels)`);
+
+  // Day pages alternate strictly, and the flipped ones put the body BEFORE
+  // the image in the markup, which is what the approved design specifies and
+  // what a reader of the HTML alone would get wrong.
+  const dayBlocks = [...html.matchAll(/<div class="dpg( flip)?">([\s\S]*?)\n  <\/div>/g)];
+  ok(`${slug}: one dpg block per itinerary day`, dayBlocks.length === days.length, `${dayBlocks.length} for ${days.length}`);
+  const flips = dayBlocks.map((m) => Boolean(m[1]));
+  ok(`${slug}: day pages alternate, starting unflipped`,
+     flips.every((f, i) => f === (i % 2 === 1)), flips.map((f) => (f ? "F" : "-")).join(""));
+  const orderWrong = dayBlocks.filter((m) => {
+    const inner = m[2];
+    const imgAt = inner.indexOf('<div class="dimg">');
+    const bodyAt = inner.indexOf('<div class="body">');
+    return m[1] ? bodyAt > imgAt : imgAt > bodyAt;
+  });
+  ok(`${slug}: flipped days put the body first, unflipped put the image first`, orderWrong.length === 0, `${orderWrong.length} wrong`);
+  const nums = [...html.matchAll(/<div class="num">(\d+)<\/div>/g)].map((m) => m[1]);
+  ok(`${slug}: every day number is two digits, zero padded`,
+     nums.length === days.length && nums.every((x) => /^\d{2}$/.test(x)), nums.join(","));
+
+  // The hotels page: .hot with .hrow children, two a page, in hotel_ids order.
+  const hotBlocks = [...html.matchAll(/<div class="hot">([\s\S]*?)\n  <\/div>/g)];
+  ok(`${slug}: ${Math.ceil(hotels.length / 2)} hotel page(s)`, hotBlocks.length === Math.ceil(hotels.length / 2), String(hotBlocks.length));
+  const rowsPerPage = hotBlocks.map((m) => (m[1].match(/<div class="hrow">/g) ?? []).length);
+  ok(`${slug}: two hrow a page, the last carrying the remainder`,
+     rowsPerPage.every((r, i) => r === (i === hotBlocks.length - 1 ? hotels.length - i * 2 : 2)) &&
+       rowsPerPage.reduce((a, b) => a + b, 0) === hotels.length,
+     rowsPerPage.join("+"));
+  if (hotels.length > 0) {
+    const names = [...html.matchAll(/<h5>([^<]+)<\/h5>/g)].map((m) => m[1]);
+    ok(`${slug}: hotels are in hotel_ids order`,
+       names.join("|") === hotels.map((x) => x.name).join("|"), names.join(", "));
+    ok(`${slug}: the hotels page carries no price, tier or star rating`,
+       !/price|tier|star|rating|room categor/i.test(hotBlocks.map((m) => m[1]).join(" ")));
+  }
+
+  // The route: a gold timeline, not a map.
+  const routeBlock = html.match(/<div class="route">([\s\S]*?)<\/div>\n  <\/div>/)?.[1] ?? "";
+  const stopCount = (routeBlock.match(/<div class="stop">/g) ?? []).length;
+  const expectedStops = (() => {
+    const out: string[] = [];
+    for (const d of days) {
+      const raw = String(d.placeName || "").trim();
+      if (!raw) continue;
+      // Mirrors the template's site-to-region mapping for the places this
+      // fixture actually uses.
+      const broad = /giza|great pyramid/i.test(raw) ? "Giza"
+        : /saqqara/i.test(raw) ? "Saqqara"
+        : /karnak|valley of the kings|luxor/i.test(raw) ? "Luxor"
+        : /philae|aswan/i.test(raw) ? "Aswan"
+        : /edfu/i.test(raw) ? "Edfu"
+        : /kom ombo/i.test(raw) ? "Kom Ombo"
+        : raw;
+      if (out[out.length - 1] !== broad) out.push(broad);
+    }
+    return out;
+  })();
+  ok(`${slug}: ${expectedStops.length} stops after collapsing consecutive repeats`,
+     stopCount === expectedStops.length, `${stopCount} vs ${expectedStops.length}: ${expectedStops.join(" > ")}`);
+  ok(`${slug}: no consecutive repeat survived`,
+     !expectedStops.some((x, i) => i > 0 && x === expectedStops[i - 1]));
+  ok(`${slug}: the route page has no svg and no map tile`, !/<svg|leaflet|mapbox|tile/i.test(html));
+
+  // Folios: sequential, correct for this tour's own page count, none on the
+  // cover or the closing page.
+  const pageCount = (html.match(/<div class="pg[ "]/g) ?? []).length;
+  const folios = [...html.matchAll(/<div class="fol">.*?<span>(\d+)<\/span><\/div>/g)].map((m) => Number(m[1]));
+  ok(`${slug}: ${pageCount} pages, ${folios.length} folios`, folios.length === pageCount - 2, `${folios.length} for ${pageCount} pages`);
+  ok(`${slug}: folios run 02 to ${String(pageCount - 1).padStart(2, "0")} with no gaps`,
+     folios.every((x, i) => x === i + 2), folios.join(","));
+  const firstPage = html.slice(html.indexOf('<div class="pg">'), html.indexOf('<div class="pg">', 10));
+  ok(`${slug}: the cover carries no folio`, !firstPage.includes('class="fol"'));
+  ok(`${slug}: the closing page carries no folio`,
+     !(html.match(/<div class="pg end">[\s\S]*$/)?.[0] ?? "").includes('class="fol"'));
+
+  // The approved stylesheet, and the pieces of it that are easy to lose.
+  ok(`${slug}: the drop cap rule is present`, html.includes("p.first::first-letter"));
+  ok(`${slug}: the quote rule is present`, html.includes('.quote{margin:9mm 0;padding-left:7mm;border-left:1px solid var(--g)'));
+  ok(`${slug}: the day numbers hang off the page edges`,
+     html.includes(".dpg .num{bottom:-12mm}") && html.includes(".dpg.flip .num{top:-14mm;bottom:auto}"));
+  ok(`${slug}: the cover veil keeps its three gradient stops`,
+     html.includes("linear-gradient(180deg,rgba(38,48,63,.5),rgba(38,48,63,.12) 42%,rgba(38,48,63,.82))"));
+  ok(`${slug}: the hotel row keeps its 88mm image column`, html.includes("grid-template-columns:88mm 1fr"));
+  ok(`${slug}: fonts stay embedded, with no Google request`,
+     html.includes("data:font/woff2;base64,") && !html.includes("fonts.googleapis.com") && !html.includes("fonts.gstatic.com"));
+
+  // Copy rules, across everything the template writes rather than only the
+  // paragraph the earlier check looked at.
+  const prose = visibleText(html);
+  const banned = ["delve", "nestled", "boasts", "hidden gem", "testament to", "tapestry", "meticulously", "unparalleled", "iconic", "breathtaking", "stunning", "in conclusion"];
+  const hits = banned.filter((b) => new RegExp(`\\b${b}\\b`, "i").test(prose));
+  ok(`${slug}: no banned word`, hits.length === 0, hits.join(", "));
+  ok(`${slug}: no em or en dash`, !/[\u2013\u2014]/.test(html));
+}
+
 console.log("\n=== House rules ===\n");
 {
   const tour = (await storage.getTourBySlug(BROCHURE_TOUR_SLUGS[0]))!;
   const html = renderBrochureHtml(tour, []);
   ok("no em or en dash in the rendered HTML", !/[\u2013\u2014]/.test(html));
-  ok("A4 page size with no margin", html.includes("@page { size: A4; margin: 0; }"));
-  ok("every page breaks after itself", html.includes("page-break-after: always"));
+  ok("A4 page size with no margin", /@page\s*\{\s*size:\s*A4;\s*margin:\s*0\s*;?\s*\}/.test(html));
+  ok("every page breaks after itself", /page-break-after:\s*always/.test(html));
   ok("fonts are embedded as data URIs, not linked", html.includes("data:font/woff2;base64,") && !html.includes("fonts.googleapis.com"));
-  ok("a tour with no hotels simply omits the hotels page", !html.includes("Where you will stay"));
+  ok("a tour with no hotels simply omits the hotels page", !html.includes("WHERE YOU WILL STAY"));
 }
 
 await closeBrochureBrowser();

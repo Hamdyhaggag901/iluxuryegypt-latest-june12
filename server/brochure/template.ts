@@ -1,22 +1,20 @@
 // The brochure's HTML, rendered once per tour and printed by Puppeteer.
 //
-// Everything here is print CSS. @page sets A4 with no margin and each page div
-// carries page-break-after, so one div is exactly one sheet. Nothing may rely
-// on a network fetch at print time: the fonts are inlined from
-// ./fonts.ts and images are the only remote resource, which is why
-// generate.ts waits on networkidle0 before printing.
+// The stylesheet below is the approved design, copied verbatim. Class names,
+// millimetre paddings, point sizes, gradient stops and the negative offsets on
+// the day numbers are all as approved; nothing here is a substitute of my own.
+// The approved preview is a browser page and pulls its fonts from Google, which
+// this must not do: setContent resolves on networkidle0 while an @font-face
+// fetch can still be in flight, so a linked font prints a fallback face with no
+// error. The faces stay inlined from ./fonts.ts.
 //
 // NO PRICES. Not the tour price, not a room rate, not a "from" figure. That is
-// deliberate and it is what keeps the PDF evergreen: a brochure with a number
-// in it is wrong the moment a season changes, and the price conversation
-// belongs in the reply to the email rather than in a file that gets forwarded.
+// what keeps the PDF evergreen: a brochure with a number in it is wrong the
+// moment a season changes, and the price conversation belongs in the reply to
+// the email rather than in a file that gets forwarded.
 
 import type { Hotel, ItineraryDay, Tour } from "@shared/schema";
 import { BROCHURE_FONT_CSS } from "./fonts";
-
-const GOLD = "#C4A661";
-const NAVY = "#26303F";
-const OFF_WHITE = "#F7F4EF";
 
 /** Images the admin has not replaced yet. Rendering one gives a broken icon. */
 const PENDING = "PENDING_UPLOAD";
@@ -35,8 +33,7 @@ function escapeHtml(value: string): string {
  *
  * PENDING_UPLOAD is a real value in this database rather than a hypothetical:
  * several hotels carry it, and an <img> pointing at it prints a broken icon
- * into a document that goes to a client. Everything that fails this test gets
- * the navy block instead.
+ * into a document that goes to a client.
  */
 function usableImage(src: string | null | undefined): src is string {
   if (typeof src !== "string") return false;
@@ -45,442 +42,423 @@ function usableImage(src: string | null | undefined): src is string {
 }
 
 /**
- * An image, or a flat navy panel carrying the place name in Playfair.
+ * An <img>, or a flat navy panel carrying the place name.
  *
- * The fallback is deliberately not a grey box or a placeholder graphic. It
- * reads as a design choice rather than as a missing asset, which means a
- * brochure for a tour whose photography is half uploaded still goes out.
+ * The fallback reads as a design choice rather than as a missing asset, which
+ * means a brochure for a tour whose photography is half uploaded still goes
+ * out. `cls` is applied either way so the panel occupies the same box the
+ * image would have.
  */
-function imageOrFallback(src: string | null | undefined, alt: string, label: string, extraClass = ""): string {
-  if (usableImage(src)) {
-    return `<img class="photo ${extraClass}" src="${escapeHtml(src.trim())}" alt="${escapeHtml(alt)}">`;
-  }
-  return `<div class="photo photo-fallback ${extraClass}"><span>${escapeHtml(label)}</span></div>`;
-}
-
-function dayLabel(day: ItineraryDay, index: number): string {
-  const n = typeof day.day === "number" && Number.isFinite(day.day) ? day.day : index + 1;
-  return `Day ${n}`;
+function imageOrFallback(src: string | null | undefined, alt: string, label: string, cls = ""): string {
+  const panel = `<div${cls ? ` class="${cls} fallback"` : ` class="fallback"`}><span>${escapeHtml(label)}</span></div>`;
+  if (!usableImage(src)) return panel;
+  const attr = cls ? ` class="${cls}"` : "";
+  // onerror covers the case the static check cannot: a URL that is present and
+  // well formed and does not load. PENDING_UPLOAD and empty are caught above,
+  // but a deleted upload or an unreachable host is neither, and the difference
+  // only shows up as a broken image in a document already sent to a client.
+  // Puppeteer runs this before it prints, because networkidle0 waits for the
+  // failed request to settle.
+  return `<img${attr} src="${escapeHtml(src.trim())}" alt="${escapeHtml(alt)}" onerror="brochureFallback(this)" data-fallback="${escapeHtml(label)}">`;
 }
 
 function list(items: string[] | null | undefined): string[] {
   return Array.isArray(items) ? items.filter((x) => typeof x === "string" && x.trim().length > 0) : [];
 }
 
+function paragraphs(text: string | null | undefined): string[] {
+  return String(text || "")
+    .split(/\n{2,}|\r\n\r\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/** Two digits, zero padded, as the design specifies for the day numbers. */
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/**
+ * The broad place a site belongs to.
+ *
+ * The route page wants Giza rather than "Great Pyramid of Giza", because a
+ * timeline of individual sites is an itinerary repeated rather than a route.
+ * Anything not in this list passes through unchanged, so an unfamiliar place
+ * name is printed as the admin typed it rather than dropped.
+ */
+const SITE_REGIONS: Array<[RegExp, string]> = [
+  [/\b(giza|sphinx|great pyramid|khufu|mena house)\b/i, "Giza"],
+  [/\b(saqqara|sakkara|dahshur|memphis|step pyramid|bent pyramid|red pyramid)\b/i, "Saqqara"],
+  [/\b(karnak|luxor temple|valley of the kings|valley of the queens|hatshepsut|deir el|medinet habu|colossi of memnon|theban|thebes|west bank)\b/i, "Luxor"],
+  [/\b(philae|elephantine|high dam|unfinished obelisk|nubian|kitchener)\b/i, "Aswan"],
+  [/\b(abu simbel)\b/i, "Abu Simbel"],
+  [/\b(egyptian museum|grand egyptian museum|khan el khalili|khan al khalili|islamic cairo|coptic cairo|citadel|old cairo)\b/i, "Cairo"],
+  [/\b(edfu|horus temple)\b/i, "Edfu"],
+  [/\b(kom ombo)\b/i, "Kom Ombo"],
+  [/\b(bibliotheca|qaitbay|montazah)\b/i, "Alexandria"],
+  [/\b(wadi el hitan|wadi al hitan|wadi rayan|qarun)\b/i, "Fayoum"],
+];
+
+function broadPlace(place: string): string {
+  const trimmed = place.trim();
+  for (const [pattern, region] of SITE_REGIONS) {
+    if (pattern.test(trimmed)) return region;
+  }
+  return trimmed;
+}
+
+/**
+ * The itinerary's places in order, mapped to their broad region, with
+ * consecutive repeats collapsed.
+ *
+ * Collapsing is what makes a tour that starts and ends in Cairo show Cairo once
+ * at each end rather than four times in a row across the first two days and the
+ * last. Non-consecutive repeats are kept, because returning to a city is a real
+ * leg of the route.
+ */
+function routeStops(days: ItineraryDay[]): string[] {
+  const stops: string[] = [];
+  for (const day of days) {
+    const place = broadPlace(String(day.placeName || ""));
+    if (!place) continue;
+    if (stops[stops.length - 1] !== place) stops.push(place);
+  }
+  return stops;
+}
+
 // ---------------------------------------------------------------------------
 // Pages
 // ---------------------------------------------------------------------------
 
-function coverPage(tour: Tour): string {
-  const hero = imageOrFallback(tour.heroImage, tour.heroImageAlt?.trim() || tour.title, tour.title, "cover-photo");
-  return `
-<div class="page cover">
+/**
+ * The bottom-of-page line. The cover and the closing page do not carry one,
+ * which is why this is called per page rather than appended to every page.
+ */
+function folio(section: string, pageNumber: number): string {
+  return `<div class="fol"><span>ILUXURY EGYPT</span><span>${escapeHtml(section.toUpperCase())}</span><span>${pad2(pageNumber)}</span></div>`;
+}
+
+function coverPage(tour: Tour, days: ItineraryDay[]): string {
+  const hero = imageOrFallback(tour.heroImage, tour.heroImageAlt?.trim() || tour.title, tour.title, "bleed");
+
+  // Built from what the row actually holds. A part the database does not have
+  // is left out rather than invented, which is why this is a filter and not a
+  // template string with fallbacks in it.
+  const places = routeStops(days);
+  const parts = [
+    String(tour.duration || "").trim().toUpperCase(),
+    places.length > 0 ? places.map((p) => escapeHtml(p.toUpperCase())).join(" &nbsp;") : "",
+    String(tour.groupSize || "").trim().toUpperCase(),
+  ].filter((p) => p.length > 0);
+
+  return `<div class="pg">
   ${hero}
-  <div class="cover-veil"></div>
-  <div class="cover-body">
-    <p class="wordmark">iLuxury Egypt</p>
-    <div class="rule"></div>
-    <p class="eyebrow">${escapeHtml(tour.duration)}</p>
-    <h1>${escapeHtml(tour.title)}</h1>
-    <p class="cover-foot">A private journey, planned in full</p>
+  <div class="veil"></div>
+  <div class="cov">
+    <div class="mark">ILUXURY EGYPT</div>
+    <div>
+      <div class="rule"></div>
+      <h1>${escapeHtml(tour.title)}</h1>
+      ${parts.length > 0 ? `<div class="meta">${parts.join(" &nbsp;&nbsp; ")}</div>` : ""}
+    </div>
   </div>
 </div>`;
 }
 
-function introPage(tour: Tour, dayCount: number): string {
-  const paragraphs = String(tour.description || "")
-    .split(/\n{2,}|\r\n\r\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .slice(0, 4);
-  const body = paragraphs.length > 0 ? paragraphs : [String(tour.description || "").trim()].filter(Boolean);
+function journeyPage(tour: Tour, pageNumber: number): string {
+  const body = paragraphs(tour.description);
+  const opening = body[0] ?? String(tour.description || "").trim();
+  const rest = body.slice(1);
 
-  return `
-<div class="page pad">
-  <p class="section-eyebrow">The journey</p>
-  <h2>${escapeHtml(tour.title)}</h2>
-  <div class="rule left"></div>
-  <div class="intro-grid">
-    <div class="intro-copy">
-      ${body.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
-    </div>
-    <div class="intro-facts">
-      <div class="fact"><span class="fact-label">Duration</span><span class="fact-value">${escapeHtml(tour.duration)}</span></div>
-      <div class="fact"><span class="fact-label">Days planned</span><span class="fact-value">${dayCount}</span></div>
-      ${tour.groupSize ? `<div class="fact"><span class="fact-label">Group size</span><span class="fact-value">${escapeHtml(tour.groupSize)}</span></div>` : ""}
-      ${tour.category ? `<div class="fact"><span class="fact-label">Style</span><span class="fact-value">${escapeHtml(tour.category)}</span></div>` : ""}
-    </div>
+  // The pulled line is the second paragraph's own first sentence, so the quote
+  // is the tour's words rather than a line written about it here.
+  const quoteSource = rest[0] ?? opening;
+  const pulled = (quoteSource.split(/(?<=[.!?])\s+/)[0] ?? quoteSource).trim();
+  const closing = rest.slice(1);
+
+  return `<div class="pg">
+  <div class="pad">
+    <div class="kick">The journey</div>
+    <h3>${escapeHtml(tour.title)}</h3>
+    <p class="first">${escapeHtml(opening)}</p>
+    ${rest.length > 0 ? `<p>${escapeHtml(rest[0])}</p>` : ""}
+    ${pulled ? `<div class="quote">${escapeHtml(pulled)}</div>` : ""}
+    ${closing.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n    ")}
   </div>
+  ${folio("The journey", pageNumber)}
 </div>`;
 }
 
 /**
- * One page per itinerary day, flipping the photo from left to right on each
- * one. The flip is driven by the index rather than written into the markup, so
- * the alternation holds for a four day tour and a fourteen day tour alike.
+ * One page per itinerary day, strictly alternating.
+ *
+ * Odd days are `dpg`: the image band on top, text below, the number hanging off
+ * the bottom edge of the image. Even days are `dpg flip`: the body div comes
+ * FIRST in the markup, the image second, and the number hangs off the top. The
+ * alternation is driven by the index so it holds for a four day tour and a
+ * twelve day one alike.
  */
-function dayPage(day: ItineraryDay, index: number): string {
+function dayPage(day: ItineraryDay, index: number, pageNumber: number): string {
   const flipped = index % 2 === 1;
-  const title = String(day.title || "").trim();
+  const dayNumber = typeof day.day === "number" && Number.isFinite(day.day) ? day.day : index + 1;
   const place = String(day.placeName || "").trim();
-  const label = dayLabel(day, index);
-  const photo = imageOrFallback(day.image, String(day.imageAlt || "").trim() || title || label, place || title || label);
-  const activities = list(day.activities);
-  const meals = list(day.meals);
-  const accommodation = String(day.accommodation || "").trim();
+  const title = String(day.title || "").trim();
   const description = String(day.description || "").trim();
+  const photo = imageOrFallback(day.image, String(day.imageAlt || "").trim() || title || place, place || title);
 
-  return `
-<div class="page day ${flipped ? "flip" : ""}">
-  <div class="day-photo">${photo}</div>
-  <div class="day-copy">
-    <p class="day-number">${escapeHtml(label)}</p>
-    ${place ? `<p class="day-place">${escapeHtml(place)}</p>` : ""}
-    ${title ? `<h3>${escapeHtml(title)}</h3>` : ""}
-    <div class="rule left short"></div>
-    ${description ? `<p class="day-lede">${escapeHtml(description)}</p>` : ""}
-    ${
-      activities.length > 0
-        ? `<ul class="ticks">${activities.map((a) => `<li>${escapeHtml(a)}</li>`).join("")}</ul>`
-        : ""
-    }
-    <div class="day-foot">
-      ${
-        // A day with no accommodation is the last day, and an empty "Stay"
-        // line on it reads as a missing value rather than as a departure.
-        accommodation ? `<div class="foot-item"><span class="foot-label">Stay</span><span>${escapeHtml(accommodation)}</span></div>` : ""
-      }
-      ${meals.length > 0 ? `<div class="foot-item"><span class="foot-label">Meals</span><span>${escapeHtml(meals.join(", "))}</span></div>` : ""}
-    </div>
+  // The pulled line is the paragraph's last sentence when there is more than
+  // one, so the quote is not the sentence the reader has just read at the top
+  // of the same block.
+  const sentences = description.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0);
+  const pulled = sentences.length > 1 ? sentences[sentences.length - 1].trim() : "";
+
+  const img = `<div class="dimg">${photo}<div class="num">${pad2(dayNumber)}</div></div>`;
+  const body = `<div class="body">
+      ${place ? `<div class="kick">${escapeHtml(place)}</div>` : ""}
+      ${title ? `<h2>${escapeHtml(title)}</h2>` : ""}
+      ${description ? `<p class="first">${escapeHtml(description)}</p>` : ""}
+      ${pulled ? `<div class="quote">${escapeHtml(pulled)}</div>` : ""}
+    </div>`;
+
+  return `<div class="pg">
+  <div class="dpg${flipped ? " flip" : ""}">
+    ${flipped ? `${body}\n    ${img}` : `${img}\n    ${body}`}
   </div>
+  ${folio(`Day ${dayNumber}`, pageNumber)}
 </div>`;
 }
 
-function inclusionsPage(tour: Tour): string {
-  const includes = list(tour.includes);
-  const excludes = list(tour.excludes);
-  return `
-<div class="page pad">
-  <p class="section-eyebrow">What is covered</p>
-  <h2>Included, and not included</h2>
-  <div class="rule left"></div>
-  <div class="two-col">
-    <div>
-      <h4 class="col-head">Included</h4>
-      ${
-        includes.length > 0
-          ? `<ul class="ticks">${includes.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-          : `<p class="muted">Confirmed with your final itinerary.</p>`
-      }
-    </div>
-    <div>
-      <h4 class="col-head">Not included</h4>
-      ${
-        excludes.length > 0
-          ? `<ul class="crosses">${excludes.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-          : `<p class="muted">Confirmed with your final itinerary.</p>`
-      }
-    </div>
-  </div>
-</div>`;
-}
-
-function hotelsPage(hotels: Hotel[]): string {
-  if (hotels.length === 0) return "";
-  return `
-<div class="page pad">
-  <p class="section-eyebrow">Where you will stay</p>
-  <h2>The addresses on this journey</h2>
-  <div class="rule left"></div>
-  <div class="hotel-grid">
-    ${hotels
-      .slice(0, 6)
+/**
+ * Two hotels a page, each with an 88mm full height image beside its text.
+ *
+ * A tour with an odd number leaves the lower half of its last page empty, which
+ * is the approved behaviour: the grid keeps both rows at 1fr so a single .hrow
+ * occupies the top half at its proper size rather than stretching to fill the
+ * sheet.
+ */
+function hotelPages(hotels: Hotel[], firstPageNumber: number): string[] {
+  const pages: string[] = [];
+  for (let i = 0; i < hotels.length; i += 2) {
+    const pair = hotels.slice(i, i + 2);
+    const rows = pair
       .map(
-        (h) => `
-      <div class="hotel-card">
-        ${imageOrFallback(h.image, h.imageAlt?.trim() || h.name, h.location || h.name, "hotel-photo")}
-        <div class="hotel-copy">
-          <h4>${escapeHtml(h.name)}</h4>
-          <p class="hotel-where">${escapeHtml(h.location || "")}</p>
-        </div>
-      </div>`
+        (h) => `    <div class="hrow">
+      ${imageOrFallback(h.image, h.imageAlt?.trim() || h.name, h.location || h.name)}
+      <div class="hinfo">
+        ${h.location ? `<div class="city">${escapeHtml(h.location)}</div>` : ""}
+        <h5>${escapeHtml(h.name)}</h5>
+        <p>${escapeHtml(String(h.description || "").trim())}</p>
+      </div>
+    </div>`
       )
-      .join("")}
+      .join("\n");
+
+    pages.push(`<div class="pg">
+  <div class="hot">
+${rows}
   </div>
-</div>`;
+  ${folio("Where you will stay", firstPageNumber + pages.length)}
+</div>`);
+  }
+  return pages;
 }
 
-function routePage(tour: Tour, days: ItineraryDay[]): string {
-  // Consecutive duplicates collapse: four nights in one city is one stop on a
-  // route, not four, and listing it four times makes the journey look padded.
-  const stops: string[] = [];
-  for (const d of days) {
-    const place = String(d.placeName || "").trim();
-    if (!place) continue;
-    if (stops[stops.length - 1] !== place) stops.push(place);
-  }
+function routePage(days: ItineraryDay[], pageNumber: number): string {
+  const stops = routeStops(days);
   if (stops.length === 0) return "";
 
-  return `
-<div class="page pad">
-  <p class="section-eyebrow">The route</p>
-  <h2>${escapeHtml(tour.duration)}, end to end</h2>
-  <div class="rule left"></div>
-  <ol class="route">
-    ${stops
-      .map(
-        (s, i) => `
-      <li>
-        <span class="route-dot"></span>
-        <span class="route-index">${String(i + 1).padStart(2, "0")}</span>
-        <span class="route-name">${escapeHtml(s)}</span>
-      </li>`
-      )
-      .join("")}
-  </ol>
+  // A long route tightens its own spacing rather than spilling onto a second
+  // page. 13mm per stop is the approved padding and fits about twelve; past
+  // that the padding closes up so the timeline stays one page.
+  const tight = stops.length > 12;
+  const override = tight
+    ? `<style>.stop{padding-bottom:${stops.length > 18 ? "5mm" : "8mm"}}.stop b{font-size:13pt}</style>`
+    : "";
+
+  return `<div class="pg">
+  ${override}
+  <div class="pad">
+    <div class="kick">The detail</div>
+    <h3>The route.</h3>
+    <div class="route">
+      ${stops
+        .map((s, i) => `<div class="stop"><b>${escapeHtml(s)}</b><span>STOP ${i + 1}</span></div>`)
+        .join("\n      ")}
+    </div>
+  </div>
+  ${folio("Route", pageNumber)}
 </div>`;
 }
 
-function teamPage(): string {
-  return `
-<div class="page pad">
-  <p class="section-eyebrow">Who plans it</p>
-  <h2>People, not a call centre</h2>
-  <div class="rule left"></div>
-  <div class="team-copy">
-    <p>Every journey on these pages is built by hand, by the same small team that answers the phone when you call.</p>
-    <p>Your itinerary is written by one planner who stays with it from the first email to the morning you fly home, and who has walked the ground you are about to walk.</p>
-    <p>Your guides are Egyptologists rather than escorts, licensed and chosen for the specific sites on your route.</p>
-    <p>On the ground there is one number to call, answered in Cairo, at any hour of the day or night you happen to need it.</p>
+/**
+ * The roles, not the people.
+ *
+ * No names, no photographs, no licence numbers, no years of experience and no
+ * phone number: none of that is in the database and a brochure is the wrong
+ * place to invent it. Every sentence here is true of how this operator works.
+ */
+function teamPage(pageNumber: number): string {
+  return `<div class="pg">
+  <div class="pad">
+    <div class="kick">The detail</div>
+    <h3>Your team on the ground.</h3>
+    <div class="tm">
+      <h4>Your Egyptologist</h4>
+      <p>A licensed guide who stays with you for the whole journey rather than a different face at every site. They are chosen for the places on your particular route, because the person who is good at Saqqara is not always the person who is good at Karnak.</p>
+    </div>
+    <div class="tm">
+      <h4>Your concierge in Cairo</h4>
+      <p>One planner writes your itinerary and stays with it from the first email to the morning you fly home. Nothing is handed to a call centre, and you are never asked to explain your trip to somebody who has not read it.</p>
+    </div>
+    <div class="tm">
+      <h4>Reachable at any hour</h4>
+      <p>A flight moves, a site closes, somebody wakes up unwell, and the plan has to change before breakfast. Write to travel@iluxuryegypt.com at any hour and the answer comes from the office in Cairo that built the itinerary.</p>
+    </div>
   </div>
-  <div class="team-marks">
-    <div class="mark"><span class="mark-value">1</span><span class="mark-label">planner, start to finish</span></div>
-    <div class="mark"><span class="mark-value">24/7</span><span class="mark-label">on the ground in Cairo</span></div>
-    <div class="mark"><span class="mark-value">0</span><span class="mark-label">shops on the itinerary</span></div>
-  </div>
+  ${folio("Your team", pageNumber)}
 </div>`;
 }
 
-function closingPage(tour: Tour): string {
-  return `
-<div class="page closing">
-  <p class="wordmark light">iLuxury Egypt</p>
-  <div class="rule center"></div>
-  <h2 class="closing-head">Tell us your dates</h2>
-  <p class="closing-copy">This journey is a starting point rather than a fixed departure, and the shape of it changes with who is travelling and when.</p>
-  <p class="closing-copy">Reply to the email this brochure arrived with and we will come back with the version built for your dates.</p>
-  <p class="closing-mail">travel@iluxuryegypt.com</p>
-  <p class="closing-tour">${escapeHtml(tour.title)}</p>
+function inclusionsPage(tour: Tour, pageNumber: number): string {
+  const includes = list(tour.includes);
+  const excludes = list(tour.excludes);
+  const items = (rows: string[]) =>
+    rows.length > 0
+      ? `<ul>${rows.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+      : `<ul><li>Confirmed with your final itinerary.</li></ul>`;
+
+  return `<div class="pg">
+  <div class="pad">
+    <div class="kick">The detail</div>
+    <h3>What is carried for you, and what is not.</h3>
+    <div class="cols">
+      <div><h4>Included</h4>${items(includes)}</div>
+      <div class="ex"><h4>Not included</h4>${items(excludes)}</div>
+    </div>
+  </div>
+  ${folio("Inclusions", pageNumber)}
+</div>`;
+}
+
+function closingPage(): string {
+  return `<div class="pg end">
+  <div class="pad">
+    <div class="mark">ILUXURY EGYPT</div>
+    <div class="rule"></div>
+    <h3>When you are ready, we will build it around your dates.</h3>
+    <p>These pages are a starting point rather than a fixed departure, and the shape of a journey changes with who is travelling and when. Write to us with your dates and we will send the version built around them, with the rooms held and the order of the days set against the season you are coming in.</p>
+    <div class="sig">TRAVEL@ILUXURYEGYPT.COM<br>ILUXURYEGYPT.COM<br>CAIRO, EGYPT</div>
+  </div>
 </div>`;
 }
 
 // ---------------------------------------------------------------------------
 
+/** The approved stylesheet, verbatim, plus print and fallback rules. */
 function styles(): string {
-  return `
-${BROCHURE_FONT_CSS}
-@page { size: A4; margin: 0; }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 210mm; }
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  color: ${NAVY};
-  background: ${OFF_WHITE};
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-.page {
-  position: relative;
-  width: 210mm;
-  height: 297mm;
-  overflow: hidden;
-  background: ${OFF_WHITE};
-  page-break-after: always;
-  break-after: page;
-}
-.page:last-child { page-break-after: auto; break-after: auto; }
-.pad { padding: 22mm 20mm; }
+  return `${BROCHURE_FONT_CSS}
+:root{--g:#C4A661;--n:#26303F;--w:#F7F4EF}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,sans-serif}
+.pg{width:210mm;height:297mm;background:var(--w);position:relative;overflow:hidden}
+.bleed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(38,48,63,.5),rgba(38,48,63,.12) 42%,rgba(38,48,63,.82))}
+.cov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:22mm 18mm;color:var(--w)}
+.mark{font-family:Playfair Display,serif;font-size:15pt;letter-spacing:.42em;color:var(--g)}
+.rule{width:14mm;height:1px;background:var(--g);margin:6mm 0}
+h1{font-family:Playfair Display,serif;font-weight:400;font-size:38pt;line-height:1.06;max-width:152mm}
+.meta{font-size:9pt;font-weight:300;letter-spacing:.2em;margin-top:7mm;opacity:.85}
+.pad{padding:24mm 18mm}
+.kick{font-family:Playfair Display,serif;font-style:italic;font-size:11pt;color:var(--g)}
+h2{font-family:Playfair Display,serif;font-weight:400;font-size:23pt;color:var(--n);line-height:1.18;margin:3mm 0 6mm;max-width:140mm}
+h3{font-family:Playfair Display,serif;font-weight:400;font-size:30pt;color:var(--n);line-height:1.1;margin-bottom:8mm}
+p{font-size:10.5pt;line-height:1.85;color:#3d4653;font-weight:300;max-width:132mm}
+p+p{margin-top:4mm}
+p.first::first-letter{font-family:Playfair Display,serif;float:left;font-size:34pt;line-height:.82;padding:2mm 3mm 0 0;color:var(--g)}
+.quote{margin:9mm 0;padding-left:7mm;border-left:1px solid var(--g);font-family:Playfair Display,serif;font-style:italic;font-size:14pt;line-height:1.5;color:var(--n);max-width:125mm}
+.dpg{position:absolute;inset:0;display:grid;grid-template-rows:116mm 1fr}
+.dpg.flip{grid-template-rows:1fr 116mm}
+.dimg{position:relative;overflow:hidden}
+.dimg img{width:100%;height:100%;object-fit:cover}
+.num{position:absolute;right:12mm;font-family:Playfair Display,serif;font-size:76pt;color:var(--w);line-height:1}
+.dpg .num{bottom:-12mm}
+.dpg.flip .num{top:-14mm;bottom:auto}
+.body{padding:15mm 18mm}
+.fol{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;letter-spacing:.22em;color:#9aa2ad}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14mm;margin-top:4mm}
+.cols h4{font-family:Playfair Display,serif;font-weight:400;font-size:13pt;color:var(--n);padding-bottom:3mm;border-bottom:1px solid var(--g);margin-bottom:5mm}
+.cols li{list-style:none;font-size:9.5pt;font-weight:300;line-height:1.6;color:#3d4653;padding:2.6mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
+.cols .ex li{color:#8d95a1}
+.end{background:var(--n);color:var(--w)}
+.end .pad{display:flex;flex-direction:column;justify-content:center;height:100%}
+.end h3{color:var(--w)}
+.end p{color:rgba(247,244,239,.72);max-width:118mm}
+.sig{margin-top:14mm;font-size:9pt;letter-spacing:.2em;color:var(--g);line-height:2.2}
+.hot{position:absolute;inset:0;display:grid;grid-template-rows:1fr 1fr}
+.hrow{display:grid;grid-template-columns:88mm 1fr;align-items:stretch;overflow:hidden}
+.hrow img{width:100%;height:100%;object-fit:cover}
+.hinfo{padding:14mm 16mm}
+.hinfo .city{font-family:Playfair Display,serif;font-style:italic;font-size:10.5pt;color:var(--g)}
+.hinfo h5{font-family:Playfair Display,serif;font-weight:400;font-size:17pt;color:var(--n);margin:2mm 0 4mm;line-height:1.2}
+.hinfo p{font-size:9.5pt;line-height:1.75}
+.route{margin-top:12mm;position:relative;padding-left:9mm}
+.route:before{content:"";position:absolute;left:2.4mm;top:4mm;bottom:8mm;width:1px;background:var(--g)}
+.stop{position:relative;padding:0 0 13mm 0}
+.stop:before{content:"";position:absolute;left:-9mm;top:3.2mm;width:5mm;height:5mm;border-radius:50%;background:var(--g)}
+.stop b{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);display:block}
+.stop span{font-size:9pt;font-weight:300;letter-spacing:.18em;color:#8d95a1}
+.tm{padding:7mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
+.tm h4{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);margin-bottom:3mm}
 
-h1, h2, h3, h4, .wordmark, .fact-value, .mark-value, .route-index, .photo-fallback span {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-weight: 400;
-}
-p, li, span { font-weight: 300; line-height: 1.6; }
-
-.rule { width: 26mm; height: 1px; background: ${GOLD}; margin: 6mm auto; }
-.rule.left { margin: 6mm 0 8mm; }
-.rule.left.short { width: 14mm; margin: 4mm 0 6mm; }
-.rule.center { margin: 6mm auto; }
-
-.section-eyebrow {
-  font-size: 8pt; letter-spacing: 0.32em; text-transform: uppercase;
-  color: ${GOLD}; font-weight: 600;
-}
-h2 { font-size: 26pt; line-height: 1.15; margin-top: 4mm; }
-h3 { font-size: 20pt; line-height: 1.2; }
-h4 { font-size: 12pt; }
-
-/* Photos, and the navy panel that stands in for a missing one. */
-.photo { width: 100%; height: 100%; object-fit: cover; display: block; }
-.photo-fallback {
-  background: ${NAVY};
-  display: flex; align-items: center; justify-content: center;
-  text-align: center; padding: 10mm;
-}
-.photo-fallback span {
-  color: ${OFF_WHITE}; font-size: 17pt; line-height: 1.3;
-  letter-spacing: 0.02em;
-}
-
-/* Cover */
-.cover { padding: 0; }
-.cover .cover-photo { position: absolute; inset: 0; }
-.cover-veil {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(38,48,63,0.92) 0%, rgba(38,48,63,0.55) 45%, rgba(38,48,63,0.35) 100%);
-}
-.cover-body { position: absolute; left: 20mm; right: 20mm; bottom: 26mm; text-align: center; }
-.wordmark {
-  font-size: 13pt; letter-spacing: 0.34em; text-transform: uppercase;
-  color: ${GOLD}; font-weight: 400;
-}
-.wordmark.light { color: ${GOLD}; }
-.eyebrow {
-  font-size: 8.5pt; letter-spacing: 0.3em; text-transform: uppercase;
-  color: rgba(247,244,239,0.82); margin-bottom: 5mm;
-}
-.cover h1 { font-size: 34pt; line-height: 1.12; color: ${OFF_WHITE}; }
-.cover-foot {
-  margin-top: 7mm; font-size: 10pt; letter-spacing: 0.12em;
-  color: rgba(247,244,239,0.72);
-}
-
-/* Intro */
-.intro-grid { display: flex; gap: 12mm; margin-top: 4mm; }
-.intro-copy { flex: 1.7; }
-.intro-copy p { font-size: 11pt; margin-bottom: 5mm; }
-.intro-facts { flex: 1; border-left: 1px solid rgba(38,48,63,0.14); padding-left: 8mm; }
-.fact { margin-bottom: 7mm; }
-.fact-label {
-  display: block; font-size: 7.5pt; letter-spacing: 0.22em;
-  text-transform: uppercase; color: ${GOLD}; font-weight: 600; margin-bottom: 1.5mm;
-}
-.fact-value { display: block; font-size: 14pt; }
-
-/* Day pages: photo half, copy half, flipped on the odd ones. */
-.day { display: flex; padding: 0; }
-.day.flip { flex-direction: row-reverse; }
-.day-photo { width: 84mm; height: 297mm; }
-.day-copy { flex: 1; padding: 22mm 16mm; display: flex; flex-direction: column; }
-.day-number {
-  font-size: 8pt; letter-spacing: 0.32em; text-transform: uppercase;
-  color: ${GOLD}; font-weight: 600;
-}
-.day-place {
-  font-size: 8pt; letter-spacing: 0.2em; text-transform: uppercase;
-  color: rgba(38,48,63,0.5); margin-top: 2mm;
-}
-.day-lede { font-size: 10.5pt; margin-bottom: 6mm; }
-
-ul.ticks, ul.crosses { list-style: none; }
-ul.ticks li, ul.crosses li {
-  position: relative; padding-left: 7mm; margin-bottom: 3mm; font-size: 10pt;
-}
-ul.ticks li::before {
-  content: ""; position: absolute; left: 0; top: 2.2mm;
-  width: 3mm; height: 1.6mm; border-left: 1px solid ${GOLD}; border-bottom: 1px solid ${GOLD};
-  transform: rotate(-45deg);
-}
-ul.crosses li::before {
-  content: "\\00d7"; position: absolute; left: 0.5mm; top: 0;
-  color: rgba(38,48,63,0.4); font-size: 11pt;
-}
-
-.day-foot { margin-top: auto; padding-top: 8mm; border-top: 1px solid rgba(38,48,63,0.14); }
-.foot-item { display: flex; gap: 4mm; font-size: 9.5pt; margin-bottom: 2mm; }
-.foot-label {
-  min-width: 18mm; font-size: 7.5pt; letter-spacing: 0.2em; text-transform: uppercase;
-  color: ${GOLD}; font-weight: 600; padding-top: 0.8mm;
-}
-
-/* Inclusions */
-.two-col { display: flex; gap: 14mm; margin-top: 4mm; }
-.two-col > div { flex: 1; }
-.col-head {
-  font-size: 13pt; padding-bottom: 3mm; margin-bottom: 5mm;
-  border-bottom: 1px solid rgba(38,48,63,0.14);
-}
-.muted { font-size: 10pt; color: rgba(38,48,63,0.55); }
-
-/* Hotels */
-.hotel-grid { display: flex; flex-wrap: wrap; gap: 8mm; margin-top: 4mm; }
-.hotel-card { width: 81mm; }
-.hotel-photo { height: 52mm; }
-.hotel-copy { padding-top: 4mm; }
-.hotel-card h4 { font-size: 13pt; line-height: 1.25; }
-.hotel-where {
-  font-size: 8pt; letter-spacing: 0.2em; text-transform: uppercase;
-  color: ${GOLD}; font-weight: 600; margin-top: 2mm;
-}
-
-/* Route */
-ol.route { list-style: none; margin-top: 4mm; }
-ol.route li {
-  position: relative; display: flex; align-items: baseline; gap: 6mm;
-  padding: 4mm 0 4mm 8mm; border-bottom: 1px solid rgba(38,48,63,0.1);
-}
-.route-dot {
-  position: absolute; left: 0; top: 7mm;
-  width: 2mm; height: 2mm; border-radius: 50%; background: ${GOLD};
-}
-.route-index { font-size: 11pt; color: ${GOLD}; min-width: 9mm; }
-.route-name { font-size: 14pt; font-family: 'Playfair Display', Georgia, serif; }
-
-/* Team */
-.team-copy { margin-top: 4mm; max-width: 140mm; }
-.team-copy p { font-size: 11pt; margin-bottom: 5mm; }
-.team-marks { display: flex; gap: 12mm; margin-top: 12mm; padding-top: 8mm; border-top: 1px solid rgba(38,48,63,0.14); }
-.mark { flex: 1; }
-.mark-value { display: block; font-size: 24pt; color: ${GOLD}; }
-.mark-label { display: block; font-size: 9pt; color: rgba(38,48,63,0.6); margin-top: 2mm; }
-
-/* Closing */
-.closing {
-  background: ${NAVY}; color: ${OFF_WHITE};
-  padding: 40mm 24mm; text-align: center;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-.closing-head { font-size: 30pt; color: ${OFF_WHITE}; margin-bottom: 8mm; }
-.closing-copy { font-size: 11pt; color: rgba(247,244,239,0.8); max-width: 130mm; margin-bottom: 5mm; }
-.closing-mail { margin-top: 10mm; font-size: 13pt; letter-spacing: 0.12em; color: ${GOLD}; }
-.closing-tour {
-  margin-top: 16mm; font-size: 8pt; letter-spacing: 0.28em;
-  text-transform: uppercase; color: rgba(247,244,239,0.45);
-}
-`;
+/* Print, and the navy panel that stands in for a missing photograph. Neither
+   is in the approved stylesheet because the approved preview is a browser page
+   that is scrolled rather than printed, and its images all exist. */
+@page{size:A4;margin:0}
+html,body{width:210mm}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg{page-break-after:always;break-after:page}
+.pg:last-child{page-break-after:auto;break-after:auto}
+.fallback{background:var(--n);display:flex;align-items:center;justify-content:center;text-align:center;padding:10mm;width:100%;height:100%}
+.bleed.fallback{position:absolute;inset:0}
+.fallback span{font-family:Playfair Display,serif;font-size:17pt;line-height:1.3;color:var(--w);max-width:100%}`;
 }
 
 /**
  * The whole brochure for one tour.
  *
- * The day count is whatever the itinerary array holds. Nothing here assumes
- * seven, which matters because the six tours this ships for range across
- * different lengths and a template that counted on seven would silently drop
- * days from the longer ones.
+ * Page numbers are computed from the real page count rather than hardcoded: a
+ * four day tour and a twelve day one put the hotels, route, team and inclusions
+ * pages in different places, and a folio that disagrees with the sheet it sits
+ * on is worse than no folio at all. The cover and the closing page carry none.
  */
 export function renderBrochureHtml(tour: Tour, hotels: Hotel[]): string {
   const days: ItineraryDay[] = Array.isArray(tour.itinerary) ? (tour.itinerary as ItineraryDay[]) : [];
 
-  const pages = [
-    coverPage(tour),
-    introPage(tour, days.length),
-    ...days.map((d, i) => dayPage(d, i)),
-    inclusionsPage(tour),
-    hotelsPage(hotels),
-    routePage(tour, days),
-    teamPage(),
-    closingPage(tour),
-  ].filter((p) => p.trim().length > 0);
+  const pages: string[] = [];
+  // The cover is page 1 and carries no folio, so the next page's number is 2.
+  let n = 1;
+  pages.push(coverPage(tour, days));
+
+  pages.push(journeyPage(tour, ++n));
+  // forEach rather than for..of over .entries(), which this tsconfig's
+  // target rejects without downlevelIteration.
+  days.forEach((day, i) => pages.push(dayPage(day, i, ++n)));
+
+  if (hotels.length > 0) {
+    const hotelHtml = hotelPages(hotels, n + 1);
+    n += hotelHtml.length;
+    pages.push(...hotelHtml);
+  }
+
+  const route = routePage(days, n + 1);
+  if (route) {
+    n += 1;
+    pages.push(route);
+  }
+
+  pages.push(teamPage(++n));
+  pages.push(inclusionsPage(tour, ++n));
+  pages.push(closingPage());
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -488,6 +466,20 @@ export function renderBrochureHtml(tour: Tour, hotels: Hotel[]): string {
 <meta charset="utf-8">
 <title>${escapeHtml(tour.title)} | iLuxury Egypt</title>
 <style>${styles()}</style>
+<script>
+// Swaps an image that failed to load for the same navy panel a missing one
+// gets. Defined before the body so it exists by the time the first error
+// fires. Keeps the element's classes, so the panel sits in the box the
+// photograph would have occupied.
+function brochureFallback(img) {
+  var panel = document.createElement("div");
+  panel.className = (img.className ? img.className + " " : "") + "fallback";
+  var label = document.createElement("span");
+  label.textContent = img.getAttribute("data-fallback") || "";
+  panel.appendChild(label);
+  img.replaceWith(panel);
+}
+</script>
 </head>
 <body>
 ${pages.join("\n")}
