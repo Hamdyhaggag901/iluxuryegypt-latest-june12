@@ -630,6 +630,12 @@ export const tourBookings = pgTable("tour_bookings", {
 export const brochureDownloads = pgTable("brochure_downloads", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull(),
+  // Nullable, not notNull, because the rows written by the older
+  // /api/brochure-downloads endpoint captured an email address and nothing
+  // else. Making either column required would break that endpoint and would
+  // need a backfill for rows that have no name to backfill with.
+  name: text("name"),
+  travellerType: text("traveller_type"), // "traveller" | "advisor", or null when the lead skipped it
   tourId: varchar("tour_id").references(() => tours.id),
   tourTitle: text("tour_title"),
   tourSlug: text("tour_slug"),

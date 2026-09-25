@@ -973,7 +973,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(brochureDownloads).orderBy(desc(brochureDownloads.downloadedAt));
   }
 
-  async createBrochureDownload(data: { email: string; tourId?: string; tourTitle?: string; tourSlug?: string }): Promise<any> {
+  async createBrochureDownload(data: { email: string; name?: string; travellerType?: string; tourId?: string; tourTitle?: string; tourSlug?: string }): Promise<any> {
     const [download] = await db.insert(brochureDownloads).values(data).returning();
     return download;
   }

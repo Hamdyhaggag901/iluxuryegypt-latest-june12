@@ -1,3 +1,6 @@
 ﻿node_modules/
 dist/
 .env
+
+# Rendered brochures. Generated on demand and cached, never committed.
+attached_assets/brochures/

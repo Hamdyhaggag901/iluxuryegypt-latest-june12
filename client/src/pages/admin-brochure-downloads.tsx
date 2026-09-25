@@ -35,6 +35,10 @@ import {
 interface BrochureDownload {
   id: string;
   email: string;
+  // Both nullable: rows captured by the older email-only endpoint have
+  // neither, so every read of them falls back rather than showing "undefined".
+  name: string | null;
+  travellerType: string | null;
   tourId: string | null;
   tourTitle: string | null;
   tourSlug: string | null;
@@ -84,6 +88,7 @@ export default function AdminBrochureDownloads() {
 
   const filteredDownloads = downloads.filter(d =>
     d.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (d.name && d.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (d.tourTitle && d.tourTitle.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -98,14 +103,19 @@ export default function AdminBrochureDownloads() {
   };
 
   const exportToCSV = () => {
-    const headers = ["Email", "Tour", "Downloaded At"];
+    const headers = ["Name", "Email", "Travelling as", "Tour", "Downloaded At"];
     const rows = filteredDownloads.map(d => [
+      d.name || "",
       d.email,
+      d.travellerType || "",
       d.tourTitle || "N/A",
       formatDate(d.downloadedAt)
     ]);
 
-    const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
+    // Quoted, because a name or a tour title containing a comma would
+    // otherwise shift every later column of that row by one.
+    const escapeCsv = (value: string) => `"${String(value).replace(/"/g, '""')}"`;
+    const csvContent = [headers, ...rows].map(row => row.map(escapeCsv).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -169,7 +179,7 @@ export default function AdminBrochureDownloads() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by email or tour..."
+            placeholder="Search by name, email or tour..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -194,7 +204,9 @@ export default function AdminBrochureDownloads() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Travelling as</TableHead>
                   <TableHead>Tour</TableHead>
                   <TableHead>Downloaded At</TableHead>
                   <TableHead className="w-[80px]">Actions</TableHead>
@@ -204,12 +216,18 @@ export default function AdminBrochureDownloads() {
                 {filteredDownloads.map((download) => (
                   <TableRow key={download.id}>
                     <TableCell>
+                      {download.name || <span className="text-muted-foreground">Not captured</span>}
+                    </TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <a href={`mailto:${download.email}`} className="text-primary hover:underline">
                           {download.email}
                         </a>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {download.travellerType || <span className="text-muted-foreground">Not stated</span>}
                     </TableCell>
                     <TableCell>
                       {download.tourTitle || <span className="text-muted-foreground">N/A</span>}

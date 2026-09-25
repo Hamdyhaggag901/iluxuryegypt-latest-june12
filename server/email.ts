@@ -144,3 +144,103 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
     console.error("[email] Failed to send internal notification email:", error);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Brochure downloads
+// ---------------------------------------------------------------------------
+
+export interface BrochureEmailData {
+  name: string;
+  email: string;
+  travellerType?: string | null;
+  tourTitle: string;
+  tourSlug: string;
+  pdf: Buffer;
+  filename: string;
+}
+
+function brochureEmailHtml(name: string, tourTitle: string): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+      <p style="color: #C4A661; letter-spacing: 2px; font-size: 12px; text-transform: uppercase; margin: 0 0 16px;">iLuxury Egypt</p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">Dear ${escapeHtml(name)},</p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        Your copy of ${escapeHtml(tourTitle)} is attached.
+      </p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6;">
+        It is a starting point rather than a fixed departure, so the shape of it changes with who is
+        travelling and when. Reply to this email with your dates and I will come back with the version
+        built around them.
+      </p>
+      <p style="color: #333; font-size: 15px; line-height: 1.6; margin-top: 24px;">Hamdy<br />iLuxury Egypt</p>
+    </div>
+  `;
+}
+
+/**
+ * Both brochure emails: the lead's copy with the PDF attached, and the
+ * internal alert.
+ *
+ * The alert is not conditional on the first one succeeding, and that is the
+ * point of this function existing rather than two calls at the call site. A
+ * lead sitting unseen in the database because Resend rejected an attachment is
+ * the exact failure this is here to prevent, and the reply speed is the whole
+ * value of the alert, so it goes out on every request.
+ *
+ * Never throws. The caller runs it after the response has already gone.
+ */
+export async function sendBrochureEmails(data: BrochureEmailData): Promise<void> {
+  const resend = getResendClient();
+  if (!resend) {
+    console.error("[email] RESEND_API_KEY is not set, skipping both brochure emails.");
+    return;
+  }
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.email,
+      subject: `Your journey: ${data.tourTitle}`,
+      html: brochureEmailHtml(data.name, data.tourTitle),
+      attachments: [{ filename: data.filename, content: data.pdf.toString("base64") }],
+    });
+  } catch (error) {
+    console.error("[email] Failed to send the brochure to the lead:", error);
+  }
+
+  // Deliberately outside the try above, not inside a finally attached to it,
+  // so that a throw from the send is caught and this still runs.
+  try {
+    // Africa/Cairo rather than the server's zone, because the person reading
+    // this on a phone is in Cairo and a UTC timestamp costs them a conversion
+    // every time.
+    const stamp = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Cairo",
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date());
+
+    // Plain lines, no markup. This is read on a phone, often on a lock screen
+    // preview, and anything that needs rendering gets in the way of the only
+    // thing that matters, which is replying quickly.
+    const body = [
+      `Name: ${data.name}`,
+      `Email: ${data.email}`,
+      `Travelling as: ${data.travellerType || "not stated"}`,
+      `Tour: ${data.tourTitle}`,
+      `Time: ${stamp} (Africa/Cairo)`,
+    ].join("\n");
+
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: INTERNAL_NOTIFICATION_EMAIL,
+      // replyTo is the lead, so hitting reply on the phone goes straight to
+      // them with nothing to copy out of the body.
+      replyTo: data.email,
+      subject: `New brochure download: ${data.name}`,
+      text: body,
+    });
+  } catch (error) {
+    console.error("[email] Failed to send the internal brochure alert:", error);
+  }
+}

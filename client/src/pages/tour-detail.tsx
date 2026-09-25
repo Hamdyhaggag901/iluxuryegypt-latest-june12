@@ -27,6 +27,8 @@ import WhereYouWillStay from "@/components/tour-detail/WhereYouWillStay";
 import CtaBanner from "@/components/tour-detail/CtaBanner";
 import InclusionsList from "@/components/tour-detail/InclusionsList";
 import ReserveJourneyModal from "@/components/tour-detail/ReserveJourneyModal";
+import BrochureModal from "@/components/tour-detail/BrochureModal";
+import { hasBrochure } from "@shared/brochure-tours";
 import DatesAndPrices from "@/components/tour-detail/DatesAndPrices";
 import ContinueTheJourney from "@/components/tour-detail/ContinueTheJourney";
 import WhyILuxurySection from "@/components/tour-detail/WhyILuxurySection";
@@ -68,6 +70,7 @@ export default function TourDetail() {
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
+  const [isBrochureModalOpen, setIsBrochureModalOpen] = useState(false);
   const [showBrochureModal, setShowBrochureModal] = useState(false);
   const [brochureEmail, setBrochureEmail] = useState("");
   const [isSubmittingBrochure, setIsSubmittingBrochure] = useState(false);
@@ -317,6 +320,23 @@ export default function TourDetail() {
               <span className="text-sm md:text-lg font-light tracking-wide">{location}</span>
             </div>
 
+            {/* One of the two brochure entry points. Gated on the shared
+                constant, so opening this up to every tour is deleting the
+                condition here and at the section below. */}
+            {hasBrochure(tour.slug) && (
+              <div className="mt-6 md:mt-10">
+                <Button
+                  type="button"
+                  onClick={() => setIsBrochureModalOpen(true)}
+                  className="bg-accent hover:bg-accent/90 text-primary font-semibold px-6 md:px-8 py-3 md:py-6 text-sm md:text-base"
+                  data-testid="button-download-journey-hero"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download our journey
+                </Button>
+              </div>
+            )}
+
             {/* Scroll indicator - hidden on mobile */}
             <div className="hidden md:block absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
               <div className="w-6 h-10 border border-white/30 rounded-full flex items-start justify-center p-2">
@@ -461,6 +481,30 @@ export default function TourDetail() {
 
       <WhyILuxurySection tour={tour} hotels={stayHotels} />
 
+      {hasBrochure(tour.slug) && (
+        <section className="bg-muted/40 border-y border-border" data-testid="section-download-journey">
+          <div className="max-w-4xl mx-auto px-4 py-12 md:py-16 text-center">
+            <div className="w-16 h-px bg-accent mx-auto mb-6" />
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-3">
+              Take the itinerary with you
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto mb-8">
+              The full journey, day by day, as a PDF. No prices in it, because they move with the
+              season. Reply to the email and we will send the version built around your dates.
+            </p>
+            <Button
+              type="button"
+              onClick={() => setIsBrochureModalOpen(true)}
+              className="bg-accent hover:bg-accent/90 text-primary font-semibold px-8 py-6"
+              data-testid="button-download-journey-section"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download our journey
+            </Button>
+          </div>
+        </section>
+      )}
+
       <CtaBanner tour={tour} onReserve={() => setIsReserveModalOpen(true)} />
 
       <InclusionsList includes={tour.includes} excludes={tour.excludes} />
@@ -474,6 +518,13 @@ export default function TourDetail() {
       <ContinueTheJourney currentTour={tour} allTours={allToursData?.tours || []} />
 
       <ReserveJourneyModal tour={tour} open={isReserveModalOpen} onOpenChange={setIsReserveModalOpen} />
+
+      <BrochureModal
+        tour={tour}
+        open={isBrochureModalOpen}
+        onOpenChange={setIsBrochureModalOpen}
+        onRequestProposal={() => setIsReserveModalOpen(true)}
+      />
 
       {/* Lightbox */}
       {isLightboxOpen && (
@@ -524,8 +575,13 @@ export default function TourDetail() {
         </div>
       )}
 
-      {/* Fixed Brochure Download Button */}
-      {brochureUrl && (
+      {/* Fixed Brochure Download Button.
+          This is the older feature: a manually uploaded PDF at tours.brochure_url,
+          opened in a new tab after an email-only capture. It is left in place for
+          the tours that still rely on it, and hidden on the ones the generator now
+          covers, because two "download brochure" buttons on one page offering two
+          different documents is a defect rather than a choice. */}
+      {brochureUrl && !hasBrochure(tour.slug) && (
         <button
           onClick={() => setShowBrochureModal(true)}
           className="fixed bottom-6 right-6 z-40 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-3 rounded-full shadow-2xl transition-all hover:scale-105 group"

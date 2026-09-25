@@ -4,7 +4,8 @@ import express from "express";
 import path from "path";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { sendBookingConfirmation } from "./email";
+import { sendBookingConfirmation, sendBrochureEmails } from "./email";
+import { brochureFilename, generateBrochurePdf } from "./brochure/generate";
 import { registerAgentReadinessRoutes } from "./agent-readiness";
 import {
   insertInquirySchema,
@@ -2787,6 +2788,18 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
         sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS schema_markup text`,
       },
       {
+        // The brochure form captures a name and, optionally, whether the lead
+        // is a traveller or an advisor. Both nullable: the older
+        // /api/brochure-downloads endpoint writes an email and nothing else,
+        // and a NOT NULL here would start failing it.
+        name: "brochure_downloads.name",
+        sql: `ALTER TABLE brochure_downloads ADD COLUMN IF NOT EXISTS name text`,
+      },
+      {
+        name: "brochure_downloads.traveller_type",
+        sql: `ALTER TABLE brochure_downloads ADD COLUMN IF NOT EXISTS traveller_type text`,
+      },
+      {
         name: "hotels.og_image",
         sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS og_image text`,
       },
@@ -3851,6 +3864,157 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
     } catch (error) {
       console.error('Error deleting tour booking:', error);
       res.status(500).json({ message: 'Error deleting tour booking' });
+    }
+  });
+
+  // ==================== BROCHURE GENERATOR ====================
+  //
+  // POST /api/brochure/request captures the lead and hands back a download
+  // URL. GET /api/brochure/download/:slug streams the PDF.
+  //
+  // There is deliberately NO email confirmation step between the two. A
+  // confirm link costs 30 to 50 percent of real leads, and the PDF carries no
+  // prices, so there is nothing in it worth protecting with that much
+  // friction. A fake address announces itself when the email bounces.
+
+  /**
+   * Five requests an hour per address, in memory.
+   *
+   * req.ip is not used, because this app never sets `trust proxy` and behind
+   * nginx that makes every visitor 127.0.0.1, which would put the whole
+   * internet in one bucket and lock the form after five downloads worldwide.
+   * The first hop of x-forwarded-for is the client.
+   */
+  const brochureHits = new Map<string, number[]>();
+  const BROCHURE_WINDOW_MS = 60 * 60 * 1000;
+  const BROCHURE_LIMIT = 5;
+
+  function clientIp(req: import("express").Request): string {
+    const forwarded = req.headers["x-forwarded-for"];
+    const first = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(",")[0];
+    return (first || req.socket.remoteAddress || "unknown").trim();
+  }
+
+  function overBrochureLimit(ip: string): boolean {
+    const now = Date.now();
+    const recent = (brochureHits.get(ip) ?? []).filter((t) => now - t < BROCHURE_WINDOW_MS);
+    if (recent.length >= BROCHURE_LIMIT) {
+      brochureHits.set(ip, recent);
+      return true;
+    }
+    recent.push(now);
+    brochureHits.set(ip, recent);
+    // The map would otherwise grow for the life of the process, one entry per
+    // address that ever hit the form.
+    if (brochureHits.size > 5000) {
+      // Array.from rather than iterating the Map directly, which this
+      // tsconfig's target does not allow without downlevelIteration.
+      for (const [key, times] of Array.from(brochureHits.entries())) {
+        if (times.every((t: number) => now - t >= BROCHURE_WINDOW_MS)) brochureHits.delete(key);
+      }
+    }
+    return false;
+  }
+
+  // Deliberately stricter than the "looks like it has an @" test this codebase
+  // uses elsewhere: a typo here means the brochure is never delivered and the
+  // lead is unreachable, and the person is standing at the form able to fix it.
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
+  app.post("/api/brochure/request", async (req, res) => {
+    try {
+      const { name, email, tourSlug, travellerType } = req.body ?? {};
+
+      // Specific messages, never a generic one: the form shows these next to
+      // the field, and "Invalid request" gives the person nothing to act on.
+      if (typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({ success: false, field: "name", message: "Please enter your full name." });
+      }
+      if (typeof email !== "string" || email.trim().length === 0) {
+        return res.status(400).json({ success: false, field: "email", message: "Please enter your email address." });
+      }
+      if (!EMAIL_PATTERN.test(email.trim())) {
+        return res.status(400).json({ success: false, field: "email", message: "That email address does not look right. Please check it." });
+      }
+      if (typeof tourSlug !== "string" || tourSlug.trim().length === 0) {
+        return res.status(400).json({ success: false, field: "tourSlug", message: "We could not tell which journey this was for. Please reload the page." });
+      }
+
+      const tour = await storage.getTourBySlug(tourSlug.trim());
+      if (!tour) {
+        return res.status(404).json({ success: false, field: "tourSlug", message: "That journey no longer exists." });
+      }
+
+      if (overBrochureLimit(clientIp(req))) {
+        return res.status(429).json({
+          success: false,
+          message: "That is five brochures in an hour from this connection. Please try again later, or email travel@iluxuryegypt.com.",
+        });
+      }
+
+      const cleanName = name.trim();
+      const cleanEmail = email.trim();
+      const cleanType = typeof travellerType === "string" && travellerType.trim().length > 0 ? travellerType.trim() : undefined;
+
+      await storage.createBrochureDownload({
+        email: cleanEmail,
+        name: cleanName,
+        travellerType: cleanType,
+        tourId: tour.id,
+        tourTitle: tour.title,
+        tourSlug: tour.slug,
+      });
+
+      // Answer first. The download must never wait on Puppeteer or on Resend.
+      res.json({
+        success: true,
+        ok: true,
+        url: `/api/brochure/download/${encodeURIComponent(tour.slug)}?t=${Date.now().toString(36)}`,
+      });
+
+      // Then the slow half, after the response has gone. setImmediate rather
+      // than a floating promise so the response is flushed first, and the
+      // whole thing is wrapped because an unhandled rejection here would take
+      // the process down.
+      setImmediate(() => {
+        void (async () => {
+          try {
+            const pdf = await generateBrochurePdf(tour.slug);
+            await sendBrochureEmails({
+              name: cleanName,
+              email: cleanEmail,
+              travellerType: cleanType,
+              tourTitle: tour.title,
+              tourSlug: tour.slug,
+              pdf,
+              filename: brochureFilename(tour.slug),
+            });
+          } catch (error) {
+            console.error("[brochure] background email step failed:", error);
+          }
+        })();
+      });
+    } catch (error) {
+      console.error("Error handling brochure request:", error);
+      res.status(500).json({ success: false, message: "Something went wrong on our side. Please try again." });
+    }
+  });
+
+  app.get("/api/brochure/download/:slug", async (req, res) => {
+    try {
+      const slug = String(req.params.slug || "").trim();
+      const tour = await storage.getTourBySlug(slug);
+      if (!tour) {
+        return res.status(404).json({ success: false, message: "That journey no longer exists." });
+      }
+      const pdf = await generateBrochurePdf(tour.slug);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${brochureFilename(tour.slug)}"`);
+      res.setHeader("Content-Length", String(pdf.length));
+      res.send(pdf);
+    } catch (error) {
+      console.error("Error streaming brochure:", error);
+      res.status(500).json({ success: false, message: "The brochure could not be generated." });
     }
   });
 
