@@ -142,6 +142,7 @@ export const hotels = pgTable("hotels", {
   canonicalUrl: text("canonical_url"), // Optional canonical URL override. Falls back to this page's own URL when empty.
   robots: text("robots"), // Optional robots directive override, e.g. "noindex, follow". Falls back to "index, follow" when empty.
   schemaType: text("schema_type"), // Optional schema.org @type override for the auto-generated JSON-LD. Falls back to "Hotel" when empty.
+  schemaMarkup: text("schema_markup"), // Optional raw JSON-LD override. Replaces the auto-generated Hotel node entirely when set, the same way tours.schema_markup does.
   ogImage: text("og_image"), // Optional social-share image override. Falls back to `image` when empty.
   featured: boolean("featured").notNull().default(false), // Deprecated: featured hotel is now chosen via stayListingSettings.featuredHotelId
   isPartner: boolean("is_partner").notNull().default(false), // Shows a "Trusted Partner" badge on the homepage's Where You Will Stay cards
@@ -754,6 +755,7 @@ export const insertHotelSchema = createInsertSchema(hotels).omit({
   canonicalUrl: z.string().nullable().optional(),
   robots: z.string().nullable().optional(),
   schemaType: z.string().nullable().optional(),
+  schemaMarkup: z.string().nullable().optional(),
   ogImage: z.string().nullable().optional(),
   featured: z.boolean().default(false),
   isPartner: z.boolean().default(false),

@@ -747,7 +747,7 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
         const alt = galleryAlt[url]?.trim();
         return alt ? { "@type": "ImageObject", url, caption: alt } : url;
       });
-      const jsonLd = {
+      const autoJsonLd = {
         "@context": "https://schema.org",
         "@type": hotel.schemaType?.trim() || "Hotel",
         name: hotel.name,
@@ -774,6 +774,56 @@ export async function resolvePageMeta(pathname: string): Promise<PageMeta | null
             }
           : {}),
       };
+
+      // A hand-written override REPLACES the node above rather than joining
+      // it. Appending was the obvious thing and it is wrong here: the auto
+      // node and an override both carry @type Hotel, so a page would ship two
+      // Hotel entities describing the same building, and Google picks one
+      // without telling anyone which. posts can append because what it stores
+      // there is an ItemList, a different @type from the BlogPosting beside
+      // it. Here it is the same @type, so it has to be a replacement.
+      //
+      // Replacing is also the only way to drop `priceRange`. It is emitted
+      // from price_tier, and a price range on a page that publishes no prices
+      // is exactly the claim we do not want to make.
+      //
+      // Parsed rather than trusted, because the column is editable in the
+      // admin: malformed JSON falls back to the auto node with a log, which
+      // keeps a page with broken structured data from ever shipping.
+      let jsonLd: object | object[] = autoJsonLd;
+      const rawHotelSchema = hotel.schemaMarkup?.trim();
+      if (rawHotelSchema) {
+        try {
+          const parsed: unknown = JSON.parse(rawHotelSchema);
+          const nodes = Array.isArray(parsed)
+            ? parsed
+            : parsed && typeof parsed === "object" && Array.isArray((parsed as { "@graph"?: unknown })["@graph"])
+              ? ((parsed as { "@graph": unknown[] })["@graph"])
+              : [parsed];
+          const usable = nodes.filter((n): n is object => Boolean(n) && typeof n === "object");
+          if (usable.length > 0) {
+            // The override is written by hand in a SQL file that cannot see
+            // the row's image URLs, so a hand-written Hotel node would
+            // otherwise silently drop the photography the generated one
+            // carried. `image` and `url` are inherited when the override
+            // leaves them out, and left alone when it does not.
+            jsonLd = usable.map((node) => {
+              const type = (node as { "@type"?: unknown })["@type"];
+              if (type !== "Hotel" && type !== "LodgingBusiness" && type !== "Resort") return node;
+              const n = node as Record<string, unknown>;
+              return {
+                ...n,
+                ...(n.image === undefined ? { image: autoJsonLd.image } : {}),
+                ...(n.url === undefined ? { url: autoJsonLd.url } : {}),
+              };
+            });
+          } else {
+            console.error(`[seo-meta] /hotel/${hotel.slug}: schema_markup held no usable nodes, using the generated one`);
+          }
+        } catch {
+          console.error(`[seo-meta] /hotel/${hotel.slug}: schema_markup is not valid JSON, using the generated one`);
+        }
+      }
       return {
         title: withSiteName(title),
         description: truncate(description, 160),

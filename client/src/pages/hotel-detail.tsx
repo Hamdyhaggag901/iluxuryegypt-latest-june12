@@ -144,11 +144,19 @@ export default function HotelDetail() {
       ) || null
     : null;
 
-  // Generic questions that apply to any hotel — grounded only in data that
+  // A hotel whose schema_markup is set carries its own FAQPage, written to
+  // match the FAQ block at the foot of its article word for word. Adding the
+  // generic three below on top of it would put two FAQPage nodes on one page
+  // saying different things, and the one a crawler happened to read would be
+  // the one that does not match what a visitor sees. So when the server has
+  // supplied the structured data, this stands down entirely.
+  const serverSuppliedSchema = Boolean((seoHotel as { schemaMarkup?: string | null } | undefined)?.schemaMarkup?.trim());
+
+  // Generic questions that apply to any hotel, grounded only in data that
   // actually exists (facilities list); booking-policy questions with no
   // per-hotel data (breakfast, cancellation) point to our specialists
   // instead of inventing an answer.
-  const hotelFaqs = seoHotel
+  const hotelFaqs = seoHotel && !serverSuppliedSchema
     ? [
         {
           question: "Is breakfast included?",
@@ -168,13 +176,13 @@ export default function HotelDetail() {
       ]
     : [];
 
-  // Title/description/image + FAQPage only — no Hotel/LodgingBusiness jsonLd
-  // here. server/seo-meta.ts already injects a complete Hotel schema (name,
-  // description, images, address, starRating, priceRange, amenityFeature)
-  // into the initial server-rendered HTML for this route; a second
-  // client-side Hotel block would just duplicate/conflict with it once JS
-  // runs (including in the Puppeteer prerender bots receive). FAQPage is a
-  // different @type the server doesn't add, so it's safe to add here.
+  // Title/description/image, and a FAQPage only when the server did not send
+  // one. No Hotel/LodgingBusiness jsonLd here either way: server/seo-meta.ts
+  // injects a complete Hotel schema into the initial server-rendered HTML for
+  // this route, so a second client-side Hotel block would duplicate and
+  // conflict with it once JS runs, including in the Puppeteer prerender bots
+  // receive. hotelFaqs is empty when schema_markup is set, and
+  // buildFaqJsonLd returns undefined for an empty list, so nothing is added.
   useSEO({
     title: seoHotel?.name,
     description: seoHotel?.description?.slice(0, 160),

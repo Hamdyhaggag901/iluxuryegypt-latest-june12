@@ -2778,6 +2778,15 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
         sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS schema_type text`,
       },
       {
+        // Raw JSON-LD override, the column posts, tours and destinations
+        // already had and hotels did not. A hotel page's structured data was
+        // entirely auto-generated from the row, which meant no FAQPage that
+        // matched the article's own FAQ block and no way to drop the
+        // priceRange the auto node emits from price_tier.
+        name: "hotels.schema_markup",
+        sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS schema_markup text`,
+      },
+      {
         name: "hotels.og_image",
         sql: `ALTER TABLE hotels ADD COLUMN IF NOT EXISTS og_image text`,
       },
