@@ -959,5 +959,65 @@ for (const [label, desc, guard] of [
   ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
 }
 
+// ---------------------------------------------------------------------------
+console.log("\nP. The hotels cluster: a generic interior must never pass\n");
+// ---------------------------------------------------------------------------
+// The whole risk in this cluster is that hotel photography is interchangeable.
+// A marble lobby is a marble lobby, and a guard asking for "hotel" plus
+// "luxury" would take one shot in Dubai for one in Cairo without blinking.
+// None of these guards asks for a hotel at all.
+
+const HOTEL_CLUSTER = [
+  "where-to-stay-in-cairo", "luxury-hotels-cairo", "cairo-hotel-with-pyramid-view",
+  "best-hotels-in-luxor-egypt", "best-hotels-in-aswan", "5-star-hotels-in-egypt",
+];
+{
+  const missing = HOTEL_CLUSTER.filter((slug) => !POSTS.some((p) => p.slug === slug));
+  ok("all six hotel articles have image specs", missing.length === 0, missing.join(", "));
+}
+for (const [label, desc, guard] of [
+  ["a Dubai lobby for Cairo",
+   "luxury hotel lobby with marble floors and chandeliers in Dubai",
+   guardFor("where-to-stay-in-cairo", "Nile River")],
+  ["a generic five star suite",
+   "elegant five star hotel suite interior with a king bed and city view",
+   guardFor("luxury-hotels-cairo", "Nile River")],
+  ["a resort pool for the Red Sea",
+   "swimming pool at a luxury resort with sun loungers",
+   guardFor("5-star-hotels-in-egypt", "Red Sea reef")],
+  ["the Luxor casino in Las Vegas for Luxor",
+   "the Luxor hotel and casino pyramid on the Las Vegas strip",
+   guardFor("best-hotels-in-luxor-egypt", "Nile River")],
+  ["an Aswan hotel buffet",
+   "breakfast buffet and reception interior at a hotel in Aswan, Egypt",
+   guardFor("best-hotels-in-aswan", "Nile at Aswan")],
+  ["a Las Vegas sphinx replica",
+   "replica sphinx model outside a casino in Las Vegas",
+   guardFor("cairo-hotel-with-pyramid-view", "Giza Pyramids")],
+  ["a Maldives resort for the Egyptian coast",
+   "overwater villas and turquoise lagoon in the Maldives",
+   guardFor("5-star-hotels-in-egypt", "Red Sea reef")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is rejected", !v.ok, v.ok ? "WRONGLY ACCEPTED" : `(${v.reason})`);
+}
+for (const [label, desc, guard] of [
+  ["the Cairo corniche",
+   "the Nile river and the corniche in Cairo, Egypt, at dusk",
+   guardFor("where-to-stay-in-cairo", "Nile River")],
+  ["feluccas at Aswan",
+   "feluccas sailing between the granite islands on the Nile at Aswan, Egypt",
+   guardFor("best-hotels-in-aswan", "Nile at Aswan")],
+  ["the Giza plateau at dusk",
+   "the pyramids of Giza in golden evening light over the desert sand in Egypt",
+   guardFor("cairo-hotel-with-pyramid-view", "Giza Pyramids")],
+  ["the Nile at Luxor",
+   "feluccas on the water beside the corniche at Luxor, Egypt",
+   guardFor("best-hotels-in-luxor-egypt", "Nile River")],
+] as Array<[string, string, Guard]>) {
+  const v = checkRelevance(desc, guard);
+  ok(label + " is accepted", v.ok, v.ok ? "" : `WRONGLY REJECTED (${v.reason})`);
+}
+
 console.log(fails === 0 ? "\nAll image guard cases passed." : `\n${fails} failure(s)`);
 process.exit(fails === 0 ? 0 : 1);

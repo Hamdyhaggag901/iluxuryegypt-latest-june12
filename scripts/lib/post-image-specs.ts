@@ -1299,6 +1299,154 @@ export const POSTS: PostSpec[] = [
                  deny: ["pyramid", "cairo", "aswan", "temple", "karnak", "column", "columns"] } },
     ],
   },
+
+  // -------------------------------------------------------------------------
+  // The hotels cluster
+  // -------------------------------------------------------------------------
+  // The hard case in this whole file. A photograph of a hotel interior is
+  // interchangeable: a marble lobby in Cairo and a marble lobby in Dubai are
+  // the same picture, and a guard that asks for "hotel" plus "luxury" would
+  // accept either. So none of these guards asks for a hotel at all. Each one
+  // requires the PLACE the article is about and something outdoors that ties
+  // the frame to it, and every one of them denies the generic interior
+  // vocabulary outright. An empty position is the right outcome here; a
+  // Dubai lobby captioned as Cairo is not.
+  {
+    slug: "where-to-stay-in-cairo",
+    focusKeyword: "where to stay in cairo",
+    keywordSuffix: " when deciding where to stay in cairo",
+    images: [
+      { role: "featured", place: "Nile River", city: "Cairo", keyword: true,
+        queries: ["Nile river Cairo corniche evening", "Cairo Nile waterfront Egypt", "Nile Cairo bridge river Egypt"],
+        guard: { requirePlace: ["nile"], allowPlaces: ["cairo", "giza"],
+                 require: [["river", "water", "corniche", "bridge", "bank", "boat"]],
+                 deny: ["lobby", "suite", "bedroom", "interior", "reception", "spa", "buffet", "luxor", "aswan", "dubai", "abu dhabi", "doha", "istanbul"] } },
+      { role: "body", afterH2: 4, place: "Old Cairo", city: "Cairo",
+        queries: ["old Cairo street Egypt", "historic Cairo lane Egypt", "Cairo old town street"],
+        guard: { requirePlace: ["cairo"], allowPlaces: ["cairo", "old cairo", "coptic cairo", "islamic cairo"],
+                 require: [["street", "alley", "lane", "wall", "stone", "old", "historic"]],
+                 deny: ["pyramid", "sphinx", "luxor", "aswan", "alexandria", "skyline", "traffic", "lobby", "suite", "interior"] } },
+      { role: "body", afterH2: 8, place: "Giza Pyramids", city: "Giza",
+        queries: ["Giza pyramids Egypt", "Great Pyramid Giza desert", "pyramids Giza sand sky"],
+        guard: { requirePlace: ["giza", "great pyramid"], allowPlaces: ["giza", "cairo", "memphis"],
+                 require: [["egypt", "egyptian", "desert", "sand", "sky"]],
+                 deny: ["museum", "sudan", "maya", "chichen", "lobby", "interior", "model"] } },
+    ],
+  },
+  {
+    slug: "luxury-hotels-cairo",
+    focusKeyword: "luxury hotels cairo",
+    keywordSuffix: " above the river near the luxury hotels cairo keeps on the corniche",
+    images: [
+      { role: "featured", place: "Nile River", city: "Cairo", keyword: true,
+        queries: ["Nile Cairo corniche at dusk", "Cairo river waterfront evening Egypt", "Nile Cairo skyline water"],
+        guard: { requirePlace: ["nile"], allowPlaces: ["cairo", "giza", "zamalek", "gezira"],
+                 require: [["river", "water", "corniche", "bank", "bridge", "dusk", "evening"]],
+                 deny: ["lobby", "suite", "bedroom", "interior", "reception", "spa", "buffet", "ballroom", "luxor", "aswan", "dubai", "abu dhabi", "doha", "beirut"] } },
+      { role: "body", afterH2: 5, place: "Islamic Cairo", city: "Cairo",
+        queries: ["Islamic Cairo minarets street", "Al Muizz street Cairo", "Cairo mosque dome facade"],
+        guard: { requirePlace: ["islamic cairo", "muizz", "moez"], allowPlaces: ["cairo"],
+                 require: [["street", "minaret", "minarets", "mosque", "dome", "domes", "facade", "gate"]],
+                 deny: ["pyramid", "church", "luxor", "aswan", "alexandria", "lobby", "interior", "hotel room"] } },
+      { role: "body", afterH2: 10, place: "Old Cairo", city: "Cairo",
+        queries: ["old Cairo lane Egypt", "Cairo historic street wall", "Cairo old town Egypt"],
+        guard: { requirePlace: ["cairo"], allowPlaces: ["cairo", "old cairo", "coptic cairo", "islamic cairo"],
+                 require: [["street", "alley", "lane", "wall", "stone", "old", "historic"]],
+                 deny: ["pyramid", "sphinx", "luxor", "aswan", "skyline", "traffic", "lobby", "suite", "interior"] } },
+    ],
+  },
+  {
+    slug: "cairo-hotel-with-pyramid-view",
+    focusKeyword: "cairo hotel with pyramid view",
+    keywordSuffix: " of the kind a cairo hotel with pyramid view looks out on",
+    images: [
+      { role: "featured", place: "Giza Pyramids", city: "Giza", keyword: true,
+        queries: ["Giza pyramids at dusk Egypt", "Great Pyramid Giza golden light", "pyramids Giza evening sky Egypt"],
+        guard: { requirePlace: ["giza", "great pyramid"], allowPlaces: ["giza", "cairo", "memphis"],
+                 require: [["egypt", "egyptian", "desert", "sand", "sky", "sunset", "dusk"]],
+                 deny: ["museum", "sudan", "maya", "chichen", "model", "lobby", "interior", "pool", "resort"] } },
+      { role: "body", afterH2: 4, place: "Giza Pyramids", city: "Giza",
+        queries: ["Sphinx and pyramid Giza Egypt", "Great Sphinx Giza plateau", "Sphinx Giza Egypt stone"],
+        guard: { requirePlace: ["giza", "sphinx", "great pyramid"], allowPlaces: ["giza", "cairo", "memphis"],
+                 require: [["sphinx", "pyramid", "pyramids", "stone", "limestone", "plateau"]],
+                 deny: ["museum", "replica", "model", "las vegas", "luxor hotel", "sudan", "lobby", "interior"] } },
+      { role: "body", afterH2: 9, place: "Giza Pyramids", city: "Giza",
+        queries: ["Giza plateau desert sand Egypt", "pyramids desert edge Egypt", "Giza pyramids from a distance"],
+        guard: { requirePlace: ["giza", "great pyramid"], allowPlaces: ["giza", "cairo", "memphis"],
+                 require: [["desert", "sand", "plateau", "sky", "egypt", "egyptian"]],
+                 deny: ["museum", "model", "sudan", "maya", "chichen", "lobby", "interior", "pool"] } },
+    ],
+  },
+  {
+    slug: "best-hotels-in-luxor-egypt",
+    focusKeyword: "best hotels in luxor egypt",
+    keywordSuffix: " on the river the best hotels in luxor egypt look over",
+    images: [
+      { role: "featured", place: "Nile River", city: "Luxor", keyword: true,
+        queries: ["Nile river Luxor corniche Egypt", "Luxor waterfront Nile feluccas", "Nile at Luxor water Egypt"],
+        // "luxor" as well as "nile", because a photograph captioned "the
+        // corniche at Luxor" is exactly this position and many are. The Las
+        // Vegas casino of the same name is the reason this would normally be
+        // risky, and it is denied outright below.
+        guard: { requirePlace: ["nile", "luxor"], allowPlaces: ["luxor", "thebes", "theban"],
+                 require: [["river", "water", "felucca", "boat", "bank", "corniche"]],
+                 deny: ["cairo", "aswan", "ocean", "sea", "lobby", "suite", "bedroom", "interior", "reception", "las vegas", "luxor hotel"] } },
+      { role: "body", afterH2: 3, place: "Karnak Temple", city: "Luxor",
+        queries: ["Karnak temple columns Luxor", "Karnak hypostyle hall Egypt", "Karnak pillars Egypt"],
+        guard: { requirePlace: ["karnak"], allowPlaces: ["luxor", "karnak", "thebes"],
+                 require: [["column", "columns", "hall", "hieroglyph", "stone", "pillar"]],
+                 deny: ["greece", "athens", "pyramid", "museum", "las vegas", "casino", "lobby", "interior"] } },
+      { role: "body", afterH2: 8, place: "Theban hills", city: "Luxor",
+        queries: ["Theban hills Luxor west bank", "Luxor west bank cliffs desert", "rocky hills Luxor Egypt"],
+        guard: { requirePlace: ["theban", "thebes", "luxor", "valley of the kings"], allowPlaces: ["luxor", "thebes", "theban"],
+                 require: [["hill", "hills", "cliff", "cliffs", "desert", "rock", "mountain", "mountains"]],
+                 deny: ["pyramid", "cairo", "aswan", "temple", "karnak", "column", "columns", "las vegas", "lobby", "interior"] } },
+    ],
+  },
+  {
+    slug: "best-hotels-in-aswan",
+    focusKeyword: "best hotels in aswan",
+    keywordSuffix: " on the water the best hotels in aswan face",
+    images: [
+      { role: "featured", place: "Nile at Aswan", city: "Aswan", keyword: true,
+        queries: ["Aswan Nile felucca sunset Egypt", "Aswan river islands granite Egypt", "Nile Aswan water evening"],
+        guard: { requirePlace: ["aswan"], allowPlaces: ["aswan", "nubia", "elephantine"],
+                 require: [["felucca", "sail", "sailing", "boat", "sunset", "nile", "river", "island", "islands"]],
+                 deny: ["pyramid", "cairo", "luxor", "cruise ship", "lobby", "suite", "bedroom", "interior", "reception", "buffet"] } },
+      { role: "body", afterH2: 5, place: "Philae Temple", city: "Aswan",
+        queries: ["Philae temple Aswan Egypt", "Philae island temple columns", "Philae temple water Egypt"],
+        guard: { requirePlace: ["philae", "agilkia"], allowPlaces: ["aswan", "philae", "agilkia"],
+                 require: [["temple", "column", "columns", "island", "pylon", "ruins"]],
+                 deny: ["pyramid", "karnak", "luxor", "cairo", "abu simbel", "lobby", "interior"] } },
+      { role: "body", afterH2: 10, place: "Nubian village", city: "Aswan",
+        queries: ["Nubian village Aswan painted houses", "Nubian house blue wall Aswan", "Nubian village colourful Egypt"],
+        guard: { requirePlace: ["nubian", "nubia"], allowPlaces: ["aswan", "nubia"],
+                 require: [["village", "house", "houses", "wall", "walls", "street", "painted", "colourful", "colorful"]],
+                 deny: ["temple", "pyramid", "tomb", "museum", "abu simbel", "luxor", "lobby", "interior", "resort"] } },
+    ],
+  },
+  {
+    slug: "5-star-hotels-in-egypt",
+    focusKeyword: "5 star hotels in egypt",
+    keywordSuffix: " in the country where 5 star hotels in egypt are licensed rather than reviewed",
+    images: [
+      { role: "featured", place: "Nile River", city: "Cairo", keyword: true,
+        queries: ["Nile river Cairo evening Egypt", "Cairo corniche water dusk", "Nile Cairo waterfront Egypt"],
+        guard: { requirePlace: ["nile"], allowPlaces: ["cairo", "giza", "luxor", "aswan"],
+                 require: [["river", "water", "corniche", "bank", "bridge", "boat"]],
+                 deny: ["lobby", "suite", "bedroom", "interior", "reception", "spa", "buffet", "ballroom", "dubai", "abu dhabi", "doha", "istanbul", "maldives"] } },
+      { role: "body", afterH2: 4, place: "Nile at Aswan", city: "Aswan",
+        queries: ["Aswan Nile islands water Egypt", "Nile Aswan felucca river", "Aswan river granite Egypt"],
+        guard: { requirePlace: ["aswan"], allowPlaces: ["aswan", "nubia", "elephantine"],
+                 require: [["nile", "river", "water", "island", "islands", "felucca", "sail"]],
+                 deny: ["temple", "pyramid", "cruise ship", "luxor", "cairo", "lobby", "interior", "resort"] } },
+      { role: "body", afterH2: 8, place: "Red Sea reef", city: "Hurghada",
+        queries: ["Red Sea coast Egypt water", "Red Sea coral reef Egypt", "Red Sea shoreline Hurghada"],
+        guard: { requirePlace: ["red sea"], allowPlaces: ["hurghada", "marsa alam", "sharm", "dahab", "safaga", "sinai"],
+                 require: [["reef", "coral", "fish", "underwater", "coast", "water", "beach"]],
+                 deny: ["aquarium", "tank", "zoo", "maldives", "caribbean", "bahamas", "great barrier", "fiji", "swimming pool", "lobby", "interior"] } },
+    ],
+  },
 ];
 
 

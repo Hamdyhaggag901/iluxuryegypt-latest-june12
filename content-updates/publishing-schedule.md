@@ -1,6 +1,6 @@
-# Publishing schedule: 27 scheduled articles
+# Publishing schedule: 33 scheduled articles
 
-27 articles across 12 weeks, most of them two to three days apart.
+33 articles across 12 weeks, most of them two to three days apart.
 Publishing a batch at once is an unnatural pattern for a site this young, which
 is the only reason they are spread out rather than shipped together.
 
@@ -40,10 +40,16 @@ sitemap fetch after the moment passes. No manual step is needed for that.
 | 21 | Monday, 9 November 2026, 09:00 Cairo time | `7-night-nile-cruise` | `7 night nile cruise` | 1019 |
 | 22 | Thursday, 12 November 2026, 09:00 Cairo time | `lake-nasser-cruise` | `lake nasser cruise` | 1425 |
 | 23 | Sunday, 15 November 2026, 09:00 Cairo time | `best-time-to-go-to-egypt-nile-cruise` | `best time to go to egypt nile cruise` | 1401 |
-| 24 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
-| 25 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
-| 26 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
-| 27 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
+| 24 | Wednesday, 18 November 2026, 09:00 Cairo time | `where-to-stay-in-cairo` | `where to stay in cairo` | 1613 |
+| 25 | Saturday, 21 November 2026, 09:00 Cairo time | `luxury-hotels-cairo` | `luxury hotels cairo` | 1631 |
+| 26 | Tuesday, 24 November 2026, 09:00 Cairo time | `cairo-hotel-with-pyramid-view` | `cairo hotel with pyramid view` | 1514 |
+| 27 | Friday, 27 November 2026, 09:00 Cairo time | `best-hotels-in-luxor-egypt` | `best hotels in luxor egypt` | 1412 |
+| 28 | Monday, 30 November 2026, 09:00 Cairo time | `best-hotels-in-aswan` | `best hotels in aswan` | 1412 |
+| 29 | Tuesday, 1 December 2026, 09:00 Cairo time | `hatshepsut-temple` | `hatshepsut temple` | 2025 |
+| 30 | Thursday, 3 December 2026, 09:00 Cairo time | `5-star-hotels-in-egypt` | `5 star hotels in egypt` | 1419 |
+| 31 | Saturday, 5 December 2026, 09:00 Cairo time | `memphis-egypt` | `memphis egypt` | 1871 |
+| 32 | Thursday, 10 December 2026, 09:00 Cairo time | `deir-el-medina` | `deir el medina` | 1428 |
+| 33 | Tuesday, 15 December 2026, 09:00 Cairo time | `bahariya-oasis-egypt` | `bahariya oasis egypt` | 1458 |
 
 The order is deliberate. Each article links back to ones already published and
 never forward to one still scheduled, because a link to a post that has not
@@ -427,7 +433,105 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "Aswan guide"
   - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
 
-### 24. Hatshepsut Temple at Deir el Bahari: One Monument, Two Names
+### 24. Where to Stay in Cairo: Choosing by Neighbourhood
+
+- **Goes live:** Wednesday, 18 November 2026, 09:00 Cairo time
+- **URL:** `/blog/where-to-stay-in-cairo`
+- **Primary keyword:** `where to stay in cairo` (5 uses in the body)
+- **Secondary:** `where to stay in cairo egypt`, `5 star hotels in cairo egypt`, `where to stay in cairo first time`, `where to stay in cairo near pyramids`
+- **SEO title:** Where to Stay in Cairo: Picking the Right Side (46 chars)
+- **Meta description:** 157 chars
+- **Length:** 1613 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - tour: `/hotel/four-seasons-nile-plaza` &mdash; anchor "Four Seasons at Nile Plaza"
+  - tour: `/hotel/fairmont-nile-city` &mdash; anchor "Fairmont Nile City"
+  - tour: `/hotel/kempinski-nile-hotel-cairo` &mdash; anchor "The Kempinski"
+  - tour: `/hotel/sofitel-cairo-nile-el-gezirah` &mdash; anchor "Sofitel El Gezirah"
+  - tour: `/hotel/mena-house-hotel-egypt` &mdash; anchor "Marriott Mena House"
+  - tour: `/hotel/waldorf-astoria-cairo-heliopolis` &mdash; anchor "The Waldorf Astoria"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we actually use"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "The Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 25. Luxury Hotels Cairo: How the Good Ones Differ
+
+- **Goes live:** Saturday, 21 November 2026, 09:00 Cairo time
+- **URL:** `/blog/luxury-hotels-cairo`
+- **Primary keyword:** `luxury hotels cairo` (4 uses in the body)
+- **Secondary:** `best hotels in cairo`, `5 star hotels in cairo`, `luxury hotels in cairo egypt`, `cairo luxury hotels`, `best luxury hotel in cairo`
+- **SEO title:** Luxury Hotels Cairo: What Separates Them (40 chars)
+- **Meta description:** 158 chars
+- **Length:** 1631 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - tour: `/hotel/four-seasons-nile-plaza` &mdash; anchor "The Four Seasons at Nile Plaza"
+  - tour: `/hotel/four-seasons-first-residence-cairo` &mdash; anchor "the First Residence"
+  - tour: `/hotel/fairmont-nile-city` &mdash; anchor "The Fairmont Nile City"
+  - tour: `/hotel/kempinski-nile-hotel-cairo` &mdash; anchor "The Kempinski"
+  - tour: `/hotel/sofitel-cairo-downtown-nile` &mdash; anchor "the Sofitel Downtown"
+  - tour: `/hotel/sofitel-cairo-nile-el-gezirah` &mdash; anchor "The Sofitel El Gezirah"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the properties we actually use"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "the Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 26. Cairo Hotel With Pyramid View: The Honest List
+
+- **Goes live:** Tuesday, 24 November 2026, 09:00 Cairo time
+- **URL:** `/blog/cairo-hotel-with-pyramid-view`
+- **Primary keyword:** `cairo hotel with pyramid view` (4 uses in the body)
+- **Secondary:** `pyramid view hotel giza`, `best hotels in giza with pyramid view`, `hotels in cairo with pyramid view`, `hotel with pyramid view`
+- **SEO title:** Cairo Hotel With Pyramid View: What Is Real (43 chars)
+- **Meta description:** 152 chars
+- **Length:** 1514 words, 13 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - tour: `/hotel/mena-house-hotel-egypt` &mdash; anchor "Marriott Mena House"
+  - article: `/blog/where-to-stay-in-cairo` &mdash; anchor "The comparison of the four areas"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we actually use"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 27. Best Hotels in Luxor Egypt: East Bank or West
+
+- **Goes live:** Friday, 27 November 2026, 09:00 Cairo time
+- **URL:** `/blog/best-hotels-in-luxor-egypt`
+- **Primary keyword:** `best hotels in luxor egypt` (3 uses in the body)
+- **Secondary:** `best hotels in luxor`, `luxor egypt luxury hotels`, `luxury hotels in luxor egypt`, `where to stay in luxor egypt`
+- **SEO title:** Best Hotels in Luxor Egypt: Which Bank to Pick (46 chars)
+- **Meta description:** 155 chars
+- **Length:** 1412 words, 13 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor guide"
+  - article: `/blog/nile-cruise-luxor-to-aswan` &mdash; anchor "the river route"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we do use"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 28. Best Hotels in Aswan: The River Decides It
+
+- **Goes live:** Monday, 30 November 2026, 09:00 Cairo time
+- **URL:** `/blog/best-hotels-in-aswan`
+- **Primary keyword:** `best hotels in aswan` (3 uses in the body)
+- **Secondary:** `best hotel in aswan egypt`, `best hotels in aswan egypt`, `where to stay in aswan`
+- **SEO title:** Best Hotels in Aswan: Which Side of the Water (45 chars)
+- **Meta description:** 155 chars
+- **Length:** 1412 words, 14 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - tour: `/hotel/old-cataract-aswan` &mdash; anchor "The Old Cataract"
+  - tour: `/hotel/movenpick-aswan` &mdash; anchor "The Movenpick"
+  - article: `/blog/nile-cruise-luxor-to-aswan` &mdash; anchor "The route between the two cities"
+  - destination: `/egypt-travel-guide/aswan-egypt-attractions` &mdash; anchor "The Aswan guide"
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we use"
+  - tour: `/egypt-nile-cruise-packages` &mdash; anchor "Nile cruise itineraries"
+
+### 29. Hatshepsut Temple at Deir el Bahari: One Monument, Two Names
 
 - **Goes live:** Tuesday, 1 December 2026, 09:00 Cairo time
 - **URL:** `/blog/hatshepsut-temple`
@@ -443,7 +547,23 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 25. Memphis Egypt: The Ancient Capital, Not the One in Tennessee
+### 30. 5 Star Hotels in Egypt: What the Rating Means
+
+- **Goes live:** Thursday, 3 December 2026, 09:00 Cairo time
+- **URL:** `/blog/5-star-hotels-in-egypt`
+- **Primary keyword:** `5 star hotels in egypt` (3 uses in the body)
+- **Secondary:** `egypt hotels 5 star`, `5 star hotel in egypt`, `5 star hotels egypt`, `luxor egypt 5 star hotels`
+- **SEO title:** 5 Star Hotels in Egypt: What the Stars Mean (43 chars)
+- **Meta description:** 159 chars
+- **Length:** 1419 words, 12 H2 sections
+- **FAQs:** 8, rendered on the page and emitted as FAQPage structured data
+- **SQL file:** `content-updates/add-posts-wave-hotels-cluster.sql`
+- **Internal links:**
+  - tour: `/luxury-hotels-in-egypt` &mdash; anchor "the hotels we actually use"
+  - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "The Cairo guide"
+  - tour: `/egypt-private-tour-packages` &mdash; anchor "private itineraries"
+
+### 31. Memphis Egypt: The Ancient Capital, Not the One in Tennessee
 
 - **Goes live:** Saturday, 5 December 2026, 09:00 Cairo time
 - **URL:** `/blog/memphis-egypt`
@@ -460,7 +580,7 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/cairo-travel-guide` &mdash; anchor "Cairo area guide"
   - tour: `/10-day-egypt-tour` &mdash; anchor "longer Egypt itineraries"
 
-### 26. Deir el Medina: The Village That Built the Royal Tombs
+### 32. Deir el Medina: The Village That Built the Royal Tombs
 
 - **Goes live:** Thursday, 10 December 2026, 09:00 Cairo time
 - **URL:** `/blog/deir-el-medina`
@@ -477,7 +597,7 @@ reached its date would 404. The generator enforces this.
   - destination: `/egypt-travel-guide/attractions-in-luxor` &mdash; anchor "Luxor area guide"
   - tour: `/best-luxury-egypt-tours` &mdash; anchor "longer Egypt itineraries"
 
-### 27. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
+### 33. Bahariya Oasis Egypt: Springs, Golden Mummies and Black Hills
 
 - **Goes live:** Tuesday, 15 December 2026, 09:00 Cairo time
 - **URL:** `/blog/bahariya-oasis-egypt`

@@ -1,7 +1,7 @@
 import { writeFileSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
-  ARTICLES, SCHEDULE, LIVE, TOUR_SLUGS, DESTINATION_SLUGS,
+  ARTICLES, SCHEDULE, LIVE, TOUR_SLUGS, DESTINATION_SLUGS, HOTEL_SLUGS,
   EXISTING_POST_SLUGS, RESERVED_KEYWORDS,
 } from "./articles.mjs";
 
@@ -101,18 +101,42 @@ const KEYWORDS_OWNED_BY_ONE_ARTICLE = {
 // server/tour-redirects.ts rather than copied, because a copy drifts and the
 // drift is invisible: a link to an old path still works, it just spends a
 // redirect on every reader and every crawl, and nothing ever complains.
-const REDIRECTED_PATHS = (() => {
+// Paths that 301 somewhere else, mirroring resolveRedirect in
+// server/path-redirects.ts. Parsed from the source rather than copied.
+//
+// The three tables do NOT behave the same way and conflating them produces a
+// false positive that is worse than no check: CHILD_PATH_REDIRECTS sends
+// /luxury-hotels-in-egypt/<slug> to /hotel/<slug> while leaving
+// /luxury-hotels-in-egypt itself alone, so treating its keys as redirected
+// paths flagged the hotels listing page, which is the canonical URL every
+// hotels article is supposed to link.
+const { REDIRECT_EXACT, REDIRECT_PREFIX, REDIRECT_CHILD_ONLY } = (() => {
   const root = "/home/user/iluxuryegypt-latest-june12/server";
-  const paths = new Set();
   const src = readFileSync(`${root}/path-redirects.ts`, "utf8");
-  for (const block of ["EXACT_PATH_REDIRECTS", "CHILD_PATH_REDIRECTS", "PATH_PREFIX_REDIRECTS"]) {
+  const keys = (block) => {
     const m = src.match(new RegExp(block + "[^=]*= \\{([\\s\\S]*?)\\n\\};"));
-    if (m) for (const e of m[1].matchAll(/"([^"]+)":\s*"[^"]+"/g)) paths.add(e[1]);
-  }
+    return m ? [...m[1].matchAll(/"([^"]+)":\s*"[^"]+"/g)].map((e) => e[1]) : [];
+  };
+  const exact = new Set(keys("EXACT_PATH_REDIRECTS"));
   const tours = readFileSync(`${root}/tour-redirects.ts`, "utf8");
-  for (const e of tours.matchAll(/^\s+"([a-z0-9-]+)":\s*"[a-z0-9-]+",/gm)) paths.add(`/${e[1]}`);
-  return paths;
+  for (const e of tours.matchAll(/^\s+"([a-z0-9-]+)":\s*"[a-z0-9-]+",/gm)) exact.add(`/${e[1]}`);
+  return {
+    REDIRECT_EXACT: exact,
+    // The prefix itself redirects, and so does everything under it.
+    REDIRECT_PREFIX: keys("PATH_PREFIX_REDIRECTS"),
+    // Only the children redirect. The parent is a real page.
+    REDIRECT_CHILD_ONLY: keys("CHILD_PATH_REDIRECTS"),
+  };
 })();
+
+/** Mirrors resolveRedirect: true when this path would 301. */
+function redirects(path) {
+  const bare = path.split("?")[0].replace(/\/+$/, "") || "/";
+  if (REDIRECT_EXACT.has(bare)) return true;
+  for (const parent of REDIRECT_CHILD_ONLY) if (bare.startsWith(`${parent}/`)) return true;
+  for (const prefix of REDIRECT_PREFIX) if (bare === prefix || bare.startsWith(`${prefix}/`)) return true;
+  return false;
+}
 
 const AUTHOR_NAME = "Hamdy Haggag";
 const AUTHOR_BIO =
@@ -350,9 +374,16 @@ STORED.forEach((a, index) => {
   // actual text.
   const relatedBlock = a.body.match(/<aside class="related-posts"[\s\S]*?<\/aside>/)?.[0] ?? "";
   const relatedHrefs = [...relatedBlock.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  //
+  // /hotel/<slug> links are exempt for the same reason. An article called
+  // "where to stay in Cairo" that names four hotels has to link all four, and
+  // capping that at one would make the article worse rather than tidier. They
+  // are references to the site's own records rather than recommendations to
+  // read something else, so they get their own ceiling below.
   const hrefs = allHrefs
     .filter((h) => !/^https?:\/\//.test(h))
     .filter((h) => !h.startsWith("#"))
+    .filter((h) => !/^\/hotel\//.test(h))
     .filter((h, i, all) => {
       // Remove exactly as many occurrences as the related block contributes,
       // so a prose link to the same target still counts.
@@ -362,6 +393,12 @@ STORED.forEach((a, index) => {
   if (hrefs.length < 3) problems.push(`${L}: only ${hrefs.length} internal prose links (min 3)`);
   if (hrefs.length > 4) problems.push(`${L}: ${hrefs.length} internal prose links (max 4)`);
 
+  // Six is a lot of hotels to name in one article and it is the point at which
+  // a page stops being advice and becomes a directory.
+  const hotelLinks = [...new Set(allHrefs.filter((h) => /^\/hotel\//.test(h)))];
+  if (hotelLinks.length > 6)
+    problems.push(`${L}: links to ${hotelLinks.length} hotels (max 6). Past that it is a directory rather than advice.`);
+
   // The rule that matters most: a tour under the category path is a 404.
   for (const href of hrefs) {
     if (/^\/luxury-egypt-tour-packages\/[^/]+$/.test(href)) {
@@ -369,18 +406,28 @@ STORED.forEach((a, index) => {
       if (TOUR_SLUGS.has(sub)) problems.push(`${L}: ${href} is a TOUR under the category path and will 404`);
     }
     if (!href.startsWith("/")) problems.push(`${L}: ${href} is not a site relative link`);
+
+  }
+
+  // Hotels live at /hotel/<slug>, never under the listing page, and only
+  // hotels that exist. Checked against EVERY internal link rather than the
+  // prose subset: /hotel/ links are exempt from the editorial cap, which means
+  // they are filtered out of that list, which briefly meant these two checks
+  // looped over a list the links could never be in and silently passed.
+  for (const href of allHrefs.filter((h) => h.startsWith("/"))) {
+    if (/^\/luxury-hotels-in-egypt\/[^/]+$/.test(href))
+      problems.push(`${L}: ${href} puts a hotel under the listing page. Hotels are /hotel/<slug>.`);
+    const hotel = href.match(/^\/hotel\/([^/]+)$/)?.[1];
+    if (hotel && !HOTEL_SLUGS.has(hotel))
+      problems.push(`${L}: ${href} is not a hotel in the hotels table. See HOTEL_SLUGS in articles.mjs.`);
   }
 
   // Never link at a path that redirects. It works, and it costs the reader and
   // the crawler a hop for nothing, and it leaks a little of whatever the link
   // was passing on.
   for (const href of allHrefs.filter((h) => h.startsWith("/"))) {
-    const bare = href.split("?")[0].replace(/\/+$/, "") || "/";
-    if (REDIRECTED_PATHS.has(bare))
+    if (redirects(href))
       problems.push(`${L}: links to ${href}, which 301s somewhere else. Link the final URL.`);
-    for (const parent of REDIRECTED_PATHS)
-      if (parent !== "/" && bare.startsWith(`${parent}/`))
-        problems.push(`${L}: links to ${href}, under ${parent} which 301s. Link the final URL.`);
   }
 
   const tourLinks = hrefs.filter((h) => TOUR_SLUGS.has(h.replace(/^\//, "")));
@@ -526,6 +573,15 @@ STORED.forEach((a, index) => {
       if (r.anchor.toLowerCase().includes(a.primary))
         problems.push(`${L}: related anchor "${r.anchor}" repeats the primary keyword verbatim`);
     }
+
+    // One real table per article. Every one of these queries is list shaped
+    // in some direction, and a list pretending to be a table is not the same
+    // thing to a reader on a phone or to a crawler looking for a comparison.
+    const tables = (a.body.match(/<table>/g) ?? []).length;
+    if (tables < 1) problems.push(`${L}: no table. Every one of these queries has a comparison in it.`);
+    if (tables > 2) problems.push(`${L}: ${tables} tables, which is a spreadsheet rather than an article`);
+    if (tables > 0 && !/<thead>/.test(a.body))
+      problems.push(`${L}: the table has no header row`);
 
     if (!/class="post-byline"/.test(a.body)) problems.push(`${L}: no visible author and updated line`);
     if (!/class="author-bio"/.test(a.body)) problems.push(`${L}: no author bio`);

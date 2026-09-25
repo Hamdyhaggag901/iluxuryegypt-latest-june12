@@ -6,8 +6,8 @@
 -- move a page, and an article that links out four times and is linked to zero
 -- times is a page the site itself does not vouch for.
 --
--- 55 links, across 19 source pages, to 21 targets. The last 15 point at the
--- five Nile cluster articles. Every target has at
+-- 73 links, across 19 source pages, to 27 targets. The last 18 point at the
+-- six hotels cluster articles. Every target has at
 -- least two sources and most have three, so one source page being missing
 -- or already at its link cap does not leave a target with one inbound link.
 --
@@ -124,7 +124,25 @@ INSERT INTO inbound_links (source_table, source_slug, target_slug, anchor, sente
   ('tours', '7-day-egypt-tour', 'nile-cruise-luxor-to-aswan', 'the river half of this week', 'The sailing is the middle of this itinerary, and {{A}} covers the temples it reaches.'),
   ('destinations', 'alexandria-egypt-attractions', 'best-time-to-go-to-egypt-nile-cruise', 'the season on the river', 'If the Nile is also on your itinerary, {{A}} covers a narrower window than the one that applies up here.'),
   ('tours', 'egypt-small-group-tour', '7-night-nile-cruise', 'the length of the sailing', 'Departures run to different river lengths, and {{A}} covers what each one actually adds.'),
-  ('tours', 'family-tours-egypt', 'lake-nasser-cruise', 'the southern alternative', 'For families returning to Egypt, {{A}} covers a quieter week than the classic route.');
+  ('tours', 'family-tours-egypt', 'lake-nasser-cruise', 'the southern alternative', 'For families returning to Egypt, {{A}} covers a quieter week than the classic route.'),
+  ('destinations', 'cairo-travel-guide', 'where-to-stay-in-cairo', 'picking which side of the city to sleep on', 'The address matters more here than in any other Egyptian city, and {{A}} works through the four areas.'),
+  ('destinations', 'cairo-travel-guide', 'luxury-hotels-cairo', 'what separates the grand properties', 'If you are choosing between the big riverside names, {{A}} covers what actually differs between them.'),
+  ('destinations', 'attractions-in-luxor', 'best-hotels-in-luxor-egypt', 'east bank or west bank', 'Where you sleep here decides how your mornings run, and {{A}} sets out the trade between the two banks.'),
+  ('destinations', 'aswan-egypt-attractions', 'best-hotels-in-aswan', 'what the room should be facing', 'The town is small enough that the view matters more than the address, and {{A}} explains the three positions.'),
+  ('destinations', 'things-to-do-in-hurghada', '5-star-hotels-in-egypt', 'what the star rating actually covers', 'A five star on this coast means something different from a five star in Cairo, and {{A}} explains why.'),
+  ('tours', 'egypt-private-tour-packages', 'where-to-stay-in-cairo', 'choosing a Cairo base', 'Cairo is the one city on this route where the neighbourhood changes the holiday, and {{A}} covers the choice.'),
+  ('tours', 'best-luxury-egypt-tours', 'luxury-hotels-cairo', 'how the Cairo hotels differ', 'The city nights on this journey sit in the properties {{A}} compares.'),
+  ('tours', 'egypt-nile-cruise-packages', 'best-hotels-in-aswan', 'the nights either side of the sailing', 'Most sailings start or finish here, and {{A}} covers where to spend the land nights around them.'),
+  ('tours', '7-day-egypt-tour', 'cairo-hotel-with-pyramid-view', 'whether a pyramid view is worth it', 'A week here usually includes a Giza morning, and {{A}} covers whether sleeping beside the plateau earns its cost.'),
+  ('tours', '10-day-egypt-tour', 'best-hotels-in-luxor-egypt', 'which bank to stay on in Luxor', 'Two nights in Luxor go differently depending on the bank, and {{A}} explains the choice.'),
+  ('tours', '12-days-egypt-tour', '5-star-hotels-in-egypt', 'reading a star rating honestly', 'Hotels on this route are all rated five stars and are not all the same, and {{A}} covers what the rating means.'),
+  ('tours', 'egypt-small-group-tour', 'where-to-stay-in-cairo', 'where the city nights sit', 'If you are extending either end of this departure, {{A}} covers which part of Cairo to add them in.'),
+  ('tours', 'luxury-small-group-tours-egypt', 'luxury-hotels-cairo', 'the Cairo properties compared', 'The hotels used on this route are the ones {{A}} goes through in detail.'),
+  ('tours', 'family-tours-egypt', 'best-hotels-in-aswan', 'picking an Aswan room', 'Aswan is the gentlest stop on a family route, and {{A}} covers what to ask about the room and the pool.'),
+  ('tours', 'egypt-tours-family', 'cairo-hotel-with-pyramid-view', 'the view, and what it costs', 'Children remember the pyramids from the window, and {{A}} covers which hotels genuinely have that.'),
+  ('tours', 'egypt-private-tours', 'best-hotels-in-luxor-egypt', 'the Luxor bank question', 'Luxor nights are where private itineraries diverge most, and {{A}} explains the two options.'),
+  ('destinations', 'alexandria-egypt-attractions', '5-star-hotels-in-egypt', 'what five stars guarantees', 'The classification works the same way here as everywhere else in Egypt, and {{A}} covers what it does and does not cover.'),
+  ('destinations', 'siwa-oasis-egypt', '5-star-hotels-in-egypt', 'why the rating stops helping out here', 'A desert camp is judged on its site and its crew rather than on facilities, which is part of what {{A}} explains.');
 
 -- Mirrors client/src/lib/legacy-text-to-html.ts. See the note above.
 CREATE OR REPLACE FUNCTION pg_temp.to_html(raw text) RETURNS text AS $$

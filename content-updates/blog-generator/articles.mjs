@@ -48,12 +48,18 @@ import a40 from "./a40.mjs";
 import a41 from "./a41.mjs";
 import a42 from "./a42.mjs";
 import a43 from "./a43.mjs";
+import a44 from "./a44.mjs";
+import a45 from "./a45.mjs";
+import a46 from "./a46.mjs";
+import a47 from "./a47.mjs";
+import a48 from "./a48.mjs";
+import a49 from "./a49.mjs";
 
 // a14 onwards are the two later waves. They are APPENDED rather than slotted
 // into date order, so the 13 files above regenerate byte for byte. The order of
 // this array no longer matches the order of publication, which is why gen.mjs
 // validates "does this link point at something already live" by date.
-export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43];
+export const ARTICLES = [a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49];
 
 // One article every two to three days. A site this young publishing a batch at
 // once is an unnatural pattern, which is the only reason they are spread out.
@@ -128,6 +134,14 @@ export const SCHEDULE = [
   "2026-11-09T09:00:00+02:00", // 7-night-nile-cruise
   "2026-11-12T09:00:00+02:00", // lake-nasser-cruise
   "2026-11-15T09:00:00+02:00", // best-time-to-go-to-egypt-nile-cruise
+
+  // The hotels cluster.
+  "2026-11-18T09:00:00+02:00", // where-to-stay-in-cairo
+  "2026-11-21T09:00:00+02:00", // luxury-hotels-cairo
+  "2026-11-24T09:00:00+02:00", // cairo-hotel-with-pyramid-view
+  "2026-11-27T09:00:00+02:00", // best-hotels-in-luxor-egypt
+  "2026-11-30T09:00:00+02:00", // best-hotels-in-aswan
+  "2026-12-03T09:00:00+02:00", // 5-star-hotels-in-egypt
 ];
 
 // Real slugs. Tours live at the site ROOT, never under the category path.
@@ -147,6 +161,38 @@ export const TOUR_SLUGS = new Set([
   // Confirmed published in the tours table on 19 September 2026.
   "white-desert-luxury-camping",
 ]);
+
+// Real hotel slugs, served at /hotel/<slug>. A hand maintained mirror of the
+// `hotels` table, exactly like TOUR_SLUGS above and with the same failure
+// modes: a slug missing here makes the generator reject a link to a hotel that
+// exists, and a slug left here after a hotel is unpublished lets a link
+// through that 404s.
+//
+// Every one of these was confirmed from a content-updates SQL file that has
+// been run against the live database. THERE IS NO LUXOR HOTEL. That is not an
+// omission in this list, it is the state of the table, and it is why
+// best-hotels-in-luxor-egypt names no hotel at all.
+export const HOTEL_SLUGS = new Set([
+  // Cairo
+  "four-seasons-nile-plaza", "four-seasons-first-residence-cairo",
+  "fairmont-nile-city", "sofitel-cairo-nile-el-gezirah",
+  "waldorf-astoria-cairo-heliopolis", "sofitel-cairo-downtown-nile",
+  "kempinski-nile-hotel-cairo", "cairo-marriott-hotel",
+  // Giza
+  "mena-house-hotel-egypt",
+  // Aswan
+  "old-cataract-aswan", "movenpick-aswan",
+]);
+
+/**
+ * Hotels the site's OWN record describes as having a view of the pyramids.
+ *
+ * One, and the list is short on purpose. Several Cairo hotels mention the
+ * pyramids in their descriptions as a distance ("roughly a 30 minute taxi ride
+ * away"), which is not a view, and an article that turns one into the other is
+ * inventing a feature of somebody else's building.
+ */
+export const HOTELS_WITH_PYRAMID_VIEW = new Set(["mena-house-hotel-egypt"]);
 
 export const DESTINATION_SLUGS = new Set([
   "cairo-travel-guide", "attractions-in-luxor", "aswan-egypt-attractions",

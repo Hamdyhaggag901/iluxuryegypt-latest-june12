@@ -230,12 +230,19 @@ async function destinationIndex(): Promise<ContentResult> {
  * and every hotel's canonical_url point at. That path is unchanged.
  */
 async function hotelIndex(): Promise<ContentResult> {
-  const [hero, hotels] = await Promise.all([
+  const [hero, settings, hotels] = await Promise.all([
     storage.getStayPageHero().catch(() => undefined),
+    storage.getStayListingSettings().catch(() => undefined),
     storage.getHotels().catch(() => []),
   ]);
 
   const heading = hero?.title?.trim() || HOTEL_INDEX_FALLBACK_HEADING;
+  // The listing page's own intro, which a crawler has never seen. It is
+  // editable in the admin, it is rendered to a browser, and until now the
+  // server rendered version of this page was a heading and a list of names
+  // with no prose at all. It also carries the hotels cluster hub block, so
+  // the links from this pillar down to its articles have to be in here.
+  const intro = settings?.description?.trim();
   const published = hotels.filter((h) => h.status === "published");
   const items = published
     .map(
@@ -246,7 +253,11 @@ async function hotelIndex(): Promise<ContentResult> {
     )
     .join("");
 
-  return content(`<h1>${esc(heading)}</h1><ul>${items}</ul>`);
+  return content(
+    `<h1>${esc(heading)}</h1>` +
+    (intro ? `<div>${trusted(intro)}</div>` : "") +
+    `<ul>${items}</ul>`
+  );
 }
 
 async function categoryPage(slug: string): Promise<ContentResult> {

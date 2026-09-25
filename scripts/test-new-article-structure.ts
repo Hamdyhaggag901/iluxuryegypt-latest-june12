@@ -23,7 +23,11 @@ import path from "path";
 
 // The five Phase A rows exactly as the wave SQL stores them, read back from
 // the generated SQL so this checks what ships rather than a hand-made stub.
-const sql = fs.readFileSync(path.resolve(import.meta.dirname, "../content-updates/add-posts-wave-nile-cluster.sql"), "utf8");
+// Both new waves, so the hotels cluster is covered by the same assertions as
+// the Nile one rather than by a second copy of this file.
+const sql = ["nile-cluster", "hotels-cluster"]
+  .map((w) => fs.readFileSync(path.resolve(import.meta.dirname, `../content-updates/add-posts-wave-${w}.sql`), "utf8"))
+  .join("\n");
 const bodies = [...sql.matchAll(/^  '([a-z0-9-]+)',\n  '((?:[^']|'')*)',\n  '((?:[^']|'')*)',/gm)]
   .map((m) => ({ slug: m[1], title: m[2].replace(/''/g, "'"), body: m[3].replace(/''/g, "'") }));
 
@@ -75,6 +79,8 @@ for (const row of bodies) {
   ok("dateModified matches the visible Last updated line",
      bylineDate.length > 0 && bp.dateModified.startsWith(bylineDate),
      `schema ${bp.dateModified} vs byline ${bylineDate}`);
+  ok("exactly one table with a header row",
+     (row.body.match(/<table>/g) ?? []).length === 1 && row.body.includes("<thead>"));
   ok("exactly one byline and one table of contents",
      (row.body.match(/class="post-byline"/g) ?? []).length === 1 &&
      (row.body.match(/class="toc"/g) ?? []).length === 1);
