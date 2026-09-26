@@ -13,6 +13,7 @@ import zlib from "zlib";
 import puppeteer from "puppeteer";
 import { BROCHURE_TOUR_SLUGS } from "../shared/brochure-tours";
 import { renderBrochureHtml } from "../server/brochure/template";
+import { SITE_URL } from "../server/seo-meta";
 import {
   brochurePath,
   closeBrochureBrowser,
@@ -314,6 +315,141 @@ console.log("\n=== 3c. The folio goes cream on flip pages, and only there ===\n"
     await page.close().catch(() => undefined);
     await browser.close().catch(() => undefined);
   }
+}
+
+console.log("\n=== 8. Images come from the row, resolved against the site origin ===\n");
+for (const slug of BROCHURE_TOUR_SLUGS) {
+  const tour = (await storage.getTourBySlug(slug))!;
+  const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+  const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+  const html = renderBrochureHtml(tour, hotels);
+  const days = (tour.itinerary as ItineraryDay[]) ?? [];
+
+  // "Matches exactly" means the stored path, made absolute. A bare relative
+  // src resolves against about:blank under setContent and loads nothing, so
+  // the origin is the difference between photographs and a blank brochure.
+  const origin = (process.env.BROCHURE_ASSET_ORIGIN || SITE_URL).replace(/\/+$/, "");
+  const absolute = (v: string) => `${origin}${v.startsWith("/") ? "" : "/"}${v}`;
+
+  const cover = html.match(/<img class="bleed" src="([^"]+)"/)?.[1];
+  ok(`${slug}: the cover uses the tour's own hero_image`,
+     cover === absolute(String(tour.heroImage)), `${cover} vs ${absolute(String(tour.heroImage))}`);
+  ok(`${slug}: and it carries the stored path unchanged`,
+     Boolean(cover && cover.endsWith(String(tour.heroImage))), String(cover));
+
+  // Day images, in order, each against its own itinerary entry.
+  const dayImgs = [...html.matchAll(/<div class="dimg">(?:<img src="([^"]+)"|<div)/g)].map((m) => m[1]);
+  ok(`${slug}: one image slot per day`, dayImgs.length === days.length, `${dayImgs.length} for ${days.length}`);
+  const wrong = days
+    .map((d, i) => {
+      const stored = String(d.image || "");
+      const rendered = dayImgs[i];
+      if (!stored || stored === "PENDING_UPLOAD") return rendered === undefined ? null : `day ${i + 1} should be a panel`;
+      return rendered === absolute(stored) ? null : `day ${i + 1}: ${rendered} vs ${absolute(stored)}`;
+    })
+    .filter(Boolean);
+  ok(`${slug}: every day image is that day's itinerary[n].image`, wrong.length === 0, wrong.slice(0, 2).join("; "));
+
+  const hotelImgs = [...html.matchAll(/<div class="hrow">\s*(?:<img src="([^"]+)"|<div)/g)].map((m) => m[1]);
+  const hotelWrong = hotels
+    .map((h, i) => {
+      const stored = String(h.image || "");
+      if (!stored || stored === "PENDING_UPLOAD") return hotelImgs[i] === undefined ? null : `hotel ${i + 1} should be a panel`;
+      return hotelImgs[i] === absolute(stored) ? null : `hotel ${i + 1}: ${hotelImgs[i]}`;
+    })
+    .filter(Boolean);
+  ok(`${slug}: every hotel image is that hotel's own image`, hotelWrong.length === 0, hotelWrong.slice(0, 2).join("; "));
+
+  ok(`${slug}: no src is left relative`, !/src="\/(?!\/)/.test(html));
+  ok(`${slug}: no src points at PENDING_UPLOAD`, !/src="[^"]*PENDING_UPLOAD/.test(html));
+}
+
+console.log("\n=== 9. No markup reaches the page as visible text ===\n");
+{
+  // Checked as innerText from real Chrome, not as the source with its tags
+  // stripped. The difference matters in both directions: the approved cover
+  // line uses &nbsp; as a deliberate spacer and an escaped "&" is correctly
+  // stored as &amp;, so a source level check fails on markup that is right;
+  // and a literal "<p>" that leaked into a text node is only visible once the
+  // page is laid out. innerText is what a reader sees.
+  const browser = await puppeteer.launch({
+    headless: "new" as unknown as boolean,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  });
+  const page = await browser.newPage();
+  try {
+    for (const slug of BROCHURE_TOUR_SLUGS) {
+      const tour = (await storage.getTourBySlug(slug))!;
+      const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+      const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+      const html = renderBrochureHtml(tour, hotels);
+
+      // Not a vacuous check: the source really does hold markup.
+      const sources = String(tour.description)
+        + (tour.itinerary as ItineraryDay[]).map((d) => String(d.description || "")).join("")
+        + hotels.map((h) => String(h.description || "")).join("");
+      ok(`${slug}: the source fields do contain markup`, /<p>|<a\s+href=|&nbsp;|&amp;/.test(sources));
+
+      await page.setContent(html, { waitUntil: "domcontentloaded" });
+      const visible = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
+
+      for (const needle of ["<p>", "</p>", "href=", "&nbsp;", "<h3>", "<div", "<a ", "&amp;", "&lt;", "&quot;", "<br"]) {
+        const at = visible.indexOf(needle);
+        ok(`${slug}: no "${needle}" in the rendered page text`, at === -1,
+           at === -1 ? "" : visible.slice(Math.max(0, at - 45), at + 45));
+      }
+      // Decoded rather than merely deleted: the ampersand survives as a word.
+      ok(`${slug}: an escaped ampersand reads as "&"`, / & /.test(visible));
+      // And the anchor's words survive while its href does not.
+      ok(`${slug}: link text is kept as words`, visible.includes("sites"), "");
+      // Stripping a tag leaves a space where it was, so an inline element that
+      // closes before punctuation produces "the Nile ." unless it is closed up.
+      const looseStops = visible.match(/\w \./g) ?? [];
+      ok(`${slug}: no space left before a full stop`, looseStops.length === 0, looseStops.slice(0, 2).join(" | "));
+      const looseCommas = visible.match(/\w ,/g) ?? [];
+      ok(`${slug}: no space left before a comma`, looseCommas.length === 0, looseCommas.slice(0, 2).join(" | "));
+
+      // The pulled quote is no longer a sentence the reader has just read.
+      const dup = await page.evaluate(() => {
+        const paras = [...document.querySelectorAll("p")].map((el) => (el.textContent ?? "").trim());
+        return [...document.querySelectorAll(".quote")]
+          .map((el) => (el.textContent ?? "").trim())
+          .filter((q) => q.length > 0 && paras.some((para) => para.includes(q)));
+      });
+      ok(`${slug}: no pulled quote repeats a sentence from its own body`, dup.length === 0,
+         dup.slice(0, 1).map((q) => q.slice(0, 60)).join(""));
+      const quoteCount = await page.evaluate(() => document.querySelectorAll(".quote").length);
+      ok(`${slug}: there are quotes to check`, quoteCount > 0, String(quoteCount));
+    }
+  } finally {
+    await page.close().catch(() => undefined);
+    await browser.close().catch(() => undefined);
+  }
+}
+
+console.log("\n=== 10. The hotels page has a heading of its own ===\n");
+for (const slug of BROCHURE_TOUR_SLUGS) {
+  const tour = (await storage.getTourBySlug(slug))!;
+  const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+  const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+  const html = renderBrochureHtml(tour, hotels);
+  const hotBlocks = [...html.matchAll(/<div class="hot">([\s\S]*?)\n  <\/div>/g)].map((m) => m[1]);
+  if (hotels.length === 0) {
+    ok(`${slug}: no hotels, so no hotels page and no heading`, hotBlocks.length === 0 && !html.includes("Our journey hotels"));
+    continue;
+  }
+  const headings = hotBlocks.map((b) => b.match(/<h3>([^<]+)<\/h3>/)?.[1] ?? "");
+  ok(`${slug}: every hotels page carries a heading`, headings.every((h) => h.length > 0), headings.join(" | "));
+  ok(`${slug}: the first reads "Our journey hotels."`, headings[0] === "Our journey hotels.", headings[0]);
+  ok(`${slug}: any further page reads "continued"`,
+     headings.slice(1).every((h) => h === "Our journey hotels, continued."), headings.slice(1).join(" | "));
+  ok(`${slug}: the heading uses the standard kicker`,
+     hotBlocks.every((b) => b.includes('<div class="kick">The detail</div>')));
+  ok(`${slug}: the heading sits above the first hotel row`,
+     hotBlocks.every((b) => b.indexOf('class="hothead"') < b.indexOf('class="hrow"')));
+  ok(`${slug}: the folio still reads WHERE YOU WILL STAY`,
+     (html.match(/<span>WHERE YOU WILL STAY<\/span>/g) ?? []).length === hotBlocks.length);
+  ok(`${slug}: the grid makes room for the heading`, html.includes("grid-template-rows:auto 1fr 1fr"));
 }
 
 console.log("\n=== 7. The approved layout, per tour ===\n");

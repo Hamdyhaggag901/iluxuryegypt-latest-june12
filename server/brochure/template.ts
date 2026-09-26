@@ -14,6 +14,7 @@
 // the email rather than in a file that gets forwarded.
 
 import type { Hotel, ItineraryDay, Tour } from "@shared/schema";
+import { SITE_URL } from "../seo-meta";
 import { BROCHURE_FONT_CSS } from "./fonts";
 
 /** Images the admin has not replaced yet. Rendering one gives a broken icon. */
@@ -59,18 +60,128 @@ function imageOrFallback(src: string | null | undefined, alt: string, label: str
   // only shows up as a broken image in a document already sent to a client.
   // Puppeteer runs this before it prints, because networkidle0 waits for the
   // failed request to settle.
-  return `<img${attr} src="${escapeHtml(src.trim())}" alt="${escapeHtml(alt)}" onerror="brochureFallback(this)" data-fallback="${escapeHtml(label)}">`;
+  return `<img${attr} src="${escapeHtml(absoluteAsset(src))}" alt="${escapeHtml(alt)}" onerror="brochureFallback(this)" data-fallback="${escapeHtml(label)}">`;
 }
 
 function list(items: string[] | null | undefined): string[] {
   return Array.isArray(items) ? items.filter((x) => typeof x === "string" && x.trim().length > 0) : [];
 }
 
-function paragraphs(text: string | null | undefined): string[] {
-  return String(text || "")
+/**
+ * An asset path made absolute against the site's own origin.
+ *
+ * Images in this database are stored as site relative paths, mostly under
+ * /api/assets/uploads/. Puppeteer is given the page through setContent, whose
+ * document has no base URL, so a relative src resolves against about:blank and
+ * loads nothing: the brochure prints with no photographs at all and no error
+ * anywhere to say why. An http(s) or data URL is already absolute and passes
+ * through untouched.
+ */
+function assetOrigin(): string {
+  // Defaults to the public site, which is what these paths are relative to.
+  // The override exists because the render is a round trip out to that host
+  // and back to the same box, once per image, and a proxy in front of the site
+  // can rate limit or simply refuse a request the server makes to itself. Set
+  // BROCHURE_ASSET_ORIGIN=http://127.0.0.1:5000 to keep it on the loopback.
+  return (process.env.BROCHURE_ASSET_ORIGIN || SITE_URL).replace(/\/+$/, "");
+}
+
+function absoluteAsset(src: string): string {
+  const trimmed = src.trim();
+  if (/^(https?:)?\/\//i.test(trimmed) || /^data:/i.test(trimmed)) return trimmed;
+  return `${assetOrigin()}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+}
+
+/**
+ * HTML entities, decoded.
+ *
+ * Needed because the prose fields hold rich text: stripping the tags out of
+ * "Cairo &amp; Giza" without this leaves the reader looking at "&amp;".
+ */
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&(#\d+|#x[0-9a-fA-F]+);/g, (_m, code: string) =>
+      String.fromCodePoint(code[0] === "#" && (code[1] === "x" || code[1] === "X")
+        ? parseInt(code.slice(2), 16)
+        : parseInt(code.slice(1), 10))
+    )
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#39;/g, "'")
+    .replace(/&hellip;/g, "...")
+    .replace(/&mdash;/g, "\u2014")
+    .replace(/&ndash;/g, "\u2013")
+    .replace(/&amp;/g, "&"); // last, so "&amp;lt;" does not become "<"
+}
+
+/**
+ * A rich text field, as paragraphs of plain text.
+ *
+ * The tour and hotel descriptions and the itinerary day descriptions are all
+ * rich text and hold real markup. Inserting them into this template escaped,
+ * which is the only safe way to insert them, printed the markup at the reader:
+ * literal <p>, <h3> and <a href="..."> in the middle of a sentence in a PDF
+ * that had been emailed to a client.
+ *
+ * Block boundaries become paragraph breaks, because a field that is one line
+ * of HTML has no blank lines to split on and would otherwise collapse into a
+ * single wall of text. Anchor text survives as words and the href does not: a
+ * link is of no use in a printed page, and the sentence it sits in is.
+ */
+function richTextParagraphs(value: string | null | undefined): string[] {
+  return String(value || "")
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<\s*br\s*\/?>/gi, "\n\n")
+    .replace(/<\/\s*(p|div|h[1-6]|li|tr|blockquote|section|article)\s*>/gi, "\n\n")
     .split(/\n{2,}|\r\n\r\n/)
-    .map((p) => p.trim())
+    .map((chunk) =>
+      decodeEntities(chunk.replace(/<[^>]*>/g, " "))
+        .replace(/\s+/g, " ")
+        // Tags become spaces, so an inline element closing before punctuation
+        // leaves "the Nile ." behind. Real rich text does that constantly,
+        // because a link is usually the last thing in its sentence.
+        .replace(/\s+([,.;:!?%)\]])/g, "$1")
+        .replace(/([(\[])\s+/g, "$1")
+        .trim()
+    )
     .filter(Boolean);
+}
+
+/** The same, flattened to one line, for a field rendered as a single block. */
+function richText(value: string | null | undefined): string {
+  return richTextParagraphs(value).join(" ");
+}
+
+function sentences(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => x.length > 0);
+}
+
+/**
+ * Takes one sentence OUT of the body to use as the pulled quote.
+ *
+ * Removing it is the whole point. Both the journey page and every day page
+ * used to print a paragraph and then repeat one of its own sentences in the
+ * quote rule directly underneath, which reads as a mistake rather than as an
+ * emphasis. When there is no second sentence to spare there is no quote.
+ */
+function pullQuote(paras: string[]): { paras: string[]; quote: string } {
+  // Prefer the third paragraph, which is where the approved layout puts the
+  // rule, and fall back to the last paragraph that can spare a sentence.
+  for (const index of [2, ...paras.map((_, i) => i).reverse()]) {
+    const para = paras[index];
+    if (!para) continue;
+    const parts = sentences(para);
+    if (parts.length < 2) continue;
+    const quote = index === 2 ? parts[0] : parts[parts.length - 1];
+    const kept = parts.filter((_, i) => i !== (index === 2 ? 0 : parts.length - 1)).join(" ");
+    const next = [...paras];
+    if (kept) next[index] = kept;
+    else next.splice(index, 1);
+    return { paras: next, quote };
+  }
+  return { paras, quote: "" };
 }
 
 /** Two digits, zero padded, as the design specifies for the day numbers. */
@@ -166,24 +277,22 @@ function coverPage(tour: Tour, days: ItineraryDay[]): string {
 }
 
 function journeyPage(tour: Tour, pageNumber: number): string {
-  const body = paragraphs(tour.description);
-  const opening = body[0] ?? String(tour.description || "").trim();
-  const rest = body.slice(1);
+  // The description is rich text. Stripped to plain paragraphs before it is
+  // escaped, or the markup itself prints on the page.
+  const { paras, quote } = pullQuote(richTextParagraphs(tour.description));
 
-  // The pulled line is the second paragraph's own first sentence, so the quote
-  // is the tour's words rather than a line written about it here.
-  const quoteSource = rest[0] ?? opening;
-  const pulled = (quoteSource.split(/(?<=[.!?])\s+/)[0] ?? quoteSource).trim();
-  const closing = rest.slice(1);
+  // The rule sits after the second paragraph, which is where the approved
+  // layout puts it. Everything after it follows.
+  const before = paras.slice(0, 2);
+  const after = paras.slice(2);
 
   return `<div class="pg">
   <div class="pad">
     <div class="kick">The journey</div>
     <h3>${escapeHtml(tour.title)}</h3>
-    <p class="first">${escapeHtml(opening)}</p>
-    ${rest.length > 0 ? `<p>${escapeHtml(rest[0])}</p>` : ""}
-    ${pulled ? `<div class="quote">${escapeHtml(pulled)}</div>` : ""}
-    ${closing.map((p) => `<p>${escapeHtml(p)}</p>`).join("\n    ")}
+    ${before.map((text, i) => `<p${i === 0 ? ' class="first"' : ""}>${escapeHtml(text)}</p>`).join("\n    ")}
+    ${quote ? `<div class="quote">${escapeHtml(quote)}</div>` : ""}
+    ${after.map((text) => `<p>${escapeHtml(text)}</p>`).join("\n    ")}
   </div>
   ${folio("The journey", pageNumber)}
 </div>`;
@@ -203,14 +312,11 @@ function dayPage(day: ItineraryDay, index: number, pageNumber: number): string {
   const dayNumber = typeof day.day === "number" && Number.isFinite(day.day) ? day.day : index + 1;
   const place = String(day.placeName || "").trim();
   const title = String(day.title || "").trim();
-  const description = String(day.description || "").trim();
-  const photo = imageOrFallback(day.image, String(day.imageAlt || "").trim() || title || place, place || title);
-
-  // The pulled line is the paragraph's last sentence when there is more than
-  // one, so the quote is not the sentence the reader has just read at the top
-  // of the same block.
-  const sentences = description.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 0);
-  const pulled = sentences.length > 1 ? sentences[sentences.length - 1].trim() : "";
+  // Rich text here too, and the same reason: a day description holding <p> or
+  // an <a href> printed the tags at the reader.
+  const { paras, quote: pulled } = pullQuote(richTextParagraphs(day.description));
+  const description = paras.join(" ");
+  const photo = imageOrFallback(day.image, String(day.imageAlt || "").trim() || title || place, place || title || `Day ${dayNumber}`);
 
   const img = `<div class="dimg">${photo}<div class="num">${pad2(dayNumber)}</div></div>`;
   const body = `<div class="body">
@@ -247,14 +353,23 @@ function hotelPages(hotels: Hotel[], firstPageNumber: number): string[] {
       <div class="hinfo">
         ${h.location ? `<div class="city">${escapeHtml(h.location)}</div>` : ""}
         <h5>${escapeHtml(h.name)}</h5>
-        <p>${escapeHtml(String(h.description || "").trim())}</p>
+        <p>${escapeHtml(richText(h.description))}</p>
       </div>
     </div>`
       )
       .join("\n");
 
+    // The page needs a heading of its own: it followed the itinerary with
+    // nothing but photographs, and the only label on it was the folio.
+    // Continued rather than a bare repeat on a second page, so a reader
+    // landing on it knows it is the same section rather than a new one.
+    const heading = pages.length === 0 ? "Our journey hotels." : "Our journey hotels, continued.";
     pages.push(`<div class="pg">
   <div class="hot">
+    <div class="hothead">
+      <div class="kick">The detail</div>
+      <h3>${escapeHtml(heading)}</h3>
+    </div>
 ${rows}
   </div>
   ${folio("Where you will stay", firstPageNumber + pages.length)}
@@ -394,7 +509,9 @@ p.first::first-letter{font-family:Playfair Display,serif;float:left;font-size:34
 .end h3{color:var(--w)}
 .end p{color:rgba(247,244,239,.72);max-width:118mm}
 .sig{margin-top:14mm;font-size:9pt;letter-spacing:.2em;color:var(--g);line-height:2.2}
-.hot{position:absolute;inset:0;display:grid;grid-template-rows:1fr 1fr}
+.hot{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr 1fr}
+.hothead{padding:24mm 18mm 0}
+.hothead h3{margin-bottom:6mm}
 .hrow{display:grid;grid-template-columns:88mm 1fr;align-items:stretch;overflow:hidden}
 .hrow img{width:100%;height:100%;object-fit:cover}
 .hinfo{padding:14mm 16mm}
