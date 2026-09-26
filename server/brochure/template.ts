@@ -184,6 +184,92 @@ function pullQuote(paras: string[]): { paras: string[]; quote: string } {
   return { paras, quote: "" };
 }
 
+// ---------------------------------------------------------------------------
+// Fitting text-only pages
+// ---------------------------------------------------------------------------
+// The day pages breathe because the image band takes 116mm of the sheet. The
+// text-only pages carry far more copy in the same box, so they are the ones
+// that overset, and the answer is a second page rather than smaller type: the
+// approved sizes are the design and shrinking them to make something fit is
+// how a brochure starts looking like a form.
+//
+// The estimate below is deliberately conservative. It is the mechanism; the
+// guarantee is the assertion in scripts/test-brochure.ts, which measures every
+// page in real Chrome and fails if any content bottom passes the page box.
+
+const MM_PER_PT = 25.4 / 72;
+
+/** Usable height inside a .pad page: 297mm less its 24mm top and bottom. */
+const PAD_CONTENT_MM = 297 - 24 - 24;
+/** Content width inside a .pad page: 210mm less its 18mm side padding. */
+const PAD_CONTENT_WIDTH_MM = 210 - 18 - 18;
+/** Absorbs rounding and the difference between estimated and real leading. */
+const SLACK_MM = 4;
+/** The kicker and the h3's 8mm margin. The h3 itself is measured per heading. */
+const PAGE_HEADER_CHROME_MM = 4.5 + 8;
+/** h3 is 30pt/1.1 capped at 140mm by the approved stylesheet. */
+const H3_WIDTH_MM = 140;
+
+/**
+ * Roughly how tall a run of text will be.
+ *
+ * Inter and Playfair both average a little under half their point size per
+ * character; 0.54 is used rather than 0.5 so the estimate errs towards
+ * breaking a page early, which costs a sheet, instead of late, which costs a
+ * clipped line the reader never sees.
+ */
+function textHeightMm(text: string, fontPt: number, lineHeight: number, widthMm: number): number {
+  const charMm = fontPt * 0.54 * MM_PER_PT;
+  const perLine = Math.max(8, Math.floor(widthMm / charMm));
+  const lines = Math.max(1, Math.ceil(text.length / perLine));
+  return lines * fontPt * lineHeight * MM_PER_PT;
+}
+
+/**
+ * The height of a page's heading block, measured from the heading itself.
+ *
+ * Not a constant, because the h3 wraps: "What is carried for you, and what is
+ * not, continued." runs to a second line where the first page's heading fits
+ * on one, and assuming one line is what let the second inclusions page run
+ * 3.6mm past the sheet. Callers pass the LONGEST heading the section can
+ * produce, which is always the continued form, so every page in a section is
+ * budgeted for the worst case.
+ */
+function pageHeaderMm(heading: string): number {
+  return PAGE_HEADER_CHROME_MM + textHeightMm(heading, 30, 1.1, H3_WIDTH_MM);
+}
+
+/**
+ * Splits items across pages, filling each to `capacityMm`.
+ *
+ * An item taller than a whole page still goes on its own page rather than
+ * being dropped: losing content silently is worse than one overfull sheet,
+ * and the Chrome assertion will catch it if it ever happens.
+ */
+function paginate<T>(items: T[], heightOf: (item: T) => number, capacityMm: number): T[][] {
+  const pages: T[][] = [];
+  let current: T[] = [];
+  let used = 0;
+  for (const item of items) {
+    const h = heightOf(item);
+    if (current.length > 0 && used + h > capacityMm) {
+      pages.push(current);
+      current = [];
+      used = 0;
+    }
+    current.push(item);
+    used += h;
+  }
+  if (current.length > 0) pages.push(current);
+  return pages.length > 0 ? pages : [[]];
+}
+
+/** "Title" on the first page, "Title, continued." on the rest. */
+function continuedHeading(base: string, index: number): string {
+  if (index === 0) return base;
+  return `${base.replace(/\.\s*$/, "")}, continued.`;
+}
+
 /** Two digits, zero padded, as the design specifies for the day numbers. */
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -276,26 +362,49 @@ function coverPage(tour: Tour, days: ItineraryDay[]): string {
 </div>`;
 }
 
-function journeyPage(tour: Tour, pageNumber: number): string {
+function journeyPages(tour: Tour, firstPageNumber: number): string[] {
   // The description is rich text. Stripped to plain paragraphs before it is
   // escaped, or the markup itself prints on the page.
   const { paras, quote } = pullQuote(richTextParagraphs(tour.description));
 
-  // The rule sits after the second paragraph, which is where the approved
-  // layout puts it. Everything after it follows.
-  const before = paras.slice(0, 2);
-  const after = paras.slice(2);
+  // The quote rule sits after the second paragraph, which is where the
+  // approved layout puts it. It is treated as a block of its own here so the
+  // page break can fall either side of it rather than through it.
+  type Block = { html: string; height: number };
+  const blocks: Block[] = [];
+  paras.forEach((text, i) => {
+    blocks.push({
+      html: `<p${i === 0 ? ' class="first"' : ""}>${escapeHtml(text)}</p>`,
+      // p is 10.5pt/1.85 capped at 132mm, plus the 4mm p+p margin.
+      height: textHeightMm(text, 10.5, 1.85, 132) + (i === 0 ? 0 : 4),
+    });
+    if (i === 1 && quote) {
+      blocks.push({
+        html: `<div class="quote">${escapeHtml(quote)}</div>`,
+        // 14pt/1.5 at 125mm, plus its 9mm margins top and bottom.
+        height: textHeightMm(quote, 14, 1.5, 125) + 18,
+      });
+    }
+  });
+  if (quote && paras.length < 2) {
+    blocks.push({
+      html: `<div class="quote">${escapeHtml(quote)}</div>`,
+      height: textHeightMm(quote, 14, 1.5, 125) + 18,
+    });
+  }
 
-  return `<div class="pg">
+  // Budgeted against the continued heading, which is the taller of the two.
+  const capacity = PAD_CONTENT_MM - pageHeaderMm(continuedHeading(`${tour.title}.`, 1)) - SLACK_MM;
+  return paginate(blocks, (b) => b.height, capacity).map(
+    (page, index) => `<div class="pg">
   <div class="pad">
     <div class="kick">The journey</div>
-    <h3>${escapeHtml(tour.title)}</h3>
-    ${before.map((text, i) => `<p${i === 0 ? ' class="first"' : ""}>${escapeHtml(text)}</p>`).join("\n    ")}
-    ${quote ? `<div class="quote">${escapeHtml(quote)}</div>` : ""}
-    ${after.map((text) => `<p>${escapeHtml(text)}</p>`).join("\n    ")}
+    <h3>${escapeHtml(continuedHeading(`${tour.title}.`, index))}</h3>
+    ${page.map((b) => b.html).join("\n    ")}
   </div>
-  ${folio("The journey", pageNumber)}
-</div>`;
+  ${folio("The journey", firstPageNumber + index)}
+</div>`
+  );
 }
 
 /**
@@ -363,7 +472,7 @@ function hotelPages(hotels: Hotel[], firstPageNumber: number): string[] {
     // nothing but photographs, and the only label on it was the folio.
     // Continued rather than a bare repeat on a second page, so a reader
     // landing on it knows it is the same section rather than a new one.
-    const heading = pages.length === 0 ? "Our journey hotels." : "Our journey hotels, continued.";
+    const heading = pages.length === 0 ? "Where the nights are spent." : "Where the nights are spent, continued.";
     pages.push(`<div class="pg">
   <div class="hot">
     <div class="hothead">
@@ -412,47 +521,84 @@ function routePage(days: ItineraryDay[], pageNumber: number): string {
  * phone number: none of that is in the database and a brochure is the wrong
  * place to invent it. Every sentence here is true of how this operator works.
  */
-function teamPage(pageNumber: number): string {
-  return `<div class="pg">
+function teamPages(firstPageNumber: number): string[] {
+  const blocks: Array<[string, string]> = [
+    [
+      "Your Egyptologist",
+      "A licensed guide who stays with you for the whole journey rather than a different face at every site. They are chosen for the places on your particular route, because the person who is good at Saqqara is not always the person who is good at Karnak.",
+    ],
+    [
+      "Your concierge in Cairo",
+      "One planner writes your itinerary and stays with it from the first email to the morning you fly home. Nothing is handed to a call centre, and you are never asked to explain your trip to somebody who has not read it.",
+    ],
+    [
+      "Reachable at any hour",
+      "A flight moves, a site closes, somebody wakes up unwell, and the plan has to change before breakfast. Write to travel@iluxuryegypt.com at any hour and the answer comes from the office in Cairo that built the itinerary.",
+    ],
+  ];
+
+  // 11mm of padding above and below, the 15pt subhead, its 5mm margin, and the
+  // paragraph at 10.5pt/1.85 capped at 132mm.
+  const height = ([head, body]: [string, string]) =>
+    22 + textHeightMm(head, 15, 1.2, 132) + 5 + textHeightMm(body, 10.5, 1.85, 132);
+
+  const capacity = PAD_CONTENT_MM - pageHeaderMm(continuedHeading("Your team on the ground.", 1)) - SLACK_MM;
+  return paginate(blocks, height, capacity).map(
+    (page, index) => `<div class="pg">
   <div class="pad">
     <div class="kick">The detail</div>
-    <h3>Your team on the ground.</h3>
-    <div class="tm">
-      <h4>Your Egyptologist</h4>
-      <p>A licensed guide who stays with you for the whole journey rather than a different face at every site. They are chosen for the places on your particular route, because the person who is good at Saqqara is not always the person who is good at Karnak.</p>
-    </div>
-    <div class="tm">
-      <h4>Your concierge in Cairo</h4>
-      <p>One planner writes your itinerary and stays with it from the first email to the morning you fly home. Nothing is handed to a call centre, and you are never asked to explain your trip to somebody who has not read it.</p>
-    </div>
-    <div class="tm">
-      <h4>Reachable at any hour</h4>
-      <p>A flight moves, a site closes, somebody wakes up unwell, and the plan has to change before breakfast. Write to travel@iluxuryegypt.com at any hour and the answer comes from the office in Cairo that built the itinerary.</p>
-    </div>
+    <h3>${escapeHtml(continuedHeading("Your team on the ground.", index))}</h3>
+    ${page
+      .map(([head, body]) => `<div class="tm">
+      <h4>${escapeHtml(head)}</h4>
+      <p>${escapeHtml(body)}</p>
+    </div>`)
+      .join("\n    ")}
   </div>
-  ${folio("Your team", pageNumber)}
-</div>`;
+  ${folio("Your team", firstPageNumber + index)}
+</div>`
+  );
 }
 
-function inclusionsPage(tour: Tour, pageNumber: number): string {
+function inclusionsPages(tour: Tour, firstPageNumber: number): string[] {
   const includes = list(tour.includes);
   const excludes = list(tour.excludes);
-  const items = (rows: string[]) =>
-    rows.length > 0
-      ? `<ul>${rows.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
-      : `<ul><li>Confirmed with your final itinerary.</li></ul>`;
 
-  return `<div class="pg">
+  // Each column paginates on its own and the page is as tall as the taller of
+  // the two, so a page whose columns each fit the capacity fits the sheet.
+  // Column width is the 174mm content box less the 14mm gap, halved.
+  const columnWidth = (PAD_CONTENT_WIDTH_MM - 14) / 2;
+  // 9.5pt/1.8 plus 4mm of padding top and bottom and the hairline rule.
+  const itemHeight = (text: string) => textHeightMm(text, 9.5, 1.8, columnWidth) + 8.4;
+  // The h4, its 3mm padding, its rule and its 5mm margin: 13.55mm measured.
+  const COLUMN_HEAD_MM = 13.6;
+  const capacity =
+    PAD_CONTENT_MM
+    - pageHeaderMm(continuedHeading("What is carried for you, and what is not.", 1))
+    - 4 // .cols margin-top
+    - COLUMN_HEAD_MM
+    - SLACK_MM;
+
+  const incPages = paginate(includes, itemHeight, capacity);
+  const excPages = paginate(excludes, itemHeight, capacity);
+  const pageCount = Math.max(incPages.length, excPages.length);
+
+  const items = (rows: string[] | undefined, empty: string) =>
+    rows && rows.length > 0
+      ? `<ul>${rows.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>`
+      : `<ul><li>${empty}</li></ul>`;
+
+  return Array.from({ length: pageCount }, (_, index) => `<div class="pg">
   <div class="pad">
     <div class="kick">The detail</div>
-    <h3>What is carried for you, and what is not.</h3>
+    <h3>${escapeHtml(continuedHeading("What is carried for you, and what is not.", index))}</h3>
     <div class="cols">
-      <div><h4>Included</h4>${items(includes)}</div>
-      <div class="ex"><h4>Not included</h4>${items(excludes)}</div>
+      <div><h4>Included</h4>${items(incPages[index], index === 0 ? "Confirmed with your final itinerary." : "Continued opposite.")}</div>
+      <div class="ex"><h4>Not included</h4>${items(excPages[index], index === 0 ? "Confirmed with your final itinerary." : "Continued opposite.")}</div>
     </div>
   </div>
-  ${folio("Inclusions", pageNumber)}
-</div>`;
+  ${folio("Inclusions", firstPageNumber + index)}
+</div>`);
 }
 
 function closingPage(): string {
@@ -502,7 +648,7 @@ p.first::first-letter{font-family:Playfair Display,serif;float:left;font-size:34
 .fol{position:absolute;bottom:10mm;left:18mm;right:18mm;display:flex;justify-content:space-between;font-size:7.5pt;letter-spacing:.22em;color:#9aa2ad}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:14mm;margin-top:4mm}
 .cols h4{font-family:Playfair Display,serif;font-weight:400;font-size:13pt;color:var(--n);padding-bottom:3mm;border-bottom:1px solid var(--g);margin-bottom:5mm}
-.cols li{list-style:none;font-size:9.5pt;font-weight:300;line-height:1.6;color:#3d4653;padding:2.6mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
+.cols li{list-style:none;font-size:9.5pt;font-weight:300;line-height:1.8;color:#3d4653;padding:4mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
 .cols .ex li{color:#8d95a1}
 .end{background:var(--n);color:var(--w)}
 .end .pad{display:flex;flex-direction:column;justify-content:center;height:100%}
@@ -524,8 +670,8 @@ p.first::first-letter{font-family:Playfair Display,serif;float:left;font-size:34
 .stop:before{content:"";position:absolute;left:-9mm;top:3.2mm;width:5mm;height:5mm;border-radius:50%;background:var(--g)}
 .stop b{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);display:block}
 .stop span{font-size:9pt;font-weight:300;letter-spacing:.18em;color:#8d95a1}
-.tm{padding:7mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
-.tm h4{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);margin-bottom:3mm}
+.tm{padding:11mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
+.tm h4{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);margin-bottom:5mm}
 
 /* On a flipped day page the image band occupies the bottom 116mm, so the folio
    at bottom:10mm prints over the photograph and #9aa2ad is not legible on it.
@@ -564,16 +710,21 @@ export function renderBrochureHtml(tour: Tour, hotels: Hotel[]): string {
   let n = 1;
   pages.push(coverPage(tour, days));
 
-  pages.push(journeyPage(tour, ++n));
+  // Every section after the cover can run to more than one sheet, so each
+  // returns a list and the folio counter advances by however many it gave
+  // back. Hardcoding the count here is what made the numbers disagree with
+  // the sheets they sat on the first time this was built.
+  const add = (html: string[]) => {
+    n += html.length;
+    pages.push(...html);
+  };
+
+  add(journeyPages(tour, n + 1));
   // forEach rather than for..of over .entries(), which this tsconfig's
   // target rejects without downlevelIteration.
   days.forEach((day, i) => pages.push(dayPage(day, i, ++n)));
 
-  if (hotels.length > 0) {
-    const hotelHtml = hotelPages(hotels, n + 1);
-    n += hotelHtml.length;
-    pages.push(...hotelHtml);
-  }
+  if (hotels.length > 0) add(hotelPages(hotels, n + 1));
 
   const route = routePage(days, n + 1);
   if (route) {
@@ -581,8 +732,8 @@ export function renderBrochureHtml(tour: Tour, hotels: Hotel[]): string {
     pages.push(route);
   }
 
-  pages.push(teamPage(++n));
-  pages.push(inclusionsPage(tour, ++n));
+  add(teamPages(n + 1));
+  add(inclusionsPages(tour, n + 1));
   pages.push(closingPage());
 
   return `<!DOCTYPE html>

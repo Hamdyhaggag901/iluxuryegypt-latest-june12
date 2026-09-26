@@ -132,16 +132,20 @@ for (const slug of BROCHURE_TOUR_SLUGS) {
 
   const magic = pdf.subarray(0, 4).toString("latin1");
   const pages = pdfPageCount(pdf);
-  // cover + journey + N days + ceil(hotels/2) + route + team + inclusions + closing
+  // The journey, team and inclusions sections can each run to more than one
+  // sheet now, so the expected count is the number of .pg divs the template
+  // actually produced rather than a fixed formula. What this asserts is that
+  // the PDF has exactly as many sheets as the HTML has pages, which is the
+  // invariant that broke when a page was added without the folio following.
   const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
   const hotelCount = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter(Boolean).length;
-  const hotelPages = Math.ceil(hotelCount / 2);
-  const expected = 1 + 1 + days + hotelPages + 1 + 1 + 1 + 1;
+  const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+  const expected = (renderBrochureHtml(tour, hotels).match(/<div class="pg[ "]/g) ?? []).length;
   console.log(
     `  ${slug.padEnd(32)} ${days} days  ${hotelCount} hotels  ${String(pdf.length).padStart(8)} bytes  ${String(pages).padStart(2)} pages  ${String(first[slug]).padStart(5)}ms${cached ? "  (cached)" : ""}`
   );
   ok(`${slug}: starts with %PDF`, magic === "%PDF", magic);
-  ok(`${slug}: page count matches its ${days} day itinerary`, pages === expected, `got ${pages}, expected ${expected}`);
+  ok(`${slug}: the PDF has one sheet per template page`, pages === expected, `PDF ${pages}, HTML ${expected}`);
 }
 
 console.log("\n=== 2. The browser is reused and the second call hits the disk cache ===\n");
@@ -435,14 +439,14 @@ for (const slug of BROCHURE_TOUR_SLUGS) {
   const html = renderBrochureHtml(tour, hotels);
   const hotBlocks = [...html.matchAll(/<div class="hot">([\s\S]*?)\n  <\/div>/g)].map((m) => m[1]);
   if (hotels.length === 0) {
-    ok(`${slug}: no hotels, so no hotels page and no heading`, hotBlocks.length === 0 && !html.includes("Our journey hotels"));
+    ok(`${slug}: no hotels, so no hotels page and no heading`, hotBlocks.length === 0 && !html.includes("Where the nights are spent"));
     continue;
   }
   const headings = hotBlocks.map((b) => b.match(/<h3>([^<]+)<\/h3>/)?.[1] ?? "");
   ok(`${slug}: every hotels page carries a heading`, headings.every((h) => h.length > 0), headings.join(" | "));
-  ok(`${slug}: the first reads "Our journey hotels."`, headings[0] === "Our journey hotels.", headings[0]);
+  ok(`${slug}: the first reads "Where the nights are spent."`, headings[0] === "Where the nights are spent.", headings[0]);
   ok(`${slug}: any further page reads "continued"`,
-     headings.slice(1).every((h) => h === "Our journey hotels, continued."), headings.slice(1).join(" | "));
+     headings.slice(1).every((h) => h === "Where the nights are spent, continued."), headings.slice(1).join(" | "));
   ok(`${slug}: the heading uses the standard kicker`,
      hotBlocks.every((b) => b.includes('<div class="kick">The detail</div>')));
   ok(`${slug}: the heading sits above the first hotel row`,
@@ -553,6 +557,105 @@ for (const slug of BROCHURE_TOUR_SLUGS) {
   const hits = banned.filter((b) => new RegExp(`\\b${b}\\b`, "i").test(prose));
   ok(`${slug}: no banned word`, hits.length === 0, hits.join(", "));
   ok(`${slug}: no em or en dash`, !/[\u2013\u2014]/.test(html));
+}
+
+console.log("\n=== 11. Nothing oversets, and a long list paginates ===\n");
+{
+  // Measured in real Chrome, not estimated. The template's own fitting model
+  // is a mechanism; this is the guarantee. .pg is height:297mm with
+  // overflow:hidden, so content that runs past the box is clipped silently
+  // and a reader simply never sees the last lines.
+  const browser = await puppeteer.launch({
+    headless: "new" as unknown as boolean,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  });
+  const page = await browser.newPage();
+  try {
+    for (const slug of BROCHURE_TOUR_SLUGS) {
+      const tour = (await storage.getTourBySlug(slug))!;
+      const hotelIds: string[] = Array.isArray(tour.hotelIds) ? tour.hotelIds : [];
+      const hotels = (await Promise.all(hotelIds.map((id) => storage.getHotel(id)))).filter((h): h is Hotel => Boolean(h));
+      const html = renderBrochureHtml(tour, hotels);
+      await page.setContent(html, { waitUntil: "domcontentloaded" });
+
+      const overset = await page.evaluate(() => {
+        const out: Array<{ index: number; kind: string; over: number }> = [];
+        document.querySelectorAll(".pg").forEach((pg, index) => {
+          const box = pg.getBoundingClientRect();
+          // The day number hangs off its band on purpose and the folio is
+          // pinned inside; everything else must end within the sheet.
+          let bottom = 0;
+          pg.querySelectorAll(".pad, .hot, .body, .cov, .tm, .cols, .route, p, h3, h4, li, .quote").forEach((el) => {
+            if (el.closest(".num") || el.classList.contains("num")) return;
+            const r = el.getBoundingClientRect();
+            if (r.height > 0) bottom = Math.max(bottom, r.bottom - box.top);
+          });
+          const kind = pg.querySelector(".dpg") ? "day"
+            : pg.querySelector(".hot") ? "hotels"
+            : pg.querySelector(".route") ? "route"
+            : pg.querySelector(".cov") ? "cover"
+            : pg.classList.contains("end") ? "closing"
+            : "text";
+          if (bottom > box.height + 1) out.push({ index, kind, over: Math.round(bottom - box.height) });
+        });
+        return out;
+      });
+      ok(`${slug}: no page's content passes the page box`, overset.length === 0,
+         overset.slice(0, 3).map((o) => `page ${o.index} (${o.kind}) over by ${o.over}px`).join("; "));
+    }
+
+    // The deployment's own shape: 9 nights and a list too long for one page.
+    const long = (await storage.getTourBySlug("egypt-private-tour-packages"))!;
+    const longHotels = (await Promise.all((long.hotelIds as string[]).map((id) => storage.getHotel(id))))
+      .filter((h): h is Hotel => Boolean(h));
+    const longHtml = renderBrochureHtml(long, longHotels);
+    const inclusionHeads = [...longHtml.matchAll(/<h3>(What is carried for you[^<]*)<\/h3>/g)].map((m) => m[1]);
+    console.log(`  ${long.slug}: ${(long.includes as string[]).length} includes, ${(long.excludes as string[]).length} excludes, ${inclusionHeads.length} inclusions page(s)`);
+    ok("a long inclusions list runs to a second page", inclusionHeads.length >= 2, `${inclusionHeads.length}`);
+    ok("the second inclusions page repeats the heading with continued",
+       inclusionHeads[1] === "What is carried for you, and what is not, continued.", inclusionHeads[1]);
+    ok("the folio reads INCLUSIONS on both",
+       (longHtml.match(/<span>INCLUSIONS<\/span>/g) ?? []).length === inclusionHeads.length);
+    // Every item survives the split.
+    const rendered = [...longHtml.matchAll(/<li>([^<]+)<\/li>/g)].map((m) => m[1]);
+    const wanted = [...(long.includes as string[]), ...(long.excludes as string[])];
+    const missing = wanted.filter((w) => !rendered.some((r) => r === w.replace(/&/g, "&amp;")));
+    ok("no inclusion is lost in the split", missing.length === 0, missing.slice(0, 2).join(" | "));
+
+    // And the type was not shrunk to make it fit.
+    ok("the approved list type size is unchanged", longHtml.includes(".cols li{list-style:none;font-size:9.5pt;"));
+    ok("the approved body type size is unchanged", longHtml.includes("p{font-size:10.5pt;line-height:1.85;"));
+    ok("the approved h3 size is unchanged", longHtml.includes("h3{font-family:Playfair Display,serif;font-weight:400;font-size:30pt;"));
+  } finally {
+    await page.close().catch(() => undefined);
+    await browser.close().catch(() => undefined);
+  }
+}
+
+console.log("\n=== 12. The day pages, cover and closing page are untouched ===\n");
+{
+  const tour = (await storage.getTourBySlug("egypt-private-tours"))!;
+  const html = renderBrochureHtml(tour, []);
+  // The approved rules for everything that was explicitly out of scope.
+  for (const rule of [
+    ".dpg{position:absolute;inset:0;display:grid;grid-template-rows:116mm 1fr}",
+    ".dpg.flip{grid-template-rows:1fr 116mm}",
+    ".dpg .num{bottom:-12mm}",
+    ".dpg.flip .num{top:-14mm;bottom:auto}",
+    ".body{padding:15mm 18mm}",
+    "p{font-size:10.5pt;line-height:1.85;color:#3d4653;font-weight:300;max-width:132mm}",
+    "p+p{margin-top:4mm}",
+    ".cov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:22mm 18mm;color:var(--w)}",
+    ".end{background:var(--n);color:var(--w)}",
+    ".end p{color:rgba(247,244,239,.72);max-width:118mm}",
+    "h1{font-family:Playfair Display,serif;font-weight:400;font-size:38pt;line-height:1.06;max-width:152mm}",
+  ]) {
+    ok(`unchanged: ${rule.slice(0, 44)}`, html.includes(rule));
+  }
+  // And the two rules that were asked to change, did.
+  ok("the team block has more room", html.includes(".tm{padding:11mm 0;"));
+  ok("the team subhead has more room", html.includes(".tm h4{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);margin-bottom:5mm}"));
+  ok("the list items have more room", html.includes(".cols li{list-style:none;font-size:9.5pt;font-weight:300;line-height:1.8;color:#3d4653;padding:4mm 0;"));
 }
 
 console.log("\n=== House rules ===\n");
