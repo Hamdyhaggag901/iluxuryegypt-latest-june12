@@ -410,6 +410,14 @@ p.first::first-letter{font-family:Playfair Display,serif;float:left;font-size:34
 .tm{padding:7mm 0;border-bottom:1px solid rgba(38,48,63,.08)}
 .tm h4{font-family:Playfair Display,serif;font-weight:400;font-size:15pt;color:var(--n);margin-bottom:3mm}
 
+/* On a flipped day page the image band occupies the bottom 116mm, so the folio
+   at bottom:10mm prints over the photograph and #9aa2ad is not legible on it.
+   The folio stays exactly where the approved design puts it and goes cream on
+   those pages only. :has() rather than a class on the page div, so this stays a
+   stylesheet rule and the markup is untouched; Chrome has supported it since
+   105 and Puppeteer here is on 146. */
+.pg:has(.dpg.flip) .fol{color:rgba(247,244,239,.75)}
+
 /* Print, and the navy panel that stands in for a missing photograph. Neither
    is in the approved stylesheet because the approved preview is a browser page
    that is scrolled rather than printed, and its images all exist. */

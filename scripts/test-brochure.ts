@@ -266,6 +266,56 @@ console.log("\n=== 3b. A URL that fails to load also becomes the navy panel ===\
   }
 }
 
+console.log("\n=== 3c. The folio goes cream on flip pages, and only there ===\n");
+{
+  // On a flipped day page the image band occupies the bottom 116mm, so the
+  // folio prints over the photograph. The rule uses :has(), which cannot be
+  // checked by looking for the selector in the stylesheet: a Chrome that did
+  // not support it would parse the rule, ignore it, and leave the folio grey
+  // on the picture with nothing to show for it. So this reads the COMPUTED
+  // colour off a real flip page and a real unflipped one.
+  const tour = (await storage.getTourBySlug("egypt-private-tours"))!;
+  const html = renderBrochureHtml(tour, []);
+  ok("the rule is in the stylesheet", html.includes(".pg:has(.dpg.flip) .fol{color:rgba(247,244,239,.75)}"));
+
+  const browser = await puppeteer.launch({
+    headless: "new" as unknown as boolean,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+  });
+  const page = await browser.newPage();
+  try {
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const colours = await page.evaluate(() =>
+      [...document.querySelectorAll(".pg")].map((pg) => ({
+        flip: Boolean(pg.querySelector(".dpg.flip")),
+        day: Boolean(pg.querySelector(".dpg")),
+        colour: (() => {
+          const fol = pg.querySelector(".fol");
+          return fol ? getComputedStyle(fol).color : null;
+        })(),
+      }))
+    );
+    const CREAM = "rgba(247, 244, 239, 0.75)";
+    const GREY = "rgb(154, 162, 173)";
+    const flips = colours.filter((c) => c.flip);
+    const others = colours.filter((c) => !c.flip && c.colour !== null);
+    console.log(`  ${flips.length} flip pages, ${others.length} other pages with a folio`);
+    ok("every flip page's folio computes cream", flips.length > 0 && flips.every((c) => c.colour === CREAM),
+       flips.map((c) => c.colour).join(" "));
+    ok("no other page's folio changed", others.every((c) => c.colour === GREY),
+       others.filter((c) => c.colour !== GREY).map((c) => c.colour).join(" "));
+    // The unflipped day pages are the ones that prove this is scoped to the
+    // flip and not to day pages in general.
+    const unflippedDays = colours.filter((c) => c.day && !c.flip);
+    ok("unflipped day pages keep the grey folio", unflippedDays.length > 0 && unflippedDays.every((c) => c.colour === GREY),
+       `${unflippedDays.length} pages`);
+    ok("the folio did not move", html.includes(".fol{position:absolute;bottom:10mm;left:18mm;right:18mm;"));
+  } finally {
+    await page.close().catch(() => undefined);
+    await browser.close().catch(() => undefined);
+  }
+}
+
 console.log("\n=== 7. The approved layout, per tour ===\n");
 for (const slug of BROCHURE_TOUR_SLUGS) {
   const tour = (await storage.getTourBySlug(slug))!;
