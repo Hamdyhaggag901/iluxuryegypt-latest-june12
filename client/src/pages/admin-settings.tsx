@@ -11,8 +11,15 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle, Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Shield, Mail, Globe, User, Key, FileText, MessageCircle, Database, CheckCircle2, XCircle, Sparkles, Image as ImageIcon, Loader2 } from "lucide-react";
 import { z } from "zod";
+import {
+  SPEAK_EXPERT_IMAGE_KEYS,
+  SPEAK_EXPERT_IMAGE_LABELS,
+  resolveSpeakExpertImages,
+  type SpeakExpertImageKey,
+} from "@shared/speak-expert-images";
 import {
   Form,
   FormControl,
@@ -254,6 +261,91 @@ export default function AdminSettings() {
       toast({
         title: "Success",
         description: "Email settings updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Speak to an Expert images
+  //
+  // Read through the public endpoint rather than a second CMS one, because it
+  // already returns the effective values and resolveSpeakExpertImages fills in
+  // any key that has not been seeded yet, which is what the site renders.
+  const { data: speakExpertData, isLoading: speakExpertLoading } = useQuery<{
+    success: boolean;
+    images: Record<string, string>;
+  }>({
+    queryKey: ["publicSpeakExpertImages"],
+    queryFn: async () => {
+      const response = await fetch("/api/public/speak-expert-images");
+      if (!response.ok) throw new Error("Failed to load Speak to an Expert images");
+      return response.json();
+    },
+  });
+
+  const [speakExpertDraft, setSpeakExpertDraft] = useState<Record<string, string>>({});
+  // Which field the media library dialog is picking for, or null when closed.
+  const [pickerKey, setPickerKey] = useState<SpeakExpertImageKey | null>(null);
+
+  // Server values are the baseline; anything the editor has typed or picked
+  // wins until it is saved.
+  const speakExpertImages = resolveSpeakExpertImages(speakExpertData?.images);
+  const speakExpertValue = (key: SpeakExpertImageKey) =>
+    speakExpertDraft[key] ?? speakExpertImages[key];
+
+  // Only fetched once the picker is opened, so the settings page does not pull
+  // the whole media library on every visit.
+  const { data: mediaData, isLoading: mediaLoading } = useQuery<{
+    success: boolean;
+    media: Array<{ id: string; url: string; filename: string; altEn?: string | null }>;
+  }>({
+    queryKey: ["cmsMediaLibrary"],
+    queryFn: async () => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/media", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to load the media library");
+      return response.json();
+    },
+    enabled: pickerKey !== null,
+  });
+
+  const updateSpeakExpertImageMutation = useMutation({
+    mutationFn: async ({ key, url }: { key: SpeakExpertImageKey; url: string }) => {
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/cms/settings/speak-expert-images", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ images: { [key]: url } }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new Error(error.message || "Failed to update image");
+      }
+      return response.json();
+    },
+    onSuccess: (_result, variables) => {
+      // Drop the draft so the field goes back to reflecting the server.
+      setSpeakExpertDraft((prev) => {
+        const next = { ...prev };
+        delete next[variables.key];
+        return next;
+      });
+      queryClient.invalidateQueries({ queryKey: ["publicSpeakExpertImages"] });
+      toast({
+        title: "Success",
+        description: "Speak to an Expert image updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -630,6 +722,14 @@ export default function AdminSettings() {
               WhatsApp
             </Button>
             <Button
+              variant={activeSection === "speakExpert" ? "default" : "ghost"}
+              className="w-full justify-start"
+              onClick={() => setActiveSection("speakExpert")}
+            >
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Speak to an Expert
+            </Button>
+            <Button
               variant={activeSection === "database" ? "default" : "ghost"}
               className="w-full justify-start"
               onClick={() => setActiveSection("database")}
@@ -946,6 +1046,165 @@ export default function AdminSettings() {
               </CardContent>
             </Card>
           )}
+
+          {/* Speak to an Expert images */}
+          {activeSection === "speakExpert" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ImageIcon className="h-5 w-5 mr-2" />
+                  Speak to an Expert
+                </CardTitle>
+                <CardDescription>
+                  Change the images used by the Speak to an Expert modal. Each one saves on its own.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {speakExpertLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading current images...</p>
+                ) : (
+                  SPEAK_EXPERT_IMAGE_KEYS.map((key) => {
+                    const meta = SPEAK_EXPERT_IMAGE_LABELS[key];
+                    const value = speakExpertValue(key);
+                    const isDirty = speakExpertDraft[key] !== undefined
+                      && speakExpertDraft[key] !== speakExpertImages[key];
+                    const isSaving = updateSpeakExpertImageMutation.isPending
+                      && updateSpeakExpertImageMutation.variables?.key === key;
+
+                    return (
+                      <div key={key} className="space-y-3">
+                        <div>
+                          <Label htmlFor={`speak-expert-${key}`}>{meta.label}</Label>
+                          <p className="text-sm text-muted-foreground mt-1">{meta.description}</p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="w-full sm:w-48 shrink-0">
+                            <div className="aspect-[3/4] w-full overflow-hidden rounded-md border bg-muted">
+                              {value ? (
+                                <img
+                                  src={value}
+                                  alt={`${meta.label} preview`}
+                                  className="h-full w-full object-cover"
+                                  data-testid={`preview-${key}`}
+                                />
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 space-y-3">
+                            <Input
+                              id={`speak-expert-${key}`}
+                              value={value}
+                              onChange={(e) =>
+                                setSpeakExpertDraft((prev) => ({ ...prev, [key]: e.target.value }))
+                              }
+                              placeholder="/api/assets/uploads/photo.jpg or https://..."
+                              data-testid={`input-${key}`}
+                            />
+
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setPickerKey(key)}
+                                data-testid={`button-choose-${key}`}
+                              >
+                                <ImageIcon className="h-4 w-4 mr-2" />
+                                Choose from Media Library
+                              </Button>
+                              <Button
+                                type="button"
+                                disabled={!isDirty || isSaving}
+                                onClick={() =>
+                                  updateSpeakExpertImageMutation.mutate({ key, url: value })
+                                }
+                                data-testid={`button-save-${key}`}
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : null}
+                                Save
+                              </Button>
+                              {isDirty ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    setSpeakExpertDraft((prev) => {
+                                      const next = { ...prev };
+                                      delete next[key];
+                                      return next;
+                                    })
+                                  }
+                                >
+                                  Cancel
+                                </Button>
+                              ) : null}
+                            </div>
+
+                            <p className="text-sm text-muted-foreground">
+                              Leaving this empty is not saved. If the value is ever cleared in the
+                              database, the modal falls back to the image it shipped with rather
+                              than showing a broken picture.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Media library picker for the Speak to an Expert images */}
+          <Dialog open={pickerKey !== null} onOpenChange={(open) => !open && setPickerKey(null)}>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Choose from Media Library</DialogTitle>
+                <DialogDescription>
+                  Pick an image to use. It is applied to the field straight away, then press Save.
+                </DialogDescription>
+              </DialogHeader>
+
+              {mediaLoading ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Loading media...</p>
+              ) : (mediaData?.media?.length ?? 0) === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  No media found. Upload an image in the Media section first.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {mediaData!.media.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="group text-left rounded-md border overflow-hidden hover:border-primary focus:outline-none focus:ring-2 focus:ring-ring"
+                      onClick={() => {
+                        if (pickerKey) {
+                          const chosen = pickerKey;
+                          setSpeakExpertDraft((prev) => ({ ...prev, [chosen]: item.url }));
+                        }
+                        setPickerKey(null);
+                      }}
+                      data-testid={`media-option-${item.id}`}
+                    >
+                      <div className="aspect-square w-full overflow-hidden bg-muted">
+                        <img
+                          src={item.url}
+                          alt={item.altEn || item.filename}
+                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </div>
+                      <p className="text-xs truncate px-2 py-1.5">{item.filename}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
 
           {/* WhatsApp Settings */}
           {activeSection === "whatsapp" && (

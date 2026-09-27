@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +12,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { MessageCircle, Loader2, Star } from "lucide-react";
 import TripTypeChips from "@/components/trip-type-chips";
 import { CountryCodeSelect, DEFAULT_COUNTRY_ISO, getDialCode } from "@/components/phone-country-select";
+import { resolveSpeakExpertImages } from "@shared/speak-expert-images";
 
-const BACKGROUND_IMAGE_URL = "https://iluxuryegypt.com/api/assets/uploads/ee366046-f7f3-4c54-a946-878414a60aa0.jpg";
+// The side image is editable from the CMS. The URL this modal shipped with is
+// now the fallback and lives in shared/speak-expert-images.ts, which is also
+// what the seed writes, so the seeded value and the fallback cannot drift.
 const WHATSAPP_NUMBER = "201121012676";
 
 interface SpeakToExpertModalProps {
@@ -37,6 +41,21 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
   const { toast } = useToast();
   const [form, setForm] = useState(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Editable from the CMS. Any failure path (request error, missing row, empty
+  // stored value) resolves back to the URL this modal shipped with, so the
+  // image is never blank.
+  const { data: imageData } = useQuery<{ success: boolean; images: Record<string, string> }>({
+    queryKey: ["publicSpeakExpertImages"],
+    queryFn: async () => {
+      const response = await fetch("/api/public/speak-expert-images");
+      if (!response.ok) throw new Error("Failed to fetch");
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const images = resolveSpeakExpertImages(imageData?.images);
 
   const updateField = <K extends keyof typeof initialFormState>(field: K, value: (typeof initialFormState)[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -106,7 +125,7 @@ export default function SpeakToExpertModal({ open, onOpenChange }: SpeakToExpert
         {/* Side image */}
         <div className="hidden md:block relative h-full min-h-full">
           <img
-            src={BACKGROUND_IMAGE_URL}
+            src={images.speak_expert_image_main}
             alt="Begin your bespoke Egypt journey"
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"

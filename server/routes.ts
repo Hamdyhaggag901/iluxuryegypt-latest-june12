@@ -53,6 +53,11 @@ import { registerTourRedirects } from "./tour-redirects";
 import { registerPathPrefixRedirects } from "./path-redirects";
 import { notifyIndexNow, publicUrl, changedUrls, submitSitemap, registerIndexNowRoutes, isIndexNowEnabled, notifyDuePosts } from "./indexnow";
 import { isPostLive } from "@shared/post-visibility";
+import {
+  SPEAK_EXPERT_IMAGE_KEYS,
+  isSpeakExpertImageKey,
+  type SpeakExpertImageKey,
+} from "@shared/speak-expert-images";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { 
@@ -3129,6 +3134,71 @@ function blankOverridesToNull<T extends Record<string, any>>(data: T): T {
     } catch (error) {
       console.error('Error fetching WhatsApp settings:', error);
       res.status(500).json({ message: 'Error fetching WhatsApp settings' });
+    }
+  });
+
+  // Update the Speak to an Expert images (CMS)
+  //
+  // Only the keys this feature owns are writable here. Taking the key from the
+  // request body without that check would turn one editor endpoint into a
+  // write to any row in site_config, including the header logo.
+  app.post("/api/cms/settings/speak-expert-images", requireAuth, requireEditor, async (req, res) => {
+    try {
+      const authReq = req as AuthenticatedRequest;
+      const images = (req.body?.images ?? {}) as Record<string, unknown>;
+
+      const unknown = Object.keys(images).filter((key) => !isSpeakExpertImageKey(key));
+      if (unknown.length > 0) {
+        return res.status(400).json({ message: `Unknown image key(s): ${unknown.join(', ')}` });
+      }
+
+      const keys = SPEAK_EXPERT_IMAGE_KEYS.filter((key) => key in images);
+      if (keys.length === 0) {
+        return res.status(400).json({ message: 'No images supplied' });
+      }
+
+      // Validated before anything is written, so a bad value in the second
+      // field cannot leave the first one already saved.
+      for (const key of keys) {
+        const value = images[key];
+        if (typeof value !== 'string' || !value.trim()) {
+          return res.status(400).json({ message: `A URL is required for ${key}` });
+        }
+      }
+
+      for (const key of keys) {
+        await storage.upsertSiteConfig(key, String(images[key]).trim(), 'image', authReq.user!.id);
+      }
+
+      res.json({ success: true, message: 'Speak to an Expert images updated successfully', updated: keys });
+    } catch (error) {
+      console.error('Error updating Speak to an Expert images:', error);
+      res.status(500).json({ message: 'Error updating Speak to an Expert images' });
+    }
+  });
+
+  // Get the Speak to an Expert images (public)
+  //
+  // Returns a { key: url } map holding only the keys that have a non-empty
+  // stored value. The modal merges what comes back over its own defaults, so
+  // an unseeded database, an empty value or a failed request all render the
+  // image the modal shipped with rather than a broken one.
+  app.get("/api/public/speak-expert-images", async (req, res) => {
+    try {
+      const rows = await Promise.all(
+        SPEAK_EXPERT_IMAGE_KEYS.map((key) => storage.getSiteConfig(key)),
+      );
+
+      const images: Partial<Record<SpeakExpertImageKey, string>> = {};
+      SPEAK_EXPERT_IMAGE_KEYS.forEach((key, index) => {
+        const value = rows[index]?.value?.trim();
+        if (value) images[key] = value;
+      });
+
+      res.json({ success: true, images });
+    } catch (error) {
+      console.error('Error fetching Speak to an Expert images:', error);
+      res.status(500).json({ message: 'Error fetching Speak to an Expert images' });
     }
   });
 
