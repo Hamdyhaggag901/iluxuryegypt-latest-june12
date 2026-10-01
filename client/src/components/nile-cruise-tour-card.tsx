@@ -1,19 +1,36 @@
 import { Link } from "wouter";
-import { Ship, Users, CalendarDays } from "lucide-react";
 import { openLinkInNewTab } from "@/lib/open-in-new-tab";
-import type { TourCardProps } from "@/components/tour-card";
+import NileCruiseTourCard from "@/components/nile-cruise-tour-card";
 
-function shipType(category: string) {
-  if (/dahabiya/i.test(category)) return "Dahabiya";
-  if (/deluxe/i.test(category)) return "Deluxe";
-  if (/luxury/i.test(category)) return "Luxury";
-  return "Nile Cruise";
+export interface TourCardProps {
+  image: string;
+  category: string;
+  /** Shown as a pill over the top-right of the image. Omit for no badge. */
+  badge?: "NEW" | "OFFER" | null;
+  title: string;
+  /** e.g. "2026 - 2027". Omit to hide the line entirely. */
+  years?: string;
+  /** Pre-formatted duration text, e.g. "7 Days" or "Full Day (8 hours)". */
+  days: string;
+  /** Pre-formatted group size text, e.g. "12 Guests" or "2-12 People". Omit to hide. */
+  guests?: string;
+  /** City/stop names, rendered joined with " • ". */
+  itinerary: string[];
+  price: number;
+  currency?: string;
+  link: string;
+  /** Opens the card's link in a new tab instead of navigating away — used
+   *  where the card sits on a page the visitor is likely still using (e.g.
+   *  a "you might also like" carousel), off by default everywhere else. */
+  openInNewTab?: boolean;
 }
 
-export default function NileCruiseTourCard({
+export default function TourCard({
   image,
   category,
+  badge,
   title,
+  years,
   days,
   guests,
   itinerary,
@@ -22,88 +39,90 @@ export default function NileCruiseTourCard({
   link,
   openInNewTab = false,
 }: TourCardProps) {
-  const symbol = currency === "USD" ? "$" : `${currency} `;
-  const hasPrice = typeof price === "number" && price > 0;
-  const route =
-    itinerary.length > 1
-      ? `${itinerary[0]} ↔ ${itinerary[itinerary.length - 1]}`
-      : itinerary[0] || "";
+  const currencySymbol = currency === "USD" ? "$" : `${currency} `;
+
+  if (/cruise|dahabiya/i.test(category)) {
+    return (
+      <NileCruiseTourCard
+        image={image}
+        category={category}
+        badge={badge}
+        title={title}
+        years={years}
+        days={days}
+        guests={guests}
+        itinerary={itinerary}
+        price={price}
+        currency={currency}
+        link={link}
+        openInNewTab={openInNewTab}
+      />
+    );
+  }
 
   return (
     <Link
       href={link}
-      data-testid={`card-nile-${link}`}
-      {...(openInNewTab
-        ? { target: "_blank", rel: "noopener noreferrer", onClick: openLinkInNewTab }
-        : {})}
+      data-testid={`card-tour-${link}`}
+      {...(openInNewTab ? { target: "_blank", rel: "noopener noreferrer", onClick: openLinkInNewTab } : {})}
     >
-      <article className="group h-full flex flex-col cursor-pointer bg-card border border-card-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
-        <div className="relative aspect-[4/5] overflow-hidden">
+      <article className="group h-full flex flex-col cursor-pointer bg-card border border-card-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        {/* Cover image */}
+        <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={image}
             alt={title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <span className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm text-primary text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full">
-            {shipType(category)}
+          <span className="absolute top-3 left-3 md:top-4 md:left-4 bg-background/85 backdrop-blur-sm text-primary text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+            {category}
           </span>
-          <div className="absolute bottom-0 left-0 right-0 p-5">
-            <div className="w-8 h-px bg-accent mb-3" />
-            <h3 className="font-serif text-xl md:text-2xl font-bold text-white leading-snug line-clamp-2">
-              {title}
-            </h3>
-            {route && (
-              <p className="text-white/80 text-xs md:text-sm mt-1 tracking-wide">
-                {route}
-              </p>
-            )}
-          </div>
+          {badge && (
+            <span
+              className={`absolute top-3 right-3 md:top-4 md:right-4 text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${
+                badge === "NEW"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-accent text-accent-foreground"
+              }`}
+            >
+              {badge}
+            </span>
+          )}
         </div>
 
-        <div className="p-5 flex flex-col flex-grow">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            {days && (
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="w-4 h-4 text-accent-text" /> {days}
+        {/* Body */}
+        <div className="p-5 md:p-6 flex flex-col flex-grow">
+          <h3 className="font-serif text-lg md:text-xl font-bold text-primary leading-snug line-clamp-2">
+            {title}
+          </h3>
+          {years && <p className="text-xs md:text-sm text-muted-foreground mt-1">{years}</p>}
+          <p className="text-[11px] md:text-xs font-medium text-muted-foreground uppercase tracking-[0.1em] mt-3">
+            {days}
+            {guests ? ` • Limited to ${guests}` : ""}
+          </p>
+          {itinerary.length > 0 && (
+            <div className="mt-4">
+              <span className="text-[11px] md:text-xs font-bold text-primary uppercase tracking-[0.1em] block mb-1">
+                Itinerary
               </span>
-            )}
-            {guests && (
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-accent-text" /> {guests}
-              </span>
-            )}
-            {itinerary.length > 0 && (
-              <span className="inline-flex items-center gap-1.5">
-                <Ship className="w-4 h-4 text-accent-text" /> {itinerary.length} stops
-              </span>
-            )}
-          </div>
-
-          <hr className="border-t border-border my-4" />
-
+              <p className="text-xs md:text-sm text-muted-foreground/80 leading-relaxed">
+                {itinerary.join(" • ")}
+              </p>
+            </div>
+          )}
+          <hr className="border-t border-border my-5" />
           <div className="mt-auto flex items-end justify-between gap-3">
             <div>
-              {hasPrice ? (
-                <>
-                  <span className="text-[11px] text-muted-foreground block">From</span>
-                  <span className="font-serif text-lg font-bold text-primary">
-                    {symbol}
-                    {price.toLocaleString()}
-                    <span className="font-sans text-xs font-normal text-muted-foreground">
-                      {" "}per person
-                    </span>
-                  </span>
-                </>
-              ) : (
-                <span className="font-serif text-base font-bold text-primary">
-                  Price on request
-                </span>
-              )}
+              <span className="text-[11px] text-muted-foreground block mb-0.5">From</span>
+              <span className="font-serif text-base md:text-lg font-bold text-primary">
+                {currencySymbol}
+                {price.toLocaleString()}{" "}
+                <span className="font-sans text-xs font-normal text-muted-foreground">per person, twin/double room</span>
+              </span>
             </div>
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide px-4 py-2 rounded-full border border-primary/40 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
-              View Ship
+            <span className="shrink-0 text-[11px] md:text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-full border border-primary/40 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary">
+              View Journey
             </span>
           </div>
         </div>
