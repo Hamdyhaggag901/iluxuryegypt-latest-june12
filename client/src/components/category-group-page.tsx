@@ -1,16 +1,15 @@
-import { useState, lazy, Suspense } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Loader2, ArrowRight, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import FaqSection from "@/components/faq-section";
 import { Button } from "@/components/ui/button";
-import type { Category, Tour } from "@shared/schema";
-import { getResponsiveImageProps } from "@/lib/responsive-image";
-
-// Pulls in react-hook-form + Radix select; load it only once someone
-// actually opens the trip builder instead of on every category page load.
-const TripBuilderModal = lazy(() => import("@/components/trip-builder-modal"));
+import TripBuilderModal from "@/components/trip-builder-modal";
+import NileCruiseCategoryCard from "@/components/nile-cruise-category-card";
+import { sanitizeHtml } from "@/lib/sanitize-html";
+import type { Category, Tour, CategoryGroupHero } from "@shared/schema";
 
 type CategoryGroup = "packages" | "day-tours" | "nile-cruise";
 
@@ -26,18 +25,102 @@ interface CategoryGroupPageProps {
 // (not run through the 150-char truncation below) — these are curated copy,
 // not raw DB content that needs a safety clamp.
 const CATEGORY_DESCRIPTION_OVERRIDES: Record<string, string> = {
-  "small-group-tours-egypt":
-    "Travel in an intimate small group led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries — cultural depth without the crowds.",
+  "small-group-egypt-tours":
+    "Small group Egypt tours led by licensed Egyptologist guides through the Pyramids, Luxor, Aswan, and the Nile. Five-star hotels, deluxe cruises, and carefully designed itineraries, with cultural depth and never the crowds.",
   "egypt-family-tours":
     "Private Egyptologist guides, luxury hotels, and flexible itineraries designed for every generation. Explore the Pyramids, cruise the Nile, and discover Luxor and Aswan with VIP transportation and activities the whole family will remember.",
-  "egypt-solo-travel":
-    "Personalized private journeys for independent travelers who value flexibility and authentic experiences. Explore the Pyramids, the Nile, Luxor, and Aswan with expert Egyptologist guides, luxury hotels, and itineraries built around your own pace.",
+  "egypt-tours-for-solo-travellers":
+    "Egypt tours for solo travellers built around independence and flexibility. Explore the Pyramids, the Nile, Luxor, and Aswan with expert Egyptologist guides, luxury hotels, and itineraries shaped entirely around your own pace.",
   "egypt-spiritual-tours":
     "Visit the Great Pyramids, Abydos, Dendera, Luxor, Aswan, and the Nile with expert Egyptologist guides. Private meditation sessions, five-star stays, and personalized itineraries create peaceful moments of reflection and spiritual discovery.",
   "luxury-honeymoon-egypt":
     "Designed for couples seeking privacy and romance. Explore the Pyramids, cruise the Nile in luxury, and stay at iconic five-star hotels, with intimate candlelit dinners and Red Sea moments woven into a journey built entirely around you.",
   "solar-eclipse-egypt":
     "Witness the longest total solar eclipse on land until 2114 from a private site along Luxor's path of totality. This small-group journey pairs the August 2, 2027 spectacle with after-hours access to the Great Pyramid and Valley of the Kings.",
+};
+
+// Long-form intro copy shown between the hero and the category grid, keyed by
+// group. Curated page copy, so it lives here alongside
+// CATEGORY_DESCRIPTION_OVERRIDES rather than in the database: these listing
+// pages are static routes, not `categories` rows. Real HTML, rendered through
+// sanitizeHtml below.
+const GROUP_INTRO_HTML: Partial<Record<CategoryGroup, string>> = {
+  "day-tours": `<p>Our Egypt day tours are private and led by licensed Egyptologists. Each day is planned around timing: the right temple at opening, the right tomb before the tour buses arrive.</p>
+<p>Tours are grouped by city. <a href="/egypt-day-tours/cairo-private-tours">Cairo private tours</a> cover the Pyramids and the city's ancient and Islamic heritage. <a href="/egypt-day-tours/luxor-private-tours">Luxor private tours</a> cover Karnak and the West Bank. <a href="/egypt-day-tours/aswan-private-tours">Aswan private tours</a> cover Philae and the southern Nile.</p>
+<h2>Choosing Your Egypt Day Tour</h2>
+<p>Pick the city first, then the pace. Combine several days into a full journey, or add a single day to a stay you have already booked.</p>`,
+  packages: `<p>Our luxury Egypt tour packages are built around a simple idea: the country rewards travellers who arrive with the right access and the right pace. Every itinerary here includes private Egyptologist guiding, five-star accommodation selected for character rather than size, and permits arranged in advance for sites that close to the public.</p>
+<p>What differs between collections is who the journey is for. <a href="/luxury-egypt-tour-packages/small-group-egypt-tours">Small group tours</a> cap the party at twelve guests and open temples after hours. <a href="/luxury-egypt-tour-packages/egypt-family-tours">Family itineraries</a> pace the days around children's attention spans and build in genuine rest. <a href="/luxury-egypt-tour-packages/egypt-tours-for-solo-travellers">Solo journeys</a> favour quieter archaeological sites and unstructured evenings. Others are shaped around a specific occasion, whether that means a <a href="/luxury-egypt-tour-packages/luxury-honeymoon-egypt">honeymoon along the Nile</a>, a <a href="/luxury-egypt-tour-packages/egypt-spiritual-tours">spiritual route through Egypt's sacred temples</a>, or a <a href="/luxury-egypt-tour-packages/solar-eclipse-egypt">rare astronomical event</a>.</p>
+<h2>Choosing Between Our Egypt Luxury Tour Packages</h2>
+<p>Each collection below holds several complete itineraries, ranging from seven days to sixteen. Durations matter less than fit: a well-designed week can feel richer than a rushed fortnight, and the right itinerary is the one shaped around how you actually want to travel.</p>
+<h3>What Every Luxury Egypt Tour Package Includes</h3>
+<p>Private transfers throughout, all internal flights, expert guiding, and a concierge line available around the clock.</p>`,
+};
+
+// Exported so the page wrapper can feed them to its single useSEO call as
+// FAQPage JSON-LD. A second useSEO call here would clash: the hook clears every
+// [data-seo-jsonld] script it finds before writing its own.
+export const GROUP_FAQS: Partial<Record<CategoryGroup, Array<{ question: string; answer: string }>>> = {
+  "day-tours": [
+    {
+      question: "Are your Egypt day tours private?",
+      answer: "Yes. Every day tour is private, with your own licensed Egyptologist guide and a dedicated driver, so the pace follows you.",
+    },
+    {
+      question: "What is included in a day tour?",
+      answer: "Private guiding and transport are included. Each tour page lists the exact inclusions, such as entrance fees and meals.",
+    },
+    {
+      question: "Which city should I choose?",
+      answer: "Cairo for the Pyramids and the museums, Luxor for Karnak and the Valley of the Kings, and Aswan for Philae and the southern Nile.",
+    },
+    {
+      question: "Can I combine several day tours?",
+      answer: "Yes. Many guests link days across Cairo, Luxor, and Aswan into one itinerary, and we can arrange transfers between cities.",
+    },
+    {
+      question: "Can you pick me up from my hotel?",
+      answer: "Yes. Pickup and drop-off from your hotel are arranged for each tour.",
+    },
+    {
+      question: "How far in advance should I book?",
+      answer: "We recommend booking as early as you can, especially for October to April, so your preferred guide and dates are secured.",
+    },
+  ],
+  packages: [
+    {
+      question: "What is included in your luxury Egypt tour packages?",
+      answer: "Every package includes five-star accommodation, private Egyptologist guiding, all internal flights and transfers, entrance fees to listed sites, and round-the-clock concierge support throughout your journey.",
+    },
+    {
+      question: "How do I choose between your Egypt tour packages?",
+      answer: "Start with who is travelling rather than how long. Families, solo travellers, honeymooners, and small groups each have a dedicated collection built around different pacing and priorities.",
+    },
+    {
+      question: "Are these private or group tours?",
+      answer: "Both. Most collections are fully private, while our small group Egypt tours cap the party at twelve travellers, which lowers the cost while retaining most of the same access.",
+    },
+    {
+      question: "How long are your luxury Egypt tour packages?",
+      answer: "Itineraries range from seven to sixteen days. Shorter packages focus on Cairo, Luxor, and Aswan, while longer ones reach Alexandria, Siwa Oasis, and the Red Sea.",
+    },
+    {
+      question: "Do all packages include a Nile cruise?",
+      answer: "Not all, but most longer itineraries include a cruise segment between Luxor and Aswan. Some collections offer it as an option rather than a fixed inclusion.",
+    },
+    {
+      question: "Can these packages be customised?",
+      answer: "Yes. Every package can be adjusted for dates, hotel selection, pacing, or additional days, and our specialists build fully bespoke itineraries on request.",
+    },
+    {
+      question: "What is the best time of year to visit Egypt?",
+      answer: "October through April offers the most comfortable temperatures for exploring outdoor sites. Summer travel is possible with earlier starts and longer midday breaks.",
+    },
+    {
+      question: "How far in advance should I book?",
+      answer: "Three to six months is recommended, particularly for winter departures and any itinerary requiring private site permits, which are limited.",
+    },
+  ],
 };
 
 export default function CategoryGroupPage({
@@ -47,7 +130,6 @@ export default function CategoryGroupPage({
   basePath,
 }: CategoryGroupPageProps) {
   const [isTripBuilderOpen, setIsTripBuilderOpen] = useState(false);
-  const [hasOpenedTripBuilder, setHasOpenedTripBuilder] = useState(false);
 
   const { data, isLoading, isError } = useQuery<{ success: boolean; categories: Category[] }>({
     queryKey: ["/api/public/categories", group],
@@ -67,6 +149,20 @@ export default function CategoryGroupPage({
     },
   });
 
+  // Admin-managed hero image for this listing page. Absent for groups an
+  // admin has not set one for, which keeps the plain background below.
+  const { data: heroData } = useQuery<{ success: boolean; hero?: CategoryGroupHero }>({
+    queryKey: ["/api/public/category-group-hero", group],
+    queryFn: async () => {
+      const res = await fetch(`/api/public/category-group-hero/${group}`);
+      if (!res.ok) throw new Error("Failed to load hero");
+      return res.json();
+    },
+  });
+
+  const hero = heroData?.hero;
+  const introHtml = GROUP_INTRO_HTML[group];
+  const groupFaqs = GROUP_FAQS[group] || [];
   const categories = data?.categories || [];
   const tours = toursData?.tours || [];
   const tourCounts = categories.reduce((acc, category) => {
@@ -79,6 +175,28 @@ export default function CategoryGroupPage({
       <Navigation />
 
       <section className="min-h-[70vh] pt-[140px] pb-20 bg-[#e7e1da] relative overflow-hidden flex items-center">
+        {/* Admin-managed hero image. A real <img> rather than a CSS
+            background so it can carry alt text, and eager/high priority
+            because it is this page's LCP element. The scrim keeps the
+            existing light-on-beige text legible over a photograph. */}
+        {hero?.heroImage && (
+          <>
+            <img
+              src={hero.heroImage}
+              alt={hero.heroImageAlt}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              data-testid="img-category-group-hero"
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-b from-[#e7e1da]/85 via-[#e7e1da]/70 to-[#e7e1da]/55"
+              aria-hidden="true"
+            />
+          </>
+        )}
+
         {/* Subtle decorative elements */}
         <div className="absolute top-1/4 left-8 w-px h-32 bg-gradient-to-b from-transparent via-accent/30 to-transparent" />
         <div className="absolute top-1/3 right-8 w-px h-24 bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
@@ -158,14 +276,24 @@ export default function CategoryGroupPage({
         }
       `}</style>
 
+      {/* Long-form intro copy, between the hero and the category grid.
+          Rendered as HTML so the h2/h3 subheadings and the links to each
+          collection are real markup, same pipeline as category-detail.tsx. */}
+      {introHtml && (
+        <section className="py-12 md:py-16 bg-background">
+          <div
+            className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-base md:text-lg text-muted-foreground leading-relaxed [&>p]:mb-4 last:[&>p]:mb-0 [&>h2]:text-2xl md:[&>h2]:text-3xl [&>h2]:font-serif [&>h2]:font-bold [&>h2]:text-primary [&>h2]:mt-8 [&>h2]:mb-4 [&>h3]:text-xl md:[&>h3]:text-2xl [&>h3]:font-serif [&>h3]:font-semibold [&>h3]:text-primary [&>h3]:mt-6 [&>h3]:mb-3 [&_a]:text-accent [&_a]:underline [&_a]:underline-offset-2 [&_strong]:font-semibold"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(introHtml) }}
+            data-testid="section-group-intro"
+          />
+        </section>
+      )}
+
       {/* Tailor Made CTA - Always visible */}
       <section className="py-12 bg-background border-b border-accent/10">
         <div className="max-w-[90rem] mx-auto px-6 sm:px-10 lg:px-16">
           <button
-            onClick={() => {
-              setHasOpenedTripBuilder(true);
-              setIsTripBuilderOpen(true);
-            }}
+            onClick={() => setIsTripBuilderOpen(true)}
             className="group block w-full text-left"
             data-testid="button-category-tailor-made-cta"
           >
@@ -226,88 +354,99 @@ export default function CategoryGroupPage({
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`${basePath}/${category.slug}`}
-                  className="group cursor-pointer block"
-                >
-                  <div className="relative bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl border border-accent/10 hover:border-accent/30 h-full flex flex-col">
-                    {/* Top accent line */}
-                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+              {categories.map((category) =>
+                group === "nile-cruise" ? (
+                  <NileCruiseCategoryCard
+                    key={category.id}
+                    name={category.name}
+                    slug={category.slug}
+                    image={category.image}
+                    description={category.shortDescription || category.description || ""}
+                    shipCount={tourCounts[category.name] || 0}
+                    basePath={basePath}
+                  />
+                ) : (
+                  <Link
+                    key={category.id}
+                    href={`${basePath}/${category.slug}`}
+                    className="group cursor-pointer block"
+                  >
+                    <div className="relative bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-2xl border border-accent/10 hover:border-accent/30 h-full flex flex-col">
+                      {/* Top accent line */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
 
-                    {/* Image section with overlay */}
-                    <div className="aspect-[4/3] relative overflow-hidden flex-shrink-0">
-                      <img
-                        {...getResponsiveImageProps(category.image, 640)}
-                        sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                        alt={category.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        loading="lazy"
-                      />
+                      {/* Image section with overlay */}
+                      <div className="aspect-[4/3] relative overflow-hidden flex-shrink-0">
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          loading="lazy"
+                        />
 
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                      {/* Experience count badge */}
-                      <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
-                        <span className="text-primary text-xs font-semibold tracking-wide">
-                          {tourCounts[category.name] || 0} {tourCounts[category.name] === 1 ? "Experience" : "Experiences"}
-                        </span>
-                      </div>
-
-                      {/* Corner decorative element */}
-                      <div className="absolute top-4 right-4 w-10 h-10 border-2 border-white/40 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:border-accent/60 group-hover:bg-accent/20 transition-all duration-500">
-                        <div className="w-2 h-2 bg-white rounded-full group-hover:bg-accent transition-colors duration-500" />
-                      </div>
-
-                      {/* Category name on image */}
-                      <div className="absolute bottom-4 left-5 right-5">
-                        <div className="w-10 h-px bg-accent mb-3" />
-                        <h3 className="text-2xl md:text-3xl font-serif font-bold text-white tracking-wide">
-                          {category.name}
-                        </h3>
-                      </div>
-                    </div>
-
-                    {/* Content box */}
-                    <div className="p-6 md:p-8 relative flex flex-col flex-1">
-                      {/* Decorative circles */}
-                      <div className="absolute top-4 right-4 w-20 h-20 border border-accent/10 rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500" />
-                      <div className="absolute top-8 right-8 w-10 h-10 border border-accent/15 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
-
-                      {/* Category type */}
-                      <span className="text-accent-text text-xs tracking-[0.25em] uppercase font-medium">
-                        {group.replace("-", " ")}
-                      </span>
-
-                      {/* Description - curated override shown in full; DB fallback still clamped to 150 chars */}
-                      <div className="mt-4 flex-1">
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                          {(() => {
-                            const override = CATEGORY_DESCRIPTION_OVERRIDES[category.slug];
-                            if (override) return override;
-                            const desc = category.shortDescription || category.description || "";
-                            return desc.length > 150 ? desc.substring(0, 150) + "..." : desc;
-                          })()}
-                        </p>
-                      </div>
-
-                      {/* Action area */}
-                      <div className="mt-6 pt-6 border-t border-accent/10 flex items-center justify-between">
-                        <div>
-                          <span className="text-primary font-serif font-medium group-hover:text-accent transition-colors duration-300">
-                            Explore Collection
+                        {/* Experience count badge */}
+                        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
+                          <span className="text-primary text-xs font-semibold tracking-wide">
+                            {tourCounts[category.name] || 0} {tourCounts[category.name] === 1 ? "Experience" : "Experiences"}
                           </span>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
-                          <ArrowRight className="w-5 h-5 text-accent group-hover:translate-x-0.5 transition-transform duration-300" />
+
+                        {/* Corner decorative element */}
+                        <div className="absolute top-4 right-4 w-10 h-10 border-2 border-white/40 rounded-full flex items-center justify-center backdrop-blur-sm group-hover:border-accent/60 group-hover:bg-accent/20 transition-all duration-500">
+                          <div className="w-2 h-2 bg-white rounded-full group-hover:bg-accent transition-colors duration-500" />
+                        </div>
+
+                        {/* Category name on image */}
+                        <div className="absolute bottom-4 left-5 right-5">
+                          <div className="w-10 h-px bg-accent mb-3" />
+                          <h3 className="text-2xl md:text-3xl font-serif font-bold text-white tracking-wide">
+                            {category.name}
+                          </h3>
+                        </div>
+                      </div>
+
+                      {/* Content box */}
+                      <div className="p-6 md:p-8 relative flex flex-col flex-1">
+                        {/* Decorative circles */}
+                        <div className="absolute top-4 right-4 w-20 h-20 border border-accent/10 rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500" />
+                        <div className="absolute top-8 right-8 w-10 h-10 border border-accent/15 rounded-full opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
+
+                        {/* Category type */}
+                        <span className="text-accent-text text-xs tracking-[0.25em] uppercase font-medium">
+                          {group.replace("-", " ")}
+                        </span>
+
+                        {/* Description - curated override shown in full; DB fallback still clamped to 150 chars */}
+                        <div className="mt-4 flex-1">
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {(() => {
+                              const override = CATEGORY_DESCRIPTION_OVERRIDES[category.slug];
+                              if (override) return override;
+                              const desc = category.shortDescription || category.description || "";
+                              return desc.length > 150 ? desc.substring(0, 150) + "..." : desc;
+                            })()}
+                          </p>
+                        </div>
+
+                        {/* Action area */}
+                        <div className="mt-6 pt-6 border-t border-accent/10 flex items-center justify-between">
+                          <div>
+                            <span className="text-primary font-serif font-medium group-hover:text-accent transition-colors duration-300">
+                              Explore Collection
+                            </span>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300 group-hover:scale-110">
+                            <ArrowRight className="w-5 h-5 text-accent group-hover:translate-x-0.5 transition-transform duration-300" />
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              )}
             </div>
           )}
         </div>
@@ -330,12 +469,9 @@ export default function CategoryGroupPage({
         </div>
       </section>
 
+      <FaqSection id="group-faq" faqs={groupFaqs} testId="group-faq-section" />
       <Footer />
-      {hasOpenedTripBuilder && (
-        <Suspense fallback={null}>
-          <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
-        </Suspense>
-      )}
+      <TripBuilderModal open={isTripBuilderOpen} onOpenChange={setIsTripBuilderOpen} />
     </div>
   );
 }
